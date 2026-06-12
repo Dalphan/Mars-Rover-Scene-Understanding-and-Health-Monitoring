@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 
-from datasets.common import collect_image_files, mask_to_numpy, normalized_stem, to_tensor_sample
+from datasets.common import mask_to_numpy, to_tensor_sample
 from taxonomies import CORE_VALID_CLASSES, IGNORE_INDEX, mapping_for_dataset, remap_mask
 
 
@@ -19,31 +19,14 @@ class AI4MARSSample:
 
 
 def discover_ai4mars_samples(root: str | Path, split: Optional[str] = None) -> list[AI4MARSSample]:
-    root_path = Path(root)
-    if not root_path.exists():
-        raise FileNotFoundError(f"AI4MARS root not found: {root_path}")
+    msl_root = _resolve_msl_root(root)
+    split_name = split or "train"
 
-    search_root = root_path / split if split and (root_path / split).exists() else root_path
-    files = collect_image_files(search_root)
-
-    image_files = [path for path in files if _looks_like_image(path)]
-    mask_files = [path for path in files if _looks_like_label_mask(path)]
-    range_files = [path for path in files if _looks_like_range_mask(path)]
-    rover_files = [path for path in files if _looks_like_rover_mask(path)]
-
-    masks_by_stem = _index_by_stem(mask_files)
-    range_by_stem = _index_by_stem(range_files)
-    rover_by_stem = _index_by_stem(rover_files)
-
-    return [
-        AI4MARSSample(
-            image_path=image_path,
-            mask_path=masks_by_stem.get(normalized_stem(image_path)),
-            range_mask_path=range_by_stem.get(normalized_stem(image_path)),
-            rover_mask_path=rover_by_stem.get(normalized_stem(image_path)),
-        )
-        for image_path in image_files
-    ]
+    if split_name == "train":
+        return [*_mcam_samples(msl_root), *_ncam_samples(msl_root, "train")]
+    if split_name in {"val", "validation", "test"}:
+        return _ncam_samples(msl_root, "test")
+    raise ValueError(f"Unsupported AI4MARS split: {split_name}")
 
 
 def audit_ai4mars(root: str | Path, split: Optional[str] = None, taxonomy: str = "core") -> dict:
@@ -109,7 +92,12 @@ class AI4MARSFolderDataset(Dataset):
             raise ValueError("AI4MARS root is required when legacy split paths are not provided.")
         return discover_ai4mars_samples(self.root, split=self.split)
 
-    def _load_legacy_split(self, split_file: str, images_dir: str, masks_dir: str) -> list[AI4MARSSample]:
+    def _load_legacy_split(
+        self,
+        split_file: str,
+        images_dir: str,
+        masks_dir: str,
+    ) -> list[AI4MARSSample]:
         split_path = Path(split_file)
         if not split_path.exists():
             raise FileNotFoundError(f"Split file not found: {split_path}")
@@ -167,43 +155,66 @@ def _apply_ai4mars_masks(mask: np.ndarray, sample: AI4MARSSample, mapping: dict[
     return mapped
 
 
-def _index_by_stem(paths: list[Path]) -> dict[str, Path]:
-    indexed: dict[str, Path] = {}
-    for path in paths:
-        indexed.setdefault(normalized_stem(path), path)
-    return indexed
+def _resolve_msl_root(root: str | Path) -> Path:
+    root_path = Path(root)
+    candidates = [
+        root_path,
+        root_path / "msl",
+        root_path / "ai4mars-dataset-merged-0.6" / "msl",
+        root_path / "A)4MARS" / "ai4mars-dataset-merged-0.6" / "msl",
+    ]
+    for candidate in candidates:
+        if (candidate / "mcam").exists() and (candidate / "ncam").exists():
+            return candidate
+    raise FileNotFoundError(f"AI4MARS MSL root not found under: {root_path}")
 
 
-def _looks_like_image(path: Path) -> bool:
-    parts = {part.lower() for part in path.parts}
-    name = path.name.lower()
-    if any(part in {"masks", "mask", "labels", "label", "mxy", "rng", "range", "rover"} for part in parts):
-        return False
-    if any(token in name for token in ("mask", "label", "mxy", "rng", "range", "rover")):
-        return False
-    return "images" in parts or "image" in parts or "edr" in parts
+def _mcam_samples(msl_root: Path) -> list[AI4MARSSample]:
+    images_dir = msl_root / "mcam" / "images"
+    labels_dir = msl_root / "mcam" / "labels" / "train"
+    return [
+        AI4MARSSample(image_path=image_path, mask_path=labels_dir / f"{image_path.stem}_merged.png")
+        for image_path in _jpgs(images_dir)
+        if (labels_dir / f"{image_path.stem}_merged.png").exists()
+    ]
 
 
-def _looks_like_label_mask(path: Path) -> bool:
-    parts = {part.lower() for part in path.parts}
-    name = path.name.lower()
-    if _looks_like_range_mask(path) or _looks_like_rover_mask(path):
-        return False
-    return any(part in {"masks", "mask", "labels", "label", "mxy"} for part in parts) or any(
-        token in name for token in ("mask", "label", "mxy")
+def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
+    images_dir = msl_root / "ncam" / "images" / "edr"
+    rover_dir = msl_root / "ncam" / "images" / "mxy"
+    range_dir = msl_root / "ncam" / "images" / "rng-30m"
+    labels_dir = msl_root / "ncam" / "labels" / "train"
+    if split == "test":
+        labels_dir = msl_root / "ncam" / "labels" / "test" / "masked-gold-min3-100agree"
+
+    return [
+        AI4MARSSample(
+            image_path=image_path,
+            mask_path=labels_dir / f"{image_path.stem}_merged.png",
+            range_mask_path=_optional_mask(range_dir, image_path.stem),
+            rover_mask_path=_optional_mask(rover_dir, image_path.stem),
+        )
+        for image_path in _jpgs(images_dir)
+        if (labels_dir / f"{image_path.stem}_merged.png").exists()
+    ]
+
+
+def _jpgs(path: Path) -> list[Path]:
+    if not path.exists():
+        return []
+    return sorted(
+        file_path
+        for file_path in path.iterdir()
+        if file_path.is_file() and file_path.suffix.lower() in {".jpg", ".jpeg"}
     )
 
 
-def _looks_like_range_mask(path: Path) -> bool:
-    parts = {part.lower() for part in path.parts}
-    name = path.name.lower()
-    return "rng" in parts or "range" in parts or "rng" in name or "range" in name
-
-
-def _looks_like_rover_mask(path: Path) -> bool:
-    parts = {part.lower() for part in path.parts}
-    name = path.name.lower()
-    return "rover" in parts or "rover" in name
+def _optional_mask(path: Path, stem: str) -> Optional[Path]:
+    for name in (f"{stem}.png", f"{stem}_merged.png"):
+        candidate = path / name
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def _sorted_unique(values: list[np.ndarray]) -> list[int]:
