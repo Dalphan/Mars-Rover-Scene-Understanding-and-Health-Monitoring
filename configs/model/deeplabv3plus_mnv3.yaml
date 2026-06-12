@@ -1,0 +1,6 @@
+name: deeplabv3plus_mnv3
+pretrained: true
+encoder_name: timm-mobilenetv3_large_100
+loss:
+  type: ce
+  dice_weight: 0.0

@@ -1,0 +1,28 @@
+defaults:
+  - data: ai4mars
+  - model: segformer_b0
+  - trainer: default
+  - _self_
+
+seed: 42
+num_classes: ${data.num_classes}
+ignore_index: ${data.ignore_index}
+
+paths:
+  root: ${hydra:runtime.cwd}
+  output_dir: ${hydra:runtime.output_dir}
+
+logging:
+  save_visuals: true
+  visuals_every_n_epochs: 1
+  visuals_max_samples: 4
+
+optimizer:
+  lr: 0.00006
+  weight_decay: 0.01
+
+ckpt_path: null
+
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}

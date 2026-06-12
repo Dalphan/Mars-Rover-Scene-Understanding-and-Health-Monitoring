@@ -1,0 +1,16 @@
+torch
+torchvision
+pytorch-lightning
+torchmetrics
+hydra-core
+omegaconf
+transformers
+segmentation-models-pytorch
+timm
+datasets
+albumentations
+opencv-python
+Pillow
+numpy
+matplotlib
+pytest

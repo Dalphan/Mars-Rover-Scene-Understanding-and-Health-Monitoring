@@ -1,0 +1,16 @@
+defaults:
+  - config
+  - _self_
+
+data:
+  taxonomy: core
+  num_classes: 3
+  ignore_index: 255
+
+model:
+  name: segformer_b0
+  pretrained: true
+  checkpoint: nvidia/segformer-b0-finetuned-ade-512-512
+  loss:
+    type: ce
+    dice_weight: 0.0
