@@ -88,3 +88,4 @@ python -m scripts.audit_datasets data=mars_bench
 
 - Dataset-specific labels are mapped centrally in [taxonomies.py](taxonomies.py).
 - The first tranche intentionally implements only the core taxonomy. Rover, track, sky, shadow, hazard, background, and null pixels are ignored for core training.
+- `REPO_VERSION.txt` is a simple numeric counter. Increase it before each commit with `python scripts/update_repo_version.py` so Kaggle clones can tell which repo version they have.

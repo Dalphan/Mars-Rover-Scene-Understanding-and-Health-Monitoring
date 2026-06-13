@@ -2,4 +2,3 @@
 *.pyc
 *.md
 !README.md
-!REPO_VERSION.md
