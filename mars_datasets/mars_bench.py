@@ -1,6 +1,3 @@
-import importlib
-import sys
-from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -121,34 +118,8 @@ def _sorted_unique(values: list[np.ndarray]) -> list[int]:
 
 
 def _load_hf_dataset(dataset_name: str, split: str, config_name: Optional[str] = None):
-    repo_root = Path(__file__).resolve().parents[1]
-    saved_path = list(sys.path)
-    saved_modules = {
-        name: module
-        for name, module in sys.modules.items()
-        if name == "datasets" or name.startswith("datasets.")
-    }
+    from datasets import load_dataset
 
-    try:
-        sys.path = [
-            path
-            for path in sys.path
-            if Path(path or ".").resolve() != repo_root
-        ]
-        for name in list(sys.modules):
-            if name == "datasets" or name.startswith("datasets."):
-                del sys.modules[name]
-
-        module = importlib.import_module("datasets")
-        module_file = Path(getattr(module, "__file__", "")).resolve()
-        if repo_root in module_file.parents:
-            raise ImportError("Imported the local datasets package instead of Hugging Face datasets.")
-        if config_name:
-            return module.load_dataset(dataset_name, config_name, split=split)
-        return module.load_dataset(dataset_name, split=split)
-    finally:
-        for name in list(sys.modules):
-            if name == "datasets" or name.startswith("datasets."):
-                del sys.modules[name]
-        sys.modules.update(saved_modules)
-        sys.path = saved_path
+    if config_name:
+        return load_dataset(dataset_name, config_name, split=split)
+    return load_dataset(dataset_name, split=split)
