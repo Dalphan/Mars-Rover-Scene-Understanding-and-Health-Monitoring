@@ -206,7 +206,7 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
     rover_dir = msl_root / "ncam" / "images" / "mxy"
     range_dir = msl_root / "ncam" / "images" / "rng-30m"
     merged_label = ""
-    labels_dirs = msl_root / "ncam" / "labels" / "train"
+    labels_dirs = [msl_root / "ncam" / "labels" / "train"]
     if split == "test":
         merged_label = "_merged"
         labels_dirs = [msl_root / "ncam" / "labels" / "test" / "masked-gold-min3-100agree",
