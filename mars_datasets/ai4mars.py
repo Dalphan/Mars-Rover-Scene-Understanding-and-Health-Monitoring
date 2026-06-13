@@ -20,6 +20,7 @@ class AI4MARSSample:
 
 def discover_ai4mars_samples(root: str | Path, split: Optional[str] = None) -> list[AI4MARSSample]:
     msl_root = _resolve_msl_root(root)
+    print(f"[AI4MARS discover] MSL root resolved to: {msl_root}")
     split_name = split or "train"
 
     if split_name == "train":
@@ -30,26 +31,54 @@ def discover_ai4mars_samples(root: str | Path, split: Optional[str] = None) -> l
 
 
 def audit_ai4mars(root: str | Path, split: Optional[str] = None, taxonomy: str = "core") -> dict:
+    split_name = split or "train"
+    print(f"[AI4MARS audit] start split={split_name} root={root}")
     samples = discover_ai4mars_samples(root=root, split=split)
     mapping = mapping_for_dataset("ai4mars", taxonomy=taxonomy)
+    print(f"[AI4MARS audit] discovered {len(samples)} image/label pairs")
 
-    original_values = []
-    mapped_values = []
-    for sample in samples:
+    original_values: set[int] = set()
+    mapped_values: set[int] = set()
+    missing_masks = 0
+    progress_step = max(1, len(samples) // 10) if samples else 1
+
+    for index, sample in enumerate(samples, start=1):
         if sample.mask_path is None:
+            missing_masks += 1
             continue
-        mask = mask_to_numpy(Image.open(sample.mask_path))
-        original_values.append(mask)
-        mapped_values.append(_apply_ai4mars_masks(mask, sample, mapping))
+
+        try:
+            mask = mask_to_numpy(Image.open(sample.mask_path))
+        except FileNotFoundError:
+            missing_masks += 1
+            print(f"[AI4MARS audit] missing label skipped: {sample.mask_path}")
+            continue
+
+        mask_values = {int(value) for value in np.unique(mask)}
+        original_values.update(mask_values)
+        mapped_values.update(mapping.get(value, IGNORE_INDEX) for value in mask_values)
+
+        if _mask_contains_positive(sample.range_mask_path):
+            mapped_values.add(IGNORE_INDEX)
+        if _mask_contains_positive(sample.rover_mask_path):
+            mapped_values.add(IGNORE_INDEX)
+
+        if index == 1 or index == len(samples) or index % progress_step == 0:
+            print(f"[AI4MARS audit] processed {index}/{len(samples)} samples")
+
+    print(
+        "[AI4MARS audit] done "
+        f"images={len(samples)} masks={len(samples) - missing_masks} missing_masks={missing_masks}"
+    )
 
     return {
         "dataset": "ai4mars",
         "split": split,
         "images": len(samples),
-        "masks": sum(sample.mask_path is not None for sample in samples),
-        "missing_masks": sum(sample.mask_path is None for sample in samples),
-        "original_label_values": _sorted_unique(original_values),
-        "mapped_label_values": _sorted_unique(mapped_values),
+        "masks": len(samples) - missing_masks,
+        "missing_masks": missing_masks,
+        "original_label_values": sorted(original_values),
+        "mapped_label_values": sorted(mapped_values),
     }
 
 
@@ -161,7 +190,7 @@ def _resolve_msl_root(root: str | Path) -> Path:
         root_path,
         root_path / "msl",
         root_path / "ai4mars-dataset-merged-0.6" / "msl",
-        root_path / "A)4MARS" / "ai4mars-dataset-merged-0.6" / "msl",
+        root_path / "AI4MARSv0-6" / "ai4mars-dataset-merged-0.6" / "msl",
     ]
     for candidate in candidates:
         if (candidate / "mcam").exists() and (candidate / "ncam").exists():
@@ -172,11 +201,19 @@ def _resolve_msl_root(root: str | Path) -> Path:
 def _mcam_samples(msl_root: Path) -> list[AI4MARSSample]:
     images_dir = msl_root / "mcam" / "images"
     labels_dir = msl_root / "mcam" / "labels" / "train"
-    return [
-        AI4MARSSample(image_path=image_path, mask_path=labels_dir / f"{image_path.stem}_merged.png")
-        for image_path in _jpgs(images_dir)
-        if (labels_dir / f"{image_path.stem}_merged.png").exists()
-    ]
+    samples = []
+    skipped = 0
+    for image_path in _jpgs(images_dir):
+        sample = _sample_with_required_label(
+            image_path=image_path,
+            label_path=labels_dir / f"{image_path.stem}_merged.png",
+        )
+        if sample is None:
+            skipped += 1
+            continue
+        samples.append(sample)
+    print(f"[AI4MARS discover] mcam train: {len(samples)} samples, {skipped} missing labels")
+    return samples
 
 
 def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
@@ -187,16 +224,42 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
     if split == "test":
         labels_dir = msl_root / "ncam" / "labels" / "test" / "masked-gold-min3-100agree"
 
-    return [
-        AI4MARSSample(
+    samples = []
+    skipped = 0
+    range_masks = _png_lookup(range_dir)
+    rover_masks = _png_lookup(rover_dir)
+
+    for image_path in _jpgs(images_dir):
+        sample = _sample_with_required_label(
             image_path=image_path,
-            mask_path=labels_dir / f"{image_path.stem}_merged.png",
-            range_mask_path=_optional_mask(range_dir, image_path.stem),
-            rover_mask_path=_optional_mask(rover_dir, image_path.stem),
+            label_path=labels_dir / f"{image_path.stem}_merged.png",
+            range_mask_path=_optional_mask_from_lookup(range_masks, image_path.stem),
+            rover_mask_path=_optional_mask_from_lookup(rover_masks, image_path.stem),
         )
-        for image_path in _jpgs(images_dir)
-        if (labels_dir / f"{image_path.stem}_merged.png").exists()
-    ]
+        if sample is None:
+            skipped += 1
+            continue
+        samples.append(sample)
+    print(f"[AI4MARS discover] ncam {split}: {len(samples)} samples, {skipped} missing labels")
+    return samples
+
+
+def _sample_with_required_label(
+    image_path: Path,
+    label_path: Path,
+    range_mask_path: Optional[Path] = None,
+    rover_mask_path: Optional[Path] = None,
+) -> Optional[AI4MARSSample]:
+    try:
+        label_path.stat()
+    except FileNotFoundError:
+        return None
+    return AI4MARSSample(
+        image_path=image_path,
+        mask_path=label_path,
+        range_mask_path=range_mask_path,
+        rover_mask_path=rover_mask_path,
+    )
 
 
 def _jpgs(path: Path) -> list[Path]:
@@ -209,15 +272,24 @@ def _jpgs(path: Path) -> list[Path]:
     )
 
 
-def _optional_mask(path: Path, stem: str) -> Optional[Path]:
-    for name in (f"{stem}.png", f"{stem}_merged.png"):
-        candidate = path / name
-        if candidate.exists():
-            return candidate
-    return None
+def _png_lookup(path: Path) -> dict[str, Path]:
+    if not path.exists():
+        return {}
+    return {
+        file_path.name: file_path
+        for file_path in path.iterdir()
+        if file_path.is_file() and file_path.suffix.lower() == ".png"
+    }
 
 
-def _sorted_unique(values: list[np.ndarray]) -> list[int]:
-    if not values:
-        return []
-    return sorted({int(value) for array in values for value in np.unique(array)})
+def _optional_mask_from_lookup(files: dict[str, Path], stem: str) -> Optional[Path]:
+    return files.get(f"{stem}.png") or files.get(f"{stem}_merged.png")
+
+
+def _mask_contains_positive(path: Optional[Path]) -> bool:
+    if path is None:
+        return False
+    try:
+        return bool(np.any(mask_to_numpy(Image.open(path)) == 1))
+    except FileNotFoundError:
+        return False
