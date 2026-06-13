@@ -218,8 +218,6 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
     rover_masks = _png_lookup(rover_dir)
 
     for image_path in _jpgs(images_dir):
-        print(image_path)
-        print(f"{image_path.stem}{merged_label}.png")
         sample = _sample_with_required_label(
             image_path=image_path,
             label_path=labels_dir / f"{image_path.stem}{merged_label}.png",
