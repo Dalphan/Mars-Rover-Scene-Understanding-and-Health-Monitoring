@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 from PIL import Image
@@ -54,14 +54,14 @@ def audit_ai4mars(root: str | Path, split: Optional[str] = None, taxonomy: str =
             print(f"[AI4MARS audit] missing label skipped: {sample.mask_path}")
             continue
 
-        mask_values = {int(value) for value in np.unique(mask)}
-        original_values.update(mask_values)
-        mapped_values.update(mapping.get(value, IGNORE_INDEX) for value in mask_values)
+        # mask_values = {int(value) for value in np.unique(mask)}
+        # original_values.update(mask_values)
+        # mapped_values.update(mapping.get(value, IGNORE_INDEX) for value in mask_values)
 
-        if _mask_contains_positive(sample.range_mask_path):
-            mapped_values.add(IGNORE_INDEX)
-        if _mask_contains_positive(sample.rover_mask_path):
-            mapped_values.add(IGNORE_INDEX)
+        # if _mask_contains_positive(sample.range_mask_path):
+        #     mapped_values.add(IGNORE_INDEX)
+        # if _mask_contains_positive(sample.rover_mask_path):
+        #     mapped_values.add(IGNORE_INDEX)
 
         if index == 1 or index == len(samples) or index % progress_step == 0:
             print(f"[AI4MARS audit] processed {index}/{len(samples)} samples")
@@ -195,7 +195,6 @@ def _mcam_samples(msl_root: Path) -> list[AI4MARSSample]:
         )
         if sample is None:
             skipped += 1
-            print(f"Skipping MCAM sample with missing label: {image_path.stem}")
             continue
         samples.append(sample)
     print(f"[AI4MARS discover] mcam train: {len(samples)} samples, {skipped} missing labels")
@@ -207,10 +206,12 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
     rover_dir = msl_root / "ncam" / "images" / "mxy"
     range_dir = msl_root / "ncam" / "images" / "rng-30m"
     merged_label = ""
-    labels_dir = msl_root / "ncam" / "labels" / "train"
+    labels_dirs = msl_root / "ncam" / "labels" / "train"
     if split == "test":
         merged_label = "_merged"
-        labels_dir = msl_root / "ncam" / "labels" / "test" / "masked-gold-min3-100agree"
+        labels_dirs = [msl_root / "ncam" / "labels" / "test" / "masked-gold-min3-100agree",
+                      msl_root / "ncam" / "labels" / "test" / "masked-gold-min2-100agree",
+                      msl_root / "ncam" / "labels" / "test" / "masked-gold-min1-100agree"]
 
     samples = []
     skipped = 0
@@ -220,13 +221,12 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
     for image_path in _jpgs(images_dir):
         sample = _sample_with_required_label(
             image_path=image_path,
-            label_path=labels_dir / f"{image_path.stem}{merged_label}.png",
+            label_path=[labels_dir / f"{image_path.stem}{merged_label}.png" for labels_dir in labels_dirs],
             range_mask_path=_optional_mask_from_lookup(range_masks, image_path.stem),
             rover_mask_path=_optional_mask_from_lookup(rover_masks, image_path.stem),
         )
         if sample is None:
             skipped += 1
-            print(f"Skipping NCAM sample with missing label: {image_path.stem}")
             continue
         samples.append(sample)
     print(f"[AI4MARS discover] ncam {split}: {len(samples)} samples, {skipped} missing labels")
@@ -235,20 +235,20 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
 
 def _sample_with_required_label(
     image_path: Path,
-    label_path: Path,
+    label_path: Path | list[Path],
     range_mask_path: Optional[Path] = None,
     rover_mask_path: Optional[Path] = None,
 ) -> Optional[AI4MARSSample]:
-    try:
-        label_path.stat()
-    except FileNotFoundError:
-        return None
-    return AI4MARSSample(
-        image_path=image_path,
-        mask_path=label_path,
-        range_mask_path=range_mask_path,
-        rover_mask_path=rover_mask_path,
-    )
+    label_paths = label_path if isinstance(label_path, list) else [label_path]
+    for candidate in label_paths:
+        if candidate.exists():
+            return AI4MARSSample(
+                image_path=image_path,
+                mask_path=candidate,
+                range_mask_path=range_mask_path,
+                rover_mask_path=rover_mask_path,
+            )
+    return None
 
 
 def _jpgs(path: Path) -> list[Path]:
