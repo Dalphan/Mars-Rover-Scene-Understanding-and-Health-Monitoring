@@ -204,6 +204,7 @@ def _mcam_samples(msl_root: Path) -> list[AI4MARSSample]:
         )
         if sample is None:
             skipped += 1
+            print(f"Skipping MCAM sample with missing label: {image_path.stem}")
             continue
         samples.append(sample)
     print(f"[AI4MARS discover] mcam train: {len(samples)} samples, {skipped} missing labels")
@@ -232,6 +233,7 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
         )
         if sample is None:
             skipped += 1
+            print(f"Skipping NCAM sample with missing label: {image_path.stem}")
             continue
         samples.append(sample)
     print(f"[AI4MARS discover] ncam {split}: {len(samples)} samples, {skipped} missing labels")
