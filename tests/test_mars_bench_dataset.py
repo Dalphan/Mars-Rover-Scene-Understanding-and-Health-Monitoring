@@ -1,8 +1,8 @@
 import numpy as np
 from PIL import Image
 
-from datasets import mars_bench
-from datasets.mars_bench import MarsBenchHFDataset
+from mars_datasets import mars_bench
+from mars_datasets.mars_bench import MarsBenchHFDataset
 
 
 class FakeHFDataset:

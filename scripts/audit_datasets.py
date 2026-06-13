@@ -2,8 +2,8 @@ import json
 
 from hydra import main
 
-from datasets.ai4mars import audit_ai4mars
-from datasets.mars_bench import audit_mars_bench
+from mars_datasets.ai4mars import audit_ai4mars
+from mars_datasets.mars_bench import audit_mars_bench
 
 
 @main(version_base="1.3", config_path="../configs", config_name="config")

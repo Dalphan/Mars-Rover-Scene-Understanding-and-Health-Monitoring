@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 
-from datasets.common import mask_to_numpy, to_tensor_sample
+from mars_datasets.common import mask_to_numpy, to_tensor_sample
 from taxonomies import CORE_VALID_CLASSES, IGNORE_INDEX, mapping_for_dataset, remap_mask
 
 

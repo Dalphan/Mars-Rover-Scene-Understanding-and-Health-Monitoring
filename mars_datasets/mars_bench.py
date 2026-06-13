@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 from torch.utils.data import Dataset
 
-from datasets.common import image_to_numpy, mask_to_numpy, to_tensor_sample
+from mars_datasets.common import image_to_numpy, mask_to_numpy, to_tensor_sample
 from taxonomies import CORE_VALID_CLASSES, mapping_for_dataset, remap_mask
 
 

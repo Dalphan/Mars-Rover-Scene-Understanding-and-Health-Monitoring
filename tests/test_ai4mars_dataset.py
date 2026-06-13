@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-from datasets.ai4mars import AI4MARSFolderDataset, audit_ai4mars
+from mars_datasets.ai4mars import AI4MARSFolderDataset, audit_ai4mars
 
 
 def _write_ai4mars_msl_fixture(root):

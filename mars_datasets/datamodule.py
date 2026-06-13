@@ -3,8 +3,8 @@ from typing import Optional
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
-from datasets.ai4mars import AI4MARSFolderDataset
-from datasets.mars_bench import MarsBenchHFDataset
+from mars_datasets.ai4mars import AI4MARSFolderDataset
+from mars_datasets.mars_bench import MarsBenchHFDataset
 from utils.augmentations import build_transforms
 
 

@@ -3,7 +3,7 @@ import torch
 from hydra import main
 from omegaconf import OmegaConf
 
-from datasets.datamodule import SegmentationDataModule
+from mars_datasets.datamodule import SegmentationDataModule
 from models.factory import build_model
 from train.segmentation_module import SegmentationModule
 from utils.seed import set_seed
