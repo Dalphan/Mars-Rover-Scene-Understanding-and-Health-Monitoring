@@ -186,16 +186,10 @@ def _apply_ai4mars_masks(mask: np.ndarray, sample: AI4MARSSample, mapping: dict[
 
 def _resolve_msl_root(root: str | Path) -> Path:
     root_path = Path(root)
-    candidates = [
-        root_path,
-        root_path / "msl",
-        root_path / "ai4mars-dataset-merged-0.6" / "msl",
-        root_path / "AI4MARSv0-6" / "ai4mars-dataset-merged-0.6" / "msl",
-    ]
-    for candidate in candidates:
-        if (candidate / "mcam").exists() and (candidate / "ncam").exists():
-            return candidate
-    raise FileNotFoundError(f"AI4MARS MSL root not found under: {root_path}")
+    msl_root = root_path / "AI4MARSv0-6" / "ai4mars-dataset-merged-0.6" / "msl"
+    if (msl_root / "mcam").exists() and (msl_root / "ncam").exists():
+        return msl_root
+    raise FileNotFoundError(f"AI4MARS MSL root not found: {msl_root}")
 
 
 def _mcam_samples(msl_root: Path) -> list[AI4MARSSample]:
@@ -206,7 +200,7 @@ def _mcam_samples(msl_root: Path) -> list[AI4MARSSample]:
     for image_path in _jpgs(images_dir):
         sample = _sample_with_required_label(
             image_path=image_path,
-            label_path=labels_dir / f"{image_path.stem}_merged.png",
+            label_path=labels_dir / f"{image_path.stem}_15033_merged.png",
         )
         if sample is None:
             skipped += 1
@@ -232,7 +226,7 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
     for image_path in _jpgs(images_dir):
         sample = _sample_with_required_label(
             image_path=image_path,
-            label_path=labels_dir / f"{image_path.stem}_merged.png",
+            label_path=labels_dir / f"{image_path.stem}.png",
             range_mask_path=_optional_mask_from_lookup(range_masks, image_path.stem),
             rover_mask_path=_optional_mask_from_lookup(rover_masks, image_path.stem),
         )

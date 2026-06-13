@@ -5,7 +5,7 @@ from mars_datasets.ai4mars import AI4MARSFolderDataset, audit_ai4mars
 
 
 def _write_ai4mars_msl_fixture(root):
-    msl = root / "A)4MARS" / "ai4mars-dataset-merged-0.6" / "msl"
+    msl = root / "AI4MARSv0-6" / "ai4mars-dataset-merged-0.6" / "msl"
 
     mcam_images = msl / "mcam" / "images"
     mcam_labels = msl / "mcam" / "labels" / "train"
@@ -36,9 +36,9 @@ def _write_ai4mars_msl_fixture(root):
 
 
 def test_ai4mars_dataset_loads_mcam_and_ncam_train_layout(tmp_path):
-    msl = _write_ai4mars_msl_fixture(tmp_path)
+    _write_ai4mars_msl_fixture(tmp_path)
 
-    dataset = AI4MARSFolderDataset(root=msl, split="train", taxonomy="core")
+    dataset = AI4MARSFolderDataset(root=tmp_path, split="train", taxonomy="core")
     mcam_sample = dataset[0]
     ncam_sample = dataset[1]
 
