@@ -215,8 +215,10 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
     images_dir = msl_root / "ncam" / "images" / "edr"
     rover_dir = msl_root / "ncam" / "images" / "mxy"
     range_dir = msl_root / "ncam" / "images" / "rng-30m"
+    merged_label = ""
     labels_dir = msl_root / "ncam" / "labels" / "train"
     if split == "test":
+        merged_label = "_merged"
         labels_dir = msl_root / "ncam" / "labels" / "test" / "masked-gold-min3-100agree"
 
     samples = []
@@ -225,9 +227,11 @@ def _ncam_samples(msl_root: Path, split: str) -> list[AI4MARSSample]:
     rover_masks = _png_lookup(rover_dir)
 
     for image_path in _jpgs(images_dir):
+        print(image_path)
+        print(f"{image_path.stem}{merged_label}.png")
         sample = _sample_with_required_label(
             image_path=image_path,
-            label_path=labels_dir / f"{image_path.stem}.png",
+            label_path=labels_dir / f"{image_path.stem}{merged_label}.png",
             range_mask_path=_optional_mask_from_lookup(range_masks, image_path.stem),
             rover_mask_path=_optional_mask_from_lookup(rover_masks, image_path.stem),
         )
@@ -264,7 +268,7 @@ def _jpgs(path: Path) -> list[Path]:
     return sorted(
         file_path
         for file_path in path.iterdir()
-        if file_path.is_file() and file_path.suffix.lower() in {".jpg", ".jpeg"}
+        if file_path.is_file() and file_path.suffix.lower() is ".jpg"
     )
 
 
