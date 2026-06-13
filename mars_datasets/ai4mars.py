@@ -19,14 +19,13 @@ class AI4MARSSample:
 
 
 def discover_ai4mars_samples(root: str | Path, split: Optional[str] = None) -> list[AI4MARSSample]:
-    msl_root = _resolve_msl_root(root)
-    print(f"[AI4MARS discover] MSL root resolved to: {msl_root}")
+    print(f"[AI4MARS discover] MSL root resolved to: {root}")
     split_name = split or "train"
 
     if split_name == "train":
-        return [*_mcam_samples(msl_root), *_ncam_samples(msl_root, "train")]
+        return [*_mcam_samples(root), *_ncam_samples(root, "train")]
     if split_name in {"val", "validation", "test"}:
-        return _ncam_samples(msl_root, "test")
+        return _ncam_samples(root, "test")
     raise ValueError(f"Unsupported AI4MARS split: {split_name}")
 
 
@@ -183,15 +182,6 @@ def _apply_ai4mars_masks(mask: np.ndarray, sample: AI4MARSSample, mapping: dict[
 
     return mapped
 
-
-def _resolve_msl_root(root: str | Path) -> Path:
-    root_path = Path(root)
-    msl_root = root_path / "AI4MARSv0-6" / "ai4mars-dataset-merged-0.6" / "msl"
-    if (msl_root / "mcam").exists() and (msl_root / "ncam").exists():
-        return msl_root
-    raise FileNotFoundError(f"AI4MARS MSL root not found: {msl_root}")
-
-
 def _mcam_samples(msl_root: Path) -> list[AI4MARSSample]:
     images_dir = msl_root / "mcam" / "images"
     labels_dir = msl_root / "mcam" / "labels" / "train"
@@ -268,7 +258,7 @@ def _jpgs(path: Path) -> list[Path]:
     return sorted(
         file_path
         for file_path in path.iterdir()
-        if file_path.is_file() and file_path.suffix.lower() is ".jpg"
+        if file_path.is_file() and file_path.suffix.lower() == ".jpg"
     )
 
 
