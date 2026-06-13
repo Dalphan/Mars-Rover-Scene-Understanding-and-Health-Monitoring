@@ -19,13 +19,14 @@ class AI4MARSSample:
 
 
 def discover_ai4mars_samples(root: str | Path, split: Optional[str] = None) -> list[AI4MARSSample]:
-    print(f"[AI4MARS discover] MSL root resolved to: {root}")
+    msl_root = Path(root)
+    print(f"[AI4MARS discover] MSL root resolved to: {msl_root}")
     split_name = split or "train"
 
     if split_name == "train":
-        return [*_mcam_samples(root), *_ncam_samples(root, "train")]
+        return [*_mcam_samples(msl_root), *_ncam_samples(msl_root, "train")]
     if split_name in {"val", "validation", "test"}:
-        return _ncam_samples(root, "test")
+        return _ncam_samples(msl_root, "test")
     raise ValueError(f"Unsupported AI4MARS split: {split_name}")
 
 
