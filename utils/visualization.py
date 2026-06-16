@@ -5,6 +5,49 @@ import numpy as np
 from PIL import Image
 
 
+def plot_image_and_mask(
+    image,
+    mask,
+    mean: Optional[List[float]] = None,
+    std: Optional[List[float]] = None,
+    ignore_index: Optional[int] = None,
+    num_classes: Optional[int] = None,
+    title: str = "Training sample",
+):
+    """Plot one image next to its segmentation mask."""
+    import matplotlib.pyplot as plt
+
+    if hasattr(image, "detach"):
+        image = image.detach().cpu()
+    if hasattr(mask, "detach"):
+        mask = mask.detach().cpu()
+
+    if hasattr(image, "permute"):
+        image = image.permute(1, 2, 0).numpy()
+    if hasattr(mask, "numpy"):
+        mask = mask.numpy()
+
+    image = _denormalize(image, mean, std)
+    image = (image * 255.0).clip(0, 255).astype(np.uint8)
+
+    if num_classes is None:
+        valid_mask = mask if ignore_index is None else mask[mask != ignore_index]
+        num_classes = int(valid_mask.max()) + 1 if valid_mask.size else 1
+
+    mask_color = _colorize_mask(mask, build_palette(num_classes), ignore_index)
+
+    _, axes = plt.subplots(1, 2, figsize=(10, 5))
+    axes[0].imshow(image)
+    axes[0].set_title("Image")
+    axes[0].axis("off")
+    axes[1].imshow(mask_color)
+    axes[1].set_title("Mask")
+    axes[1].axis("off")
+    plt.suptitle(title)
+    plt.tight_layout()
+    plt.show()
+
+
 def build_palette(num_classes: int) -> List[tuple]:
     base = [
         (220, 20, 60),

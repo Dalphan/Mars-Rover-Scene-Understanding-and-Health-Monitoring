@@ -47,20 +47,22 @@ class SegmentationModule(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss, preds, masks, _ = self._shared_step(batch)
+        batch_size = batch["image"].shape[0]
         self.train_iou(preds, masks)
-        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
-        self.log("train_miou", self.train_iou, on_epoch=True, prog_bar=True)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=batch_size)
+        self.log("train_miou", self.train_iou, on_epoch=True, prog_bar=True, batch_size=batch_size)
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss, preds, masks, images = self._shared_step(batch)
+        batch_size = batch["image"].shape[0]
         self.val_iou(preds, masks)
         self.val_iou_per_class(preds, masks)
         self.val_acc(preds, masks)
 
-        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
-        self.log("val_miou", self.val_iou, on_epoch=True, prog_bar=True)
-        self.log("val_acc", self.val_acc, on_epoch=True, prog_bar=True)
+        self.log("val_loss", loss, on_epoch=True, prog_bar=True, batch_size=batch_size)
+        self.log("val_miou", self.val_iou, on_epoch=True, prog_bar=True, batch_size=batch_size)
+        self.log("val_acc", self.val_acc, on_epoch=True, prog_bar=True, batch_size=batch_size)
 
         if batch_idx == 0:
             self._val_example = (
@@ -72,7 +74,7 @@ class SegmentationModule(pl.LightningModule):
     def on_validation_epoch_end(self):
         per_class = self.val_iou_per_class.compute()
         for idx, value in enumerate(per_class):
-            self.log(f"val_iou_class_{idx}", value, on_epoch=True)
+            self.log(f"val_iou_class_{idx}", value, on_epoch=True, batch_size=1)
         self.val_iou_per_class.reset()
 
         if self.cfg.logging.save_visuals and self._val_example is not None:
@@ -92,11 +94,12 @@ class SegmentationModule(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         loss, preds, masks, _ = self._shared_step(batch)
+        batch_size = batch["image"].shape[0]
         self.test_iou(preds, masks)
         self.test_acc(preds, masks)
-        self.log("test_loss", loss, on_epoch=True)
-        self.log("test_miou", self.test_iou, on_epoch=True)
-        self.log("test_acc", self.test_acc, on_epoch=True)
+        self.log("test_loss", loss, on_epoch=True, batch_size=batch_size)
+        self.log("test_miou", self.test_iou, on_epoch=True, batch_size=batch_size)
+        self.log("test_acc", self.test_acc, on_epoch=True, batch_size=batch_size)
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(

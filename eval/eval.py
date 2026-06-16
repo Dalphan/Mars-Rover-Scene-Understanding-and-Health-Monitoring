@@ -6,6 +6,7 @@ from omegaconf import OmegaConf
 from mars_datasets.datamodule import SegmentationDataModule
 from models.factory import build_model
 from train.segmentation_module import SegmentationModule
+from utils.epoch_logging import EpochMetricsPrinter
 from utils.runtime import configure_runtime
 from utils.seed import set_seed
 
@@ -25,7 +26,10 @@ def run(cfg):
     checkpoint = torch.load(cfg.ckpt_path, map_location="cpu")
     module.load_state_dict(checkpoint["state_dict"], strict=True)
 
-    trainer = pl.Trainer(**OmegaConf.to_container(cfg.trainer, resolve=True))
+    trainer = pl.Trainer(
+        **OmegaConf.to_container(cfg.trainer, resolve=True),
+        callbacks=[EpochMetricsPrinter()],
+    )
     trainer.test(module, datamodule=data_module)
 
 

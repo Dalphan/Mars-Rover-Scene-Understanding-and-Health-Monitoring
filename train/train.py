@@ -6,6 +6,7 @@ from omegaconf import OmegaConf
 from mars_datasets.datamodule import SegmentationDataModule
 from models.factory import build_model
 from train.segmentation_module import SegmentationModule
+from utils.epoch_logging import EpochMetricsPrinter
 from utils.runtime import configure_runtime
 from utils.seed import set_seed
 
@@ -30,7 +31,7 @@ def run(cfg):
 
     trainer = pl.Trainer(
         **OmegaConf.to_container(cfg.trainer, resolve=True),
-        callbacks=[checkpoint_callback, lr_monitor],
+        callbacks=[checkpoint_callback, lr_monitor, EpochMetricsPrinter()],
     )
     trainer.fit(module, datamodule=data_module)
 
