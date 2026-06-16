@@ -15,13 +15,30 @@ class SegmentationDataModule(pl.LightningDataModule):
         self.train_dataset = None
         self.val_dataset = None
         self.test_dataset = None
+        self.loaded_stages = set()
 
     def setup(self, stage: Optional[str] = None):
         if stage in (None, "fit"):
-            self.train_dataset = self._build_dataset("train", is_train=True)
-            self.val_dataset = self._build_dataset("val", is_train=False)
+            self._setup_fit()
         if stage in (None, "test"):
-            self.test_dataset = self._build_dataset("test", is_train=False)
+            self._setup_test()
+
+    def _setup_fit(self):
+        if "fit" in self.loaded_stages and self.train_dataset is not None and self.val_dataset is not None:
+            print("[DataModule] fit datasets already loaded; skipping setup.")
+            return
+
+        self.train_dataset = self._build_dataset("train", is_train=True)
+        self.val_dataset = self._build_dataset("val", is_train=False)
+        self.loaded_stages.add("fit")
+
+    def _setup_test(self):
+        if "test" in self.loaded_stages and self.test_dataset is not None:
+            print("[DataModule] test dataset already loaded; skipping setup.")
+            return
+
+        self.test_dataset = self._build_dataset("test", is_train=False)
+        self.loaded_stages.add("test")
 
     def _build_dataset(self, split: str, is_train: bool):
         transform = build_transforms(self.cfg.data, is_train=is_train)

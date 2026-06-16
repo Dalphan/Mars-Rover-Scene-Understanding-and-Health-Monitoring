@@ -15,7 +15,7 @@ ignore_index: 255
 
 loader:
   batch_size: 8
-  num_workers: 4
+  num_workers: auto
 
 image_size: [512, 512]
 

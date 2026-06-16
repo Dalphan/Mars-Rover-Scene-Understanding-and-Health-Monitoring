@@ -6,11 +6,13 @@ from omegaconf import OmegaConf
 from mars_datasets.datamodule import SegmentationDataModule
 from models.factory import build_model
 from train.segmentation_module import SegmentationModule
+from utils.runtime import configure_runtime
 from utils.seed import set_seed
 
 
 @main(version_base="1.3", config_path="../configs", config_name="config")
 def run(cfg):
+    configure_runtime(cfg)
     set_seed(cfg.seed)
 
     data_module = SegmentationDataModule(cfg)

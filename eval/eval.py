@@ -6,6 +6,7 @@ from omegaconf import OmegaConf
 from mars_datasets.datamodule import SegmentationDataModule
 from models.factory import build_model
 from train.segmentation_module import SegmentationModule
+from utils.runtime import configure_runtime
 from utils.seed import set_seed
 
 
@@ -15,6 +16,7 @@ def run(cfg):
         raise ValueError("Set ckpt_path to a checkpoint file before running evaluation.")
 
     set_seed(cfg.seed)
+    configure_runtime(cfg)
 
     data_module = SegmentationDataModule(cfg)
     model = build_model(cfg)
