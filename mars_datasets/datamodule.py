@@ -75,7 +75,7 @@ class SegmentationDataModule(pl.LightningDataModule):
         return DataLoader(
             self.train_dataset,
             batch_size=self.cfg.data.loader.batch_size,
-            num_workers=self.cfg.data.loader.num_workers,
+            num_workers=0,
             shuffle=True,
             pin_memory=True,
         )
@@ -84,7 +84,7 @@ class SegmentationDataModule(pl.LightningDataModule):
         return DataLoader(
             self.val_dataset,
             batch_size=self.cfg.data.loader.batch_size,
-            num_workers=self.cfg.data.loader.num_workers,
+            num_workers=0,
             shuffle=False,
             pin_memory=True,
         )
@@ -93,7 +93,7 @@ class SegmentationDataModule(pl.LightningDataModule):
         return DataLoader(
             self.test_dataset,
             batch_size=self.cfg.data.loader.batch_size,
-            num_workers=self.cfg.data.loader.num_workers,
+            num_workers=0,
             shuffle=False,
             pin_memory=True,
         )
