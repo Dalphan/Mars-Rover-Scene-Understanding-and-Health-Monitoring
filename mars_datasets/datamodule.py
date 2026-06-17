@@ -1,7 +1,6 @@
 from typing import Optional
 
 import pytorch_lightning as pl
-import torch
 from torch.utils.data import DataLoader
 
 from mars_datasets.ai4mars import AI4MARSFolderDataset
@@ -78,7 +77,8 @@ class SegmentationDataModule(pl.LightningDataModule):
             batch_size=self.cfg.data.loader.batch_size,
             num_workers=self.cfg.data.loader.num_workers,
             shuffle=True,
-            pin_memory=torch.cuda.is_available(),
+            pin_memory=False,
+            persistent_workers=False
         )
 
     def val_dataloader(self):
@@ -87,7 +87,8 @@ class SegmentationDataModule(pl.LightningDataModule):
             batch_size=self.cfg.data.loader.batch_size,
             num_workers=self.cfg.data.loader.num_workers,
             shuffle=False,
-            pin_memory=torch.cuda.is_available(),
+            pin_memory=False,
+            persistent_workers=False
         )
 
     def test_dataloader(self):
@@ -96,7 +97,8 @@ class SegmentationDataModule(pl.LightningDataModule):
             batch_size=self.cfg.data.loader.batch_size,
             num_workers=self.cfg.data.loader.num_workers,
             shuffle=False,
-            pin_memory=torch.cuda.is_available(),
+            pin_memory=False,
+            persistent_workers=False
         )
 
 
