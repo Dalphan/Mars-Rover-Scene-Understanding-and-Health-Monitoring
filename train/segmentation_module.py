@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 import torch
+import torch.nn.functional as F
 from torchmetrics.classification import MulticlassAccuracy, MulticlassJaccardIndex
 
 from utils.losses import build_loss
@@ -37,10 +38,21 @@ class SegmentationModule(pl.LightningModule):
     def forward(self, images):
         return self.model(images)
 
+    def _match_mask_size(self, logits, masks):
+        if logits.shape[-2:] == masks.shape[-2:]:
+            return logits
+        return F.interpolate(
+            logits,
+            size=masks.shape[-2:],
+            mode="bilinear",
+            align_corners=False,
+        )
+
     def _shared_step(self, batch):
         images = batch["image"]
         masks = batch["mask"]
         logits = self(images)
+        logits = self._match_mask_size(logits, masks)
         loss = self.loss_fn(logits, masks)
         preds = torch.argmax(logits, dim=1)
         return loss, preds, masks, images

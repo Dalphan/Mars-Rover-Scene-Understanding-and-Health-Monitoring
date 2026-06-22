@@ -12,5 +12,5 @@ model:
   pretrained: true
   checkpoint: nvidia/segformer-b0-finetuned-ade-512-512
   loss:
-    type: ce
-    dice_weight: 0.0
+    type: ce_dice
+    dice_weight: 0.5
