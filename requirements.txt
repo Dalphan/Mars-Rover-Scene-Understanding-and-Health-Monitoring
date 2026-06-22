@@ -1,0 +1,11 @@
+torch
+torchvision
+datasets
+huggingface_hub
+hydra-core
+omegaconf
+numpy
+pandas
+pillow
+matplotlib
+tqdm
