@@ -10,25 +10,15 @@ from src.data.s5mars_dataset import S5MarsHFDataset
 from src.data.transforms import SegmentationTransform
 
 
-def _resolve_hf_split(cfg, split: str, logger: logging.Logger) -> str:
-    if "[" in split or cfg.analysis.max_samples is None:
-        return split
-    load_count = max(
-        int(cfg.analysis.max_samples),
-        int(cfg.dataloader.batch_size),
-        int(cfg.visualization.num_samples) if cfg.visualization.enabled else 0,
-    )
-    sliced_split = f"{split}[:{load_count}]"
-    logger.info("Using Hugging Face split slice for fast subset analysis: %s", sliced_split)
-    return sliced_split
-
-
 def build_dataset(cfg, split: str, logger: logging.Logger | None = None) -> S5MarsHFDataset:
     logger = logger or logging.getLogger(__name__)
-    token = os.environ.get("HF_TOKEN") or cfg.huggingface.token
+    env_token = os.environ.get("HF_TOKEN")
+    token = env_token or cfg.huggingface.token
     if token in ("", "HF_TOKEN_PLACEHOLDER", None):
         logger.warning("HF token is empty or placeholder; attempting dataset load without authentication")
         token = None
+    else:
+        logger.info("Using Hugging Face token from %s", "environment" if env_token else "config")
 
     transform = None
     if cfg.transforms.enabled:
@@ -43,7 +33,7 @@ def build_dataset(cfg, split: str, logger: logging.Logger | None = None) -> S5Ma
 
     return S5MarsHFDataset(
         repo_id=cfg.huggingface.repo_id,
-        split=_resolve_hf_split(cfg, split, logger),
+        split=split,
         token=token if cfg.huggingface.use_auth_token else None,
         cache_dir=cfg.huggingface.cache_dir,
         image_column=cfg.dataset.image_column,

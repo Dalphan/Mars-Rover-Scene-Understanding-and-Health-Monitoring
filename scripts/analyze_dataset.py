@@ -1,27 +1,11 @@
 from __future__ import annotations
 
-import argparse
-import os
 import random
 import sys
 from pathlib import Path
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
-
-if not getattr(argparse.ArgumentParser, "_s5mars_hydra_patch", False):
-    _original_check_help = argparse.ArgumentParser._check_help
-
-    def _check_help_compatible(self, action):
-        try:
-            return _original_check_help(self, action)
-        except ValueError as error:
-            if action.dest == "shell_completion":
-                return None
-            raise error
-
-    argparse.ArgumentParser._check_help = _check_help_compatible
-    argparse.ArgumentParser._s5mars_hydra_patch = True
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -38,15 +22,6 @@ from src.data.dataloaders import build_dataloader, build_dataset
 from src.utils.io_utils import ensure_dir, save_dataframe_csv, save_json
 from src.utils.logging_utils import setup_logger
 from src.utils.seed import set_seed
-
-
-def _resolve_token(cfg, logger):
-    token = os.environ.get("HF_TOKEN") or cfg.huggingface.token
-    if token in ("", "HF_TOKEN_PLACEHOLDER", None):
-        logger.warning("HF_TOKEN is not set; using unauthenticated Hugging Face access")
-        return None
-    logger.info("Using Hugging Face token from %s", "environment" if os.environ.get("HF_TOKEN") else "config")
-    return token
 
 
 def _save_analysis_outputs(results, cfg, output_dir: Path, logger) -> None:
@@ -120,7 +95,6 @@ def main(cfg: DictConfig) -> None:
     logger.info("Config:\n%s", OmegaConf.to_yaml(cfg))
 
     set_seed(int(cfg.seed))
-    _resolve_token(cfg, logger)
 
     dataset = build_dataset(cfg, cfg.dataset.split, logger)
     dataloader = build_dataloader(dataset, cfg, cfg.dataset.split, logger)

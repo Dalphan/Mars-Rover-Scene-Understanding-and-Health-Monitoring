@@ -6,6 +6,8 @@ This branch intentionally does not implement model training, model definitions, 
 
 ## Setup
 
+Use Python 3.11 or 3.12 for the Hydra CLI path. The dependency pins in `requirements.txt` target that stable combination.
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -31,6 +33,8 @@ python scripts/analyze_dataset.py dataset.split=val analysis.max_samples=50
 python scripts/analyze_dataset.py transforms.resize.height=256 transforms.resize.width=256 dataloader.batch_size=8
 python scripts/analyze_dataset.py dataset.split=partition_train_0.10x_partition analysis.max_samples=100
 ```
+
+`analysis.max_samples` limits analysis and visualization loops after the configured Hugging Face split is loaded. It does not rewrite `dataset.split` to a sliced split.
 
 Acceptance smoke test:
 
