@@ -2,3 +2,5 @@
 *.pyc
 *.md
 !README.md
+
+outputs/
