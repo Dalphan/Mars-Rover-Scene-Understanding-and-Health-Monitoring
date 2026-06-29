@@ -1,0 +1,12 @@
+# Stable CLI combination: Python >=3.10,<3.14 with hydra-core==1.3.2.
+torch
+torchvision
+datasets
+huggingface_hub
+hydra-core==1.3.2
+omegaconf==2.3.0
+numpy
+pandas
+pillow
+matplotlib
+tqdm

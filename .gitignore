@@ -1,5 +1,17 @@
-/pytest_cache/*
-*.pyc
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+.venv/
+venv/
+
+outputs/
+.hydra/
+
+.env
+*.log
+
 *.md
 !README.md
 

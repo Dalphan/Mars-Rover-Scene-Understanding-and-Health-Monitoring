@@ -1,0 +1,70 @@
+seed: 42
+
+huggingface:
+  repo_id: "Mirali33/mb-s5mars"
+  token: "HF_TOKEN_PLACEHOLDER"
+  use_auth_token: true
+  cache_dir: null
+
+dataset:
+  split: "train"
+  image_column: "image"
+  mask_column: "mask"
+  width_column: "width"
+  height_column: "height"
+  class_labels_column: "class_labels"
+  image_mode: "RGB"
+  ignore_index: 0
+  num_classes: 9
+  class_names:
+    0: "Background"
+    1: "Bedrock"
+    2: "Hole"
+    3: "Ridge"
+    4: "Rock"
+    5: "Rover"
+    6: "Sand / Soil"
+    7: "Sky"
+    8: "Track"
+
+transforms:
+  enabled: true
+  resize:
+    enabled: true
+    height: 512
+    width: 512
+  normalize:
+    enabled: true
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+dataloader:
+  batch_size: 4
+  shuffle: false
+  num_workers: 2
+  pin_memory: true
+  drop_last: false
+
+analysis:
+  max_samples: null
+  compute_mask_pixel_distribution: true
+  compute_image_level_class_distribution: true
+  compute_ignore_pixel_ratio: true
+  save_csv: true
+  save_json: true
+
+visualization:
+  enabled: true
+  num_samples: 8
+  alpha: 0.45
+  random_samples: true
+  save_individual: true
+  save_grid: true
+
+paths:
+  output_dir: "outputs/s5mars_analysis"
+
+logging:
+  level: "INFO"
+  log_to_file: true
+  filename: "run.log"
