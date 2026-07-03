@@ -1,8 +1,8 @@
-# Mars-Bench S5Mars Dataset Analysis
+# Mars-Bench S5Mars Segmentation
 
-PyTorch utilities for semantic segmentation data loading, analysis, and visualization on the Hugging Face dataset `Mirali33/mb-s5mars`.
+PyTorch utilities for semantic segmentation data loading, analysis, visualization, and SegFormer-B0 training on the Hugging Face dataset `Mirali33/mb-s5mars`.
 
-This branch intentionally does not implement model training, model definitions, Lightning, wandb, or manual Hugging Face downloads. It focuses on a clean dataset and analysis foundation.
+The training path uses pure PyTorch, Hydra, and Hugging Face Transformers. It does not use PyTorch Lightning.
 
 ## Setup
 
@@ -92,3 +92,20 @@ Class IDs:
 ```
 
 `ignore_index = 0` is used for statistics where background should be excluded from valid target-class percentages.
+
+## Train SegFormer-B0
+
+Install dependencies, export `HF_TOKEN` if the dataset requires authentication, then run:
+
+```bash
+python -m src.train.train_segmentation
+```
+
+Useful overrides:
+
+```bash
+python -m src.train.train_segmentation epochs=10 batch_size=4 optimizer.lr=0.00003
+python -m src.train.train_segmentation splits.train=train[:100] splits.val=val[:20]
+```
+
+The model config uses `nvidia/segformer-b0-finetuned-ade-512-512`, `num_labels=9`, and `CrossEntropyLoss(ignore_index=0)`. Checkpoints are written under `outputs/segformer_b0_s5mars/`.

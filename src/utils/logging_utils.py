@@ -35,3 +35,13 @@ def setup_logger(name: str, log_dir: str | Path, filename: str, level: str) -> l
     logger.info("Logger initialized")
     logger.info("Log directory: %s", log_path.resolve())
     return logger
+
+
+def configure_logging(cfg, name: str = "s5mars") -> logging.Logger:
+    filename = cfg.logging.filename if cfg.logging.log_to_file else ""
+    return setup_logger(
+        name=name,
+        log_dir=cfg.paths.output_dir,
+        filename=filename,
+        level=cfg.logging.level,
+    )

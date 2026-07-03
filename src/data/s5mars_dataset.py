@@ -69,8 +69,15 @@ class S5MarsHFDataset(torch.utils.data.Dataset):
         mask = self._as_pil(sample[self.mask_column], self.mask_column).convert("L")
 
         if self.transform is None:
+            # Raw image from dataset: [512, 512, 3], RGB.
+            # After tensor conversion and normalization: [3, 512, 512].
+            # Batched image tensor from DataLoader: [B, 3, 512, 512].
             image_array = np.asarray(image, dtype=np.float32) / 255.0
             image_tensor = torch.from_numpy(image_array).permute(2, 0, 1).contiguous().float()
+            # Raw mask from dataset: [512, 512], integer class IDs.
+            # S5Mars labels are already encoded as 0..8.
+            # mask value 0 is used as ignore_index during loss and metrics.
+            # Batched mask tensor from DataLoader: [B, 512, 512].
             mask_tensor = torch.from_numpy(np.asarray(mask, dtype=np.int64)).long()
         else:
             image_tensor, mask_tensor = self.transform(image, mask)

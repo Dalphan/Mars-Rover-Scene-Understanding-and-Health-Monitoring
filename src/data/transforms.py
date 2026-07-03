@@ -28,6 +28,9 @@ class SegmentationTransform:
             image = image.resize((width, height), resample=Image.Resampling.BILINEAR)
             mask = mask.resize((width, height), resample=Image.Resampling.NEAREST)
 
+        # Raw RGB image: [512, 512, 3].
+        # Tensor image after transform: [3, 512, 512].
+        # Batched image: [B, 3, 512, 512].
         image_array = np.asarray(image, dtype=np.float32) / 255.0
         if image_array.ndim == 2:
             image_array = np.stack([image_array] * 3, axis=-1)
@@ -36,6 +39,10 @@ class SegmentationTransform:
         if self.normalize_enabled:
             image_tensor = (image_tensor - self.mean) / self.std
 
+        # Raw mask: [512, 512].
+        # Mask values are Mars-Bench class IDs: 0..8.
+        # Class 0 is used as ignore_index.
+        # Batched mask: [B, 512, 512].
         mask_array = np.asarray(mask, dtype=np.int64)
         if mask_array.ndim == 3:
             mask_array = mask_array[..., 0]
