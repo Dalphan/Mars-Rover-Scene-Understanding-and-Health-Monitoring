@@ -69,25 +69,22 @@ def test_losses_return_scalar():
         assert torch.isfinite(loss)
 
 
-def test_generalized_dice_ignores_target_zero():
-    criterion = GeneralizedDiceLoss(
-        num_classes=9,
-        ignore_index=0,
-        weight_type="square",
-        smooth=1e-5,
-    )
+def test_generalized_dice_includes_class_zero_and_ignores_absent_classes():
+    targets = torch.zeros(1, 4, 4, dtype=torch.long)
+    logits = torch.full((1, 9, 4, 4), -10.0)
+    logits[:, 0, :, :] = 10.0
+    logits.requires_grad_()
 
-    logits = torch.randn(1, 9, 4, 4, requires_grad=True)
+    for weight_type in ["uniform", "simple", "square"]:
+        criterion = GeneralizedDiceLoss(
+            num_classes=9,
+            ignore_index=0,
+            weight_type=weight_type,
+            smooth=1e-5,
+        )
 
-    targets = torch.zeros(
-        1,
-        4,
-        4,
-        dtype=torch.long,
-    )
+        loss = criterion(logits, targets)
 
-    loss = criterion(logits, targets)
-
-    assert loss.ndim == 0
-    assert torch.isfinite(loss)
-    assert loss.item() == 0.0
+        assert loss.ndim == 0
+        assert torch.isfinite(loss)
+        assert loss.item() < 1e-4

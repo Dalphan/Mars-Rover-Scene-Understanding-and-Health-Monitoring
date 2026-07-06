@@ -18,8 +18,8 @@ from src.metrics.segmentation_metrics import (
 from src.models.factory import build_model
 from src.train.evaluate_segmentation import evaluate
 from src.utils.checkpoints import save_checkpoint
-from src.utils.freeze import apply_freeze_mode, count_trainable_parameters
 from src.utils.logging_utils import configure_logging
+from src.utils.model_stats import count_trainable_parameters
 from src.utils.seed import set_seed
 from src.utils.shape_debug import log_batch_shapes
 
@@ -158,7 +158,7 @@ def train_one_epoch(
 @hydra.main(config_path="../../configs", config_name="train/segformer_s5mars", version_base=None)
 def main(cfg: DictConfig):
     """
-    Train SegFormer-B0 on S5Mars using PyTorch only.
+    Train a semantic segmentation model on S5Mars using PyTorch only.
     """
     logger = configure_logging(cfg)
     logger.info("Training config:\n%s", OmegaConf.to_yaml(cfg, resolve=True))
@@ -172,19 +172,29 @@ def main(cfg: DictConfig):
     _ = test_loader
 
     model = build_model(cfg).to(device)
-    apply_freeze_mode(model, cfg.freeze)
+    model.apply_freeze(cfg.freeze)
     param_stats = count_trainable_parameters(model)
+    print(f"Model: {cfg.model.name}")
     print(f"Freeze mode: {cfg.freeze}")
     print(f"Total parameters: {param_stats['total']:,}")
     print(f"Trainable parameters: {param_stats['trainable']:,}")
     print(f"Frozen parameters: {param_stats['frozen']:,}")
     logger.info(
-        "Freeze mode=%s total_parameters=%d trainable_parameters=%d frozen_parameters=%d",
+        "Model=%s freeze_mode=%s total_parameters=%d trainable_parameters=%d frozen_parameters=%d",
+        cfg.model.name,
         cfg.freeze,
         param_stats["total"],
         param_stats["trainable"],
         param_stats["frozen"],
     )
+    gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    data_parallel_device_ids = list(range(min(2, gpu_count)))
+    if len(data_parallel_device_ids) == 2:
+        print(f"Using torch.nn.DataParallel on GPUs: {data_parallel_device_ids}")
+        logger.info("Using torch.nn.DataParallel on GPUs: %s", data_parallel_device_ids)
+        model = torch.nn.DataParallel(model, device_ids=data_parallel_device_ids)
+    else:
+        logger.info("DataParallel disabled: available_gpus=%d", gpu_count)
 
     criterion = build_criterion(
         name=cfg.criterion.name,

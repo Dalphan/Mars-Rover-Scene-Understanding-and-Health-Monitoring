@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from src.models.segformer_b0 import SegFormerB0ForMars
-
-
 def build_model(cfg):
     """
-    Build the segmentation model from Hydra config.
+    Build segmentation model from Hydra config.
+
+    Supported models:
+        - segformer_b0
+        - unet_resnet34
     """
     if cfg.model.name == "segformer_b0":
+        from src.models.segformer_b0 import SegFormerB0ForMars
+
         return SegFormerB0ForMars(
             pretrained_name=cfg.model.pretrained_name,
             num_classes=cfg.model.num_classes,
@@ -15,4 +18,18 @@ def build_model(cfg):
             log_shapes=cfg.model.log_shapes,
         )
 
-    raise ValueError(f"Unknown model name: {cfg.model.name}")
+    if cfg.model.name == "unet_resnet34":
+        from src.models.unet_resnet34 import UNetResNet34ForMars
+
+        return UNetResNet34ForMars(
+            encoder_name=cfg.model.encoder_name,
+            encoder_weights=cfg.model.encoder_weights,
+            in_channels=cfg.model.in_channels,
+            num_classes=cfg.model.num_classes,
+            log_shapes=cfg.model.log_shapes,
+        )
+
+    raise ValueError(
+        f"Unknown model name '{cfg.model.name}'. "
+        "Expected one of: segformer_b0, unet_resnet34."
+    )

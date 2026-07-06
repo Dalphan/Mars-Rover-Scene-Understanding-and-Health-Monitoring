@@ -9,7 +9,7 @@ device: cuda
 
 epochs: 50
 batch_size: 8
-num_workers: 4
+num_workers: null
 freeze: "encoder"  # [none, encoder, classifier]
 
 huggingface:
@@ -57,7 +57,7 @@ criterion:
   smooth: 1e-5
 
 checkpoint:
-  output_dir: outputs/segformer_b0_s5mars
+  output_dir: ${paths.output_dir}
   save_best: true
   monitor: val_miou
   mode: max
@@ -75,8 +75,8 @@ dataset:
   height_column: height
   class_labels_column: class_labels
   image_mode: RGB
-  ignore_index: 0
-  num_classes: 9
+  ignore_index: ${model.ignore_index}
+  num_classes: ${model.num_classes}
   class_names:
     0: "Background"
     1: "Bedrock"
@@ -89,7 +89,7 @@ dataset:
     8: "Track"
 
 paths:
-  output_dir: outputs/segformer_b0_s5mars
+  output_dir: outputs/${model.name}_s5mars
 
 logging:
   level: INFO

@@ -10,6 +10,13 @@ from src.data.s5mars_dataset import S5MarsHFDataset
 from src.data.transforms import SegmentationTransform
 
 
+def resolve_num_workers(configured_workers=None) -> int:
+    if configured_workers is not None:
+        return int(configured_workers)
+    cpu_count = os.cpu_count() or 2
+    return max(1, min(4, cpu_count // 2))
+
+
 def build_dataset(cfg, split: str, logger: logging.Logger | None = None) -> S5MarsHFDataset:
     logger = logger or logging.getLogger(__name__)
     env_token = os.environ.get("HF_TOKEN")
@@ -48,11 +55,12 @@ def build_dataset(cfg, split: str, logger: logging.Logger | None = None) -> S5Ma
 def build_dataloader(dataset, cfg, split: str, logger: logging.Logger | None = None) -> DataLoader:
     logger = logger or logging.getLogger(__name__)
     shuffle = bool(cfg.dataloader.shuffle and split == "train")
+    num_workers = resolve_num_workers(cfg.dataloader.num_workers)
     dataloader = DataLoader(
         dataset,
         batch_size=cfg.dataloader.batch_size,
         shuffle=shuffle,
-        num_workers=cfg.dataloader.num_workers,
+        num_workers=num_workers,
         pin_memory=cfg.dataloader.pin_memory,
         drop_last=cfg.dataloader.drop_last,
         collate_fn=segmentation_collate_fn,
@@ -63,7 +71,7 @@ def build_dataloader(dataset, cfg, split: str, logger: logging.Logger | None = N
         len(dataloader),
         cfg.dataloader.batch_size,
         shuffle,
-        cfg.dataloader.num_workers,
+        num_workers,
         cfg.dataloader.pin_memory,
     )
     return dataloader

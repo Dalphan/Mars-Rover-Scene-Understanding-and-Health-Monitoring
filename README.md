@@ -93,7 +93,7 @@ Class IDs:
 
 `ignore_index = 0` is used for statistics where background should be excluded from valid target-class percentages.
 
-## Train SegFormer-B0
+## Train Segmentation Models
 
 Install dependencies, export `HF_TOKEN` if the dataset requires authentication, then run:
 
@@ -106,6 +106,8 @@ Useful overrides:
 ```bash
 python -m src.train.train_segmentation epochs=10 batch_size=4 optimizer.lr=0.00003
 python -m src.train.train_segmentation splits.train=train[:100] splits.val=val[:20]
+python -m src.train.train_segmentation model=unet_resnet34 freeze=encoder
+python -m src.train.train_segmentation num_workers=null
 ```
 
-The model config uses `nvidia/segformer-b0-finetuned-ade-512-512`, `num_labels=9`, and `CrossEntropyLoss(ignore_index=0)`. Checkpoints are written under `outputs/segformer_b0_s5mars/`.
+The default model config uses `nvidia/segformer-b0-finetuned-ade-512-512`, `num_labels=9`, and `ignore_index=0`. You can switch to U-Net ResNet34 with only the Hydra model override. Checkpoints are written under `outputs/${model.name}_s5mars/`. When `num_workers=null`, the DataLoader chooses a worker count from available CPU cores. If two GPUs are visible, training uses `torch.nn.DataParallel` on GPU `0` and `1`.

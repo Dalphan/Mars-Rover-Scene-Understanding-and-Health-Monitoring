@@ -33,16 +33,9 @@ class GeneralizedDiceLoss(nn.Module):
     """
     Generalized Dice Loss for semantic segmentation.
 
-    This implementation follows the S5Mars/Mars-Bench convention:
-        - targets are class IDs 0..8
-        - class 0 is ignore_index
-        - Dice is computed only on valid target pixels
-        - Dice is averaged over semantic classes 1..8
-
-    Important:
-        Do not remove predictions equal to 0.
-        If the model predicts class 0 on a valid target pixel, this should still
-        reduce the Dice score for the true class.
+    All target labels are treated as valid semantic classes.
+    Class 0 participates in the Dice computation exactly like every other class.
+    Classes absent from the current target batch receive zero weight.
     """
 
     def __init__(
@@ -61,7 +54,6 @@ class GeneralizedDiceLoss(nn.Module):
             )
 
         self.num_classes = num_classes
-        self.ignore_index = ignore_index
         self.weight_type = weight_type
         self.smooth = smooth
 
@@ -79,70 +71,37 @@ class GeneralizedDiceLoss(nn.Module):
         Returns:
             Scalar generalized dice loss.
         """
-        if logits.ndim != 4:
-            raise ValueError(f"Expected logits [B, C, H, W], got {logits.shape}")
-
-        if targets.ndim != 3:
-            raise ValueError(f"Expected targets [B, H, W], got {targets.shape}")
-
-        batch_size, channels, height, width = logits.shape
-
-        if channels != self.num_classes:
-            raise ValueError(f"Expected {self.num_classes} channels, got {channels}.")
-
-        if targets.shape != (batch_size, height, width):
-            raise ValueError(
-                f"Target shape {targets.shape} does not match logits spatial shape "
-                f"{(batch_size, height, width)}."
-            )
-
         # probs: [B, C, H, W]
         probs = torch.softmax(logits, dim=1)
 
-        # valid_mask: [B, H, W]
-        # Pixels with target == ignore_index are excluded from Dice computation.
-        valid_mask = targets != self.ignore_index
-
-        if not valid_mask.any():
-            return logits.sum() * 0.0
-
-        safe_targets = targets.clone()
-        safe_targets[~valid_mask] = 0
-
         # target_one_hot: [B, H, W, C] -> [B, C, H, W]
         target_one_hot = F.one_hot(
-            safe_targets.long(),
+            targets.long(),
             num_classes=self.num_classes,
         ).permute(0, 3, 1, 2).float()
 
-        # valid_mask_bc: [B, 1, H, W]
-        valid_mask_bc = valid_mask.unsqueeze(1).float()
-
-        probs = probs * valid_mask_bc
-        target_one_hot = target_one_hot * valid_mask_bc
-
-        class_ids = [
-            class_id
-            for class_id in range(self.num_classes)
-            if class_id != self.ignore_index
-        ]
-
-        probs = probs[:, class_ids, :, :]
-        target_one_hot = target_one_hot[:, class_ids, :, :]
-
-        probs = probs.permute(1, 0, 2, 3).reshape(len(class_ids), -1)
-        target_one_hot = target_one_hot.permute(1, 0, 2, 3).reshape(len(class_ids), -1)
+        # Flatten batch and spatial dimensions:
+        # probs:          [B, C, H, W] -> [C, B*H*W]
+        # target_one_hot: [B, C, H, W] -> [C, B*H*W]
+        probs = probs.permute(1, 0, 2, 3).reshape(self.num_classes, -1)
+        target_one_hot = target_one_hot.permute(1, 0, 2, 3).reshape(self.num_classes, -1)
 
         class_volume = target_one_hot.sum(dim=1)
+        present = class_volume > 0
 
         if self.weight_type == "uniform":
-            weights = torch.ones_like(class_volume)
+            weights = present.to(class_volume.dtype)
         elif self.weight_type == "simple":
-            weights = 1.0 / torch.clamp(class_volume, min=self.smooth)
+            weights = torch.zeros_like(class_volume)
+            weights[present] = 1.0 / class_volume[present].clamp(min=self.smooth)
         elif self.weight_type == "square":
-            weights = 1.0 / torch.clamp(class_volume**2, min=self.smooth)
+            weights = torch.zeros_like(class_volume)
+            weights[present] = 1.0 / class_volume[present].clamp(min=self.smooth).pow(2)
         else:
             raise RuntimeError("Invalid weight_type should have been caught in __init__.")
+
+        if not present.any():
+            return logits.sum() * 0.0
 
         intersection = (probs * target_one_hot).sum(dim=1)
         denominator = probs.sum(dim=1) + target_one_hot.sum(dim=1)

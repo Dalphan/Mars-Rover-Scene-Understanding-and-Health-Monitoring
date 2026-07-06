@@ -6,6 +6,10 @@ import torch
 from omegaconf import OmegaConf
 
 
+def unwrap_model(model):
+    return model.module if hasattr(model, "module") else model
+
+
 def save_checkpoint(
     output_dir,
     epoch,
@@ -21,7 +25,7 @@ def save_checkpoint(
 
     checkpoint = {
         "epoch": epoch,
-        "model_state_dict": model.state_dict(),
+        "model_state_dict": unwrap_model(model).state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
         "scheduler_state_dict": scheduler.state_dict() if scheduler is not None else None,
         "best_miou": best_miou,
@@ -39,7 +43,7 @@ def save_checkpoint(
 def load_checkpoint(path, model, optimizer=None, scheduler=None, device="cpu"):
     checkpoint = torch.load(path, map_location=device)
 
-    model.load_state_dict(checkpoint["model_state_dict"])
+    unwrap_model(model).load_state_dict(checkpoint["model_state_dict"])
 
     if optimizer is not None and checkpoint.get("optimizer_state_dict") is not None:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])

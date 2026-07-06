@@ -93,3 +93,49 @@ class SegFormerB0ForMars(nn.Module):
             print(f"logits: shape={tuple(logits.shape)}, dtype={logits.dtype}")
 
         return logits
+
+    def apply_freeze(self, freeze: str) -> None:
+        """
+        Apply freeze strategy.
+
+        freeze:
+            none:
+                train full SegFormer.
+
+            encoder:
+                freeze MiT-B0 encoder/backbone.
+                train decode head + classifier.
+
+            classifier:
+                freeze everything except final classifier.
+        """
+        freeze = freeze.lower()
+
+        for param in self.parameters():
+            param.requires_grad = True
+
+        if freeze == "none":
+            return
+
+        if freeze == "encoder":
+            for param in self.model.segformer.parameters():
+                param.requires_grad = False
+
+            for param in self.model.decode_head.parameters():
+                param.requires_grad = True
+
+            return
+
+        if freeze == "classifier":
+            for param in self.parameters():
+                param.requires_grad = False
+
+            for param in self.model.decode_head.classifier.parameters():
+                param.requires_grad = True
+
+            return
+
+        raise ValueError(
+            f"Unknown freeze mode '{freeze}'. "
+            "Expected one of: none, encoder, classifier."
+        )
