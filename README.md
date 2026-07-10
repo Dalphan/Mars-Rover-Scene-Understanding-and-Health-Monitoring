@@ -91,7 +91,9 @@ Class IDs:
 8 Track
 ```
 
-`ignore_index = 0` is used for statistics where background should be excluded from valid target-class percentages.
+All IDs, including label `0` (Background), are semantic classes. Training model
+configs use `ignore_index = -100`; this sentinel is handled by the loss and does
+not alter model outputs.
 
 ## Train Segmentation Models
 
@@ -121,6 +123,13 @@ SMP:
 
   DeepLabV3+ MobileNetV2
   model=smp model.architecture=deeplabv3plus model.encoder_name=mobilenet_v2
+
+LCNet (project-native, no pretrained weights):
+  LCNet3_7
+  model=lcnet3_7 freeze=none
+
+  LCNet3_11
+  model=lcnet3_11 freeze=none
 ```
 
 Useful overrides:
@@ -133,9 +142,25 @@ python -m src.train.train_segmentation model=smp model.encoder_name=mobilenet_v2
 python -m src.train.train_segmentation model=smp model.architecture=deeplabv3 criterion.name=combined
 python -m src.train.train_segmentation model=smp model.architecture=deeplabv3plus model.encoder_name=mobilenet_v2
 python -m src.train.train_segmentation num_workers=null
+python -m src.train.train_segmentation model=lcnet3_7 freeze=none model_analysis.enabled=true
 ```
 
-The default model config uses `nvidia/segformer-b0-finetuned-ade-512-512`, `num_labels=9`, and `ignore_index=0`. `model=smp` defaults to U-Net ResNet34; change `model.architecture` and `model.encoder_name` for other SMP variants. Checkpoints are written under `outputs/${model.run_name}_s5mars/`. When `num_workers=null`, the DataLoader chooses a worker count from available CPU cores. If two GPUs are visible, training uses `torch.nn.DataParallel` on GPU `0` and `1`.
+## LCNet and model analysis
+
+`lcnet3_7` and `lcnet3_11` reimplement the architecture from Shi et al.,
+“Lightweight Context-Aware Network Using Partial-Channel Transformation for
+Real-Time Semantic Segmentation” (DOI: 10.1109/TITS.2023.3348631). They use all
+nine S5Mars labels, return raw full-resolution logits, and do not download or
+provide pretrained weights. The profiler depends on `fvcore` and uses eager
+FP32 inference with input `[1, 3, 512, 512]`.
+
+Enable the one-time analysis with `model_analysis.enabled=true`. GFLOPs is the
+operation count for one inference, FPS is measured images per second, and
+effective GFLOP/s is their product; it is not the hardware's theoretical peak.
+Unsupported operations reported by `fvcore` are logged, so the GFLOP count may
+be a partial count.
+
+The default model config uses `nvidia/segformer-b0-finetuned-ade-512-512`, `num_labels=9`, and `ignore_index=-100`. `model=smp` defaults to U-Net ResNet34; change `model.architecture` and `model.encoder_name` for other SMP variants. Checkpoints are written under `outputs/${model.run_name}_s5mars/`. When `num_workers=null`, the DataLoader chooses a worker count from available CPU cores. If two GPUs are visible, training uses `torch.nn.DataParallel` on GPU `0` and `1`.
 
 Training choices:
 
@@ -146,7 +171,7 @@ freeze:
   classifier  train only the final segmentation head
 
 criterion.name:
-  cross_entropy     CE with ignore_index=0
+  cross_entropy     CE with ignore_index=-100 (all dataset labels remain valid)
   generalized_dice  Dice over all semantic classes, including class 0
   combined          alpha * CE + (1 - alpha) * Dice
 

@@ -19,7 +19,7 @@ from src.models.factory import build_model
 from src.train.evaluate_segmentation import evaluate
 from src.utils.checkpoints import save_checkpoint
 from src.utils.logging_utils import configure_logging
-from src.utils.model_stats import count_trainable_parameters
+from src.utils.model_stats import analyze_model, count_trainable_parameters
 from src.utils.seed import set_seed
 from src.utils.shape_debug import log_batch_shapes
 
@@ -192,6 +192,14 @@ def main(cfg: DictConfig):
         param_stats["trainable"],
         param_stats["frozen"],
     )
+    if cfg.model_analysis.enabled:
+        analyze_model(
+            model,
+            input_shape=(1, 3, 512, 512),
+            warmup_iterations=cfg.model_analysis.warmup_iterations,
+            measurement_iterations=cfg.model_analysis.measurement_iterations,
+            logger=logger,
+        )
     gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
     data_parallel_device_ids = list(range(min(2, gpu_count)))
     if len(data_parallel_device_ids) == 2:

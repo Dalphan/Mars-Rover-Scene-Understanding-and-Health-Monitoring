@@ -31,7 +31,22 @@ def build_model(cfg):
             log_shapes=cfg.model.log_shapes,
         )
 
+    if cfg.model.name == "lcnet":
+        from src.models.lcnet import LCNet
+
+        return LCNet(
+            variant=cfg.model.variant,
+            in_channels=cfg.model.in_channels,
+            base_channels=cfg.model.base_channels,
+            partial_rate=cfg.model.partial_rate,
+            stage1_blocks=cfg.model.stage1_blocks,
+            stage2_blocks=cfg.model.stage2_blocks,
+            num_classes=cfg.model.num_classes,
+            pretrained=cfg.model.pretrained,
+            log_shapes=cfg.model.log_shapes,
+        )
+
     raise ValueError(
         f"Unknown model name '{cfg.model.name}'. "
-        "Expected one of: segformer_b0, smp."
+        "Expected one of: segformer_b0, smp, lcnet."
     )

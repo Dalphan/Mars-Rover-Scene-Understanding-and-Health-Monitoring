@@ -80,6 +80,12 @@ criterion:
   weight_type: "square"
   smooth: 1e-5
 
+# Optional one-time eager FP32 analysis, run after model construction.
+model_analysis:
+  enabled: false
+  warmup_iterations: 50
+  measurement_iterations: 100
+
 checkpoint:
   output_dir: ${paths.output_dir}
   save_best: true
