@@ -78,7 +78,6 @@ def test_generalized_dice_includes_class_zero_and_ignores_absent_classes():
     for weight_type in ["uniform", "simple", "square"]:
         criterion = GeneralizedDiceLoss(
             num_classes=9,
-            ignore_index=0,
             weight_type=weight_type,
             smooth=1e-5,
         )

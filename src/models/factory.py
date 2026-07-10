@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+
 def build_model(cfg):
     """
     Build segmentation model from Hydra config.
 
     Supported models:
         - segformer_b0
-        - unet_resnet34
+        - smp
     """
     if cfg.model.name == "segformer_b0":
         from src.models.segformer_b0 import SegFormerB0ForMars
@@ -18,10 +19,11 @@ def build_model(cfg):
             log_shapes=cfg.model.log_shapes,
         )
 
-    if cfg.model.name == "unet_resnet34":
-        from src.models.unet_resnet34 import UNetResNet34ForMars
+    if cfg.model.name == "smp":
+        from src.models.smp_model import SMPModelForMars
 
-        return UNetResNet34ForMars(
+        return SMPModelForMars(
+            architecture=cfg.model.architecture,
             encoder_name=cfg.model.encoder_name,
             encoder_weights=cfg.model.encoder_weights,
             in_channels=cfg.model.in_channels,
@@ -31,5 +33,5 @@ def build_model(cfg):
 
     raise ValueError(
         f"Unknown model name '{cfg.model.name}'. "
-        "Expected one of: segformer_b0, unet_resnet34."
+        "Expected one of: segformer_b0, smp."
     )

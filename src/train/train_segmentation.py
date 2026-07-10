@@ -107,11 +107,10 @@ def train_one_epoch(
 
         # criterion can be:
         #   cross_entropy:
-        #       CE over valid pixels only, ignoring target == 0.
+        #       CE ignoring target == 0.
         #
         #   generalized_dice:
-        #       Generalized Dice over valid pixels only, ignoring target == 0
-        #       and computing Dice over classes 1..8.
+        #       Generalized Dice over all classes, including class 0.
         #
         #   combined:
         #       alpha * cross_entropy + (1 - alpha) * generalized_dice.
@@ -174,14 +173,20 @@ def main(cfg: DictConfig):
     model = build_model(cfg).to(device)
     model.apply_freeze(cfg.freeze)
     param_stats = count_trainable_parameters(model)
-    print(f"Model: {cfg.model.name}")
+    architecture = OmegaConf.select(cfg, "model.architecture", default="n/a")
+    encoder_name = OmegaConf.select(cfg, "model.encoder_name", default="n/a")
+    print(f"Model name: {cfg.model.name}")
+    print(f"Architecture: {architecture}")
+    print(f"Encoder: {encoder_name}")
     print(f"Freeze mode: {cfg.freeze}")
     print(f"Total parameters: {param_stats['total']:,}")
     print(f"Trainable parameters: {param_stats['trainable']:,}")
     print(f"Frozen parameters: {param_stats['frozen']:,}")
     logger.info(
-        "Model=%s freeze_mode=%s total_parameters=%d trainable_parameters=%d frozen_parameters=%d",
+        "Model=%s architecture=%s encoder=%s freeze_mode=%s total_parameters=%d trainable_parameters=%d frozen_parameters=%d",
         cfg.model.name,
+        architecture,
+        encoder_name,
         cfg.freeze,
         param_stats["total"],
         param_stats["trainable"],

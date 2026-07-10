@@ -41,7 +41,6 @@ class GeneralizedDiceLoss(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        ignore_index: int = 0,
         weight_type: str = "square",
         smooth: float = 1e-5,
     ) -> None:
@@ -93,10 +92,10 @@ class GeneralizedDiceLoss(nn.Module):
             weights = present.to(class_volume.dtype)
         elif self.weight_type == "simple":
             weights = torch.zeros_like(class_volume)
-            weights[present] = 1.0 / class_volume[present].clamp(min=self.smooth)
+            weights[present] = 1.0 / class_volume[present]
         elif self.weight_type == "square":
             weights = torch.zeros_like(class_volume)
-            weights[present] = 1.0 / class_volume[present].clamp(min=self.smooth).pow(2)
+            weights[present] = 1.0 / class_volume[present].pow(2)
         else:
             raise RuntimeError("Invalid weight_type should have been caught in __init__.")
 
@@ -122,7 +121,9 @@ class CombinedSegmentationLoss(nn.Module):
     For S5Mars:
         logits:  [B, 9, 512, 512]
         targets: [B, 512, 512], values 0..8
-        ignore_index = 0
+
+    Cross-entropy ignores target value 0. Generalized Dice uses all classes,
+    including class 0.
     """
 
     def __init__(
@@ -146,7 +147,6 @@ class CombinedSegmentationLoss(nn.Module):
 
         self.generalized_dice = GeneralizedDiceLoss(
             num_classes=num_classes,
-            ignore_index=ignore_index,
             weight_type=weight_type,
             smooth=smooth,
         )

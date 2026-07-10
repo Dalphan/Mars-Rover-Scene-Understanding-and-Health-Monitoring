@@ -101,13 +101,57 @@ Install dependencies, export `HF_TOKEN` if the dataset requires authentication, 
 python -m src.train.train_segmentation
 ```
 
+Supported model configurations:
+
+```text
+Default:
+  SegFormer-B0
+  model=segformer_b0
+  checkpoint=nvidia/segformer-b0-finetuned-ade-512-512
+
+SMP:
+  U-Net ResNet34
+  model=smp
+
+  U-Net MobileNetV2
+  model=smp model.encoder_name=mobilenet_v2
+
+  DeepLabV3 ResNet34
+  model=smp model.architecture=deeplabv3
+
+  DeepLabV3+ MobileNetV2
+  model=smp model.architecture=deeplabv3plus model.encoder_name=mobilenet_v2
+```
+
 Useful overrides:
 
 ```bash
 python -m src.train.train_segmentation epochs=10 batch_size=4 optimizer.lr=0.00003
 python -m src.train.train_segmentation splits.train=train[:100] splits.val=val[:20]
-python -m src.train.train_segmentation model=unet_resnet34 freeze=encoder
+python -m src.train.train_segmentation model=smp freeze=encoder
+python -m src.train.train_segmentation model=smp model.encoder_name=mobilenet_v2 freeze=encoder
+python -m src.train.train_segmentation model=smp model.architecture=deeplabv3 criterion.name=combined
+python -m src.train.train_segmentation model=smp model.architecture=deeplabv3plus model.encoder_name=mobilenet_v2
 python -m src.train.train_segmentation num_workers=null
 ```
 
-The default model config uses `nvidia/segformer-b0-finetuned-ade-512-512`, `num_labels=9`, and `ignore_index=0`. You can switch to U-Net ResNet34 with only the Hydra model override. Checkpoints are written under `outputs/${model.name}_s5mars/`. When `num_workers=null`, the DataLoader chooses a worker count from available CPU cores. If two GPUs are visible, training uses `torch.nn.DataParallel` on GPU `0` and `1`.
+The default model config uses `nvidia/segformer-b0-finetuned-ade-512-512`, `num_labels=9`, and `ignore_index=0`. `model=smp` defaults to U-Net ResNet34; change `model.architecture` and `model.encoder_name` for other SMP variants. Checkpoints are written under `outputs/${model.run_name}_s5mars/`. When `num_workers=null`, the DataLoader chooses a worker count from available CPU cores. If two GPUs are visible, training uses `torch.nn.DataParallel` on GPU `0` and `1`.
+
+Training choices:
+
+```text
+freeze:
+  none        train all parameters
+  encoder     freeze pretrained backbone, train decoder/head
+  classifier  train only the final segmentation head
+
+criterion.name:
+  cross_entropy     CE with ignore_index=0
+  generalized_dice  Dice over all semantic classes, including class 0
+  combined          alpha * CE + (1 - alpha) * Dice
+
+criterion.weight_type:
+  uniform  equal weight for classes present in the batch
+  simple   inverse target volume
+  square   inverse squared target volume
+```

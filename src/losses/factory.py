@@ -30,7 +30,8 @@ def build_criterion(
     S5Mars:
         C = 9
         target values = 0..8
-        ignore_index = 0
+        cross_entropy ignores target value 0
+        generalized_dice uses all classes, including class 0
     """
     name = name.lower()
 
@@ -40,7 +41,6 @@ def build_criterion(
     if name == "generalized_dice":
         return GeneralizedDiceLoss(
             num_classes=num_classes,
-            ignore_index=ignore_index,
             weight_type=weight_type,
             smooth=smooth,
         )

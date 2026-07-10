@@ -1,16 +1,32 @@
 # @package _global_
 
 defaults:
+  # Model choices:
+  #   - /model: segformer_b0
+  #   - /model: smp
+  # CLI examples:
+  #   model=smp
+  #   model=smp model.architecture=deeplabv3
+  #   model=smp model.architecture=deeplabv3plus model.encoder_name=mobilenet_v2
   - /model: segformer_b0
   - _self_
 
 seed: 42
+
+# Device choices: cuda, cpu. Falls back to CPU if CUDA is unavailable.
 device: cuda
 
 epochs: 50
 batch_size: 8
+
+# null chooses a worker count dynamically from available CPU cores.
 num_workers: null
-freeze: "encoder"  # [none, encoder, classifier]
+
+# Freeze choices:
+#   none: train all parameters
+#   encoder: freeze pretrained backbone, train decoder/head
+#   classifier: train only the final segmentation head
+freeze: "encoder"
 
 huggingface:
   repo_id: "Mirali33/mb-s5mars"
@@ -42,18 +58,26 @@ dataloader:
   drop_last: false
 
 optimizer:
+  # Supported optimizer choices: [adamw].
   name: adamw
   lr: 0.00006
   weight_decay: 0.01
 
 scheduler:
+  # Supported scheduler choices: [cosine].
   name: cosine
   warmup_epochs: 3
 
 criterion:
-  name: "cross_entropy"   # [cross_entropy, generalized_dice, combined]
-  alpha: 0.5              # combined loss: alpha * CE + (1 - alpha) * GDL
-  weight_type: "square"   # [uniform, simple, square]
+  # Loss choices: [cross_entropy, generalized_dice, combined].
+  name: "cross_entropy"
+
+  # Combined loss: alpha * CE + (1 - alpha) * Generalized Dice.
+  alpha: 0.5
+
+  # Generalized Dice weight choices: [uniform, simple, square].
+  # Absent target classes get weight 0 for all modes.
+  weight_type: "square"
   smooth: 1e-5
 
 checkpoint:
@@ -89,7 +113,7 @@ dataset:
     8: "Track"
 
 paths:
-  output_dir: outputs/${model.name}_s5mars
+  output_dir: outputs/${model.run_name}_s5mars
 
 logging:
   level: INFO
