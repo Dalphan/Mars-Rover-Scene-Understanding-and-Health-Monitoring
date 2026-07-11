@@ -11,9 +11,12 @@ outputs/
 
 .env
 *.log
+gdrive_kaggle_secrets*.json
+client_secret*.json
 
 *.md
 !README.md
+!QUANTIZATION_PLAN.md
 
 outputs/
 

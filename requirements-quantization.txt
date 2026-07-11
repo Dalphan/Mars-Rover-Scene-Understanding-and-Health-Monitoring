@@ -1,0 +1,9 @@
+# Kaggle PTQ/QAT and Google Drive integration.
+# TensorRT is supplied by the Kaggle NVIDIA image and is detected at runtime.
+onnx
+onnxruntime-gpu
+onnxconverter-common
+nvidia-modelopt[onnx]
+google-api-python-client
+google-auth
+google-auth-oauthlib

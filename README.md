@@ -145,6 +145,85 @@ python -m src.train.train_segmentation num_workers=null
 python -m src.train.train_segmentation model=lcnet3_7 freeze=none model_analysis.enabled=true
 ```
 
+## PTQ and QAT on Kaggle
+
+The implementation and experimental contract are documented in
+[QUANTIZATION_PLAN.md](QUANTIZATION_PLAN.md).
+
+The training notebook supports two modes:
+
+```python
+QUANTIZATION_MODE = "none"      # standard FP32 training
+QUANTIZATION_MODE = "qat_int8"  # QAT fine-tuning from a completed FP32 run
+```
+
+Every run gets a unique directory and keeps the existing `history.json` and
+`test_metrics.json` files. It additionally writes `run_manifest.json`,
+environment metadata, SHA-256 artifact hashes, and `upload_status.json`.
+Final evaluation and downstream quantization use `best.ckpt`.
+
+QAT mode requires a completed FP32 source run. Configure either a local/Kaggle
+Input directory or the exact Google Drive folder ID for that run. QAT uses a
+deterministic train calibration subset, saves NVIDIA Model Optimizer state,
+exports an explicit Q/DQ ONNX model, builds a TensorRT INT8 engine, and
+benchmarks batch size 1 on one GPU.
+
+Post-training quantization is isolated in:
+
+```text
+notebooks/kaggle_s5mars_ptq.ipynb
+```
+
+Its core path is:
+
+```text
+best.ckpt
+  -> PyTorch FP32 reference
+  -> ONNX FP32
+  -> TensorRT FP32
+  -> TensorRT FP16
+  -> Model Optimizer INT8 PTQ Q/DQ
+  -> TensorRT INT8
+```
+
+Calibration uses only the train split. The PTQ notebook defaults to
+`RUN_FINAL_TEST=False`; use validation while choosing calibration settings and
+enable the test set only after freezing the final configuration.
+
+Install the optional quantization dependencies with:
+
+```bash
+pip install -r requirements-quantization.txt
+```
+
+TensorRT and `trtexec` are expected from the Kaggle NVIDIA runtime.
+
+## Google Drive experiment storage
+
+Drive integration is optional and disabled by default. Create an OAuth desktop
+client with Google Drive API enabled, then run locally:
+
+```bash
+python scripts/setup_google_drive_oauth.py \
+  --client-secrets path/to/client_secret.json \
+  --folder-name S5Mars_Experiments
+```
+
+Copy the generated values into Kaggle Secrets:
+
+```text
+GDRIVE_CLIENT_ID
+GDRIVE_CLIENT_SECRET
+GDRIVE_REFRESH_TOKEN
+GDRIVE_FOLDER_ID
+```
+
+Delete the generated local secret bundle after copying it. Never commit OAuth
+credentials. Share the app-managed folder manually with the second Google
+account. Set `DRIVE_UPLOAD_ENABLED=True` to upload a completed run. Files are
+written and hashed under `/kaggle/working` first, so an upload failure does not
+delete the Kaggle copy.
+
 ## LCNet and model analysis
 
 `lcnet3_7` and `lcnet3_11` reimplement the architecture from Shi et al.,
