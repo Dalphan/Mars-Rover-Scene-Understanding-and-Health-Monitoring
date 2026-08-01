@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "default_candidate_id": "wheel_candidate_05",
+  "render": {
+    "engine_preference": ["BLENDER_EEVEE", "BLENDER_WORKBENCH"],
+    "resolution_x": 800,
+    "resolution_y": 600,
+    "resolution_percentage": 100,
+    "samples": 16,
+    "image_format": "PNG",
+    "background_rgba": [0.025, 0.035, 0.055, 1.0],
+    "camera_margin": 1.2
+  },
+  "skin": {
+    "radial_histogram_bins": 96,
+    "minimum_radial_normal_alignment": 0.35,
+    "radial_band_diameter_ratio": 0.035,
+    "merge_tolerance_ratios": [1e-7, 1e-6, 1e-5, 1e-4],
+    "shell_angular_segments": 192,
+    "minimum_wall_thickness_ratio": 0.003,
+    "maximum_wall_thickness_ratio": 0.02
+  },
+  "perforation": {
+    "cutter_segments": 20,
+    "axial_radius_ratio": 0.03,
+    "tangential_radius_ratio": 0.04,
+    "radial_depth_ratio": 0.08,
+    "angular_search_bins": 72,
+    "mask_dilation_pixels": 4
+  },
+  "gates": {
+    "minimum_silhouette_iou": 0.995,
+    "maximum_bbox_relative_error": 0.001,
+    "minimum_mask_ratio": 0.002,
+    "maximum_mask_ratio": 0.05,
+    "maximum_outside_change_ratio": 0.01
+  },
+  "diagnostics": {
+    "pack_resources_in_blend": true
+  },
+  "logging": {
+    "level": "INFO"
+  }
+}

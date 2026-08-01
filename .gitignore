@@ -14,7 +14,16 @@ outputs/
 
 *.md
 !README.md
+!AGENTS.md
+!docs/**/*.md
 
 outputs/
 
 .agents/
+
+# Original 3D assets stay local and immutable; only the directory marker is tracked.
+assets/original/*
+!assets/original/.gitkeep
+
+# Blender audit runtime artifacts.
+logs/

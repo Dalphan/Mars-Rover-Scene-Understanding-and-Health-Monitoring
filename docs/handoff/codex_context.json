@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "project": "Curiosity wheel synthetic anomaly detection",
+  "recommended_branch": "anomaly-detection",
+  "recommended_blender": "5.2.0 LTS",
+  "blender_5_1_policy": "Rerun audit and preparation from scratch on 5.1; do not reuse the 5.2 audit report or disable the version preflight.",
+  "asset": {
+    "name": "24584_Curiosity_static.glb",
+    "tracked": false,
+    "sha256": "86a8ee6d39fb1711ae549ba99951d2f52b44a7b8367ce4814cc81aec60e94b31"
+  },
+  "audit": {
+    "classification": "B",
+    "source_object": "MSL",
+    "candidate_id": "wheel_candidate_05",
+    "candidate_counts": {
+      "components": 303,
+      "vertices": 2458,
+      "edges": 3970,
+      "faces": 1664
+    }
+  },
+  "current_milestone": {
+    "name": "canonical wheel and first perforation",
+    "automatic_validator_passed": true,
+    "visual_qa_passed": false,
+    "dataset_ready": false,
+    "repair_strategy": "hybrid_parametric_shell",
+    "last_mask_to_wheel_ratio": 0.005656168804463
+  },
+  "known_blockers": [
+    "Base-skin faces remain mixed into Wheel_Details and overlap the replacement shell.",
+    "The hybrid-shell material and fit are not visually acceptable yet.",
+    "The validator does not require a minimum RGB change inside the anomaly mask.",
+    "The generated blend files are not yet reopened and validated headlessly."
+  ],
+  "next_actions": [
+    "Add face-level cylindrical skin selection and remove every base-skin face from Wheel_Details.",
+    "Refit and darken the texture-free hybrid shell while preserving original hub and grousers.",
+    "Add inside-mask RGB difference gates and unit tests.",
+    "Reopen both blend outputs headlessly and validate scene invariants.",
+    "Rerun on the real GLB and require both validator success and manual visual QA.",
+    "Only then start individual grouser clustering and breakage."
+  ],
+  "entrypoints": {
+    "audit_blender": "scripts/blender/audit_asset.py",
+    "audit_host": "scripts/host/run_blender_audit.py",
+    "prepare_blender": "scripts/blender/prepare_wheel.py",
+    "prepare_host": "scripts/host/run_wheel_preparation.py",
+    "prepare_validator": "scripts/host/validate_wheel_preparation.py"
+  },
+  "documentation": "docs/handoff/blender_anomaly_detection.md"
+}

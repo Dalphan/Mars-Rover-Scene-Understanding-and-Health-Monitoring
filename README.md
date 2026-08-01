@@ -180,3 +180,136 @@ criterion.weight_type:
   simple   inverse target volume
   square   inverse squared target volume
 ```
+
+## Blender GLB wheel audit
+
+The Blender pipeline is deliberately isolated from the training code. Host-side
+launching and validation live under `scripts/host/`; scripts that import `bpy`
+live under `scripts/blender/`; Blender configuration is in
+`configs/blender/audit.json`. Original assets belong in `assets/original/` or may
+be passed from another local path. They are treated as immutable and ignored by
+Git.
+
+This first phase only audits editability. It does not create anomalies, perform
+domain randomization, generate a dataset, run PatchCore, or install ML
+dependencies into Blender.
+
+### Requirements
+
+- Blender 5.2.0 LTS;
+- the original NASA `.glb` already present locally;
+- a regular host Python for the optional launcher, validator and tests;
+- no additional Python package is required by the Blender audit.
+
+The default render configuration is Eevee at 800x600 (4:3). The audit records
+the actual render backend and warns if no hardware GPU context is detected.
+
+### Direct headless command
+
+From the repository root in PowerShell:
+
+```powershell
+& 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' `
+  --background `
+  --python scripts/blender/audit_asset.py `
+  -- `
+  --asset '..\24584_Curiosity_static.glb' `
+  --output-dir 'outputs\blender_audit\curiosity_static'
+```
+
+The equivalent generic form is:
+
+```text
+blender --background --python <script_audit> -- --asset <path_asset.glb> --output-dir <directory_output>
+```
+
+To override the checked-in standard-library-only configuration, append:
+
+```text
+--config configs/blender/audit.json
+```
+
+### Host launcher and validation
+
+The host launcher runs Blender and validates all outputs when Blender exits:
+
+```powershell
+python scripts/host/run_blender_audit.py `
+  --blender 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' `
+  --asset '..\24584_Curiosity_static.glb' `
+  --output-dir 'outputs\blender_audit\curiosity_static'
+```
+
+Validation can also be rerun independently:
+
+```powershell
+python scripts/host/validate_blender_audit.py `
+  --output-dir 'outputs\blender_audit\curiosity_static'
+```
+
+Run only the host-side unit tests (standard library only; they never import
+`bpy`):
+
+```powershell
+python -m unittest discover `
+  -s tests `
+  -p 'test_blender_audit*.py' `
+  -v
+```
+
+### Output layout
+
+```text
+outputs/blender_audit/<run>/
+  reports/
+    audit.json
+    audit.md
+  diagnostics/
+    imported_asset.blend
+  renders/
+    rover/                 # six axis-aligned overview directions
+    candidates/            # at least three close-ups per candidate
+    topology/              # wireframe/topology overview
+  logs/
+    audit.log
+```
+
+The report inventories collections, hierarchy, parents, transforms, bounding
+boxes, topology, materials, UVs, disconnected components, normals and
+non-manifold edges. Candidate wheels are scored from independent signals:
+names, cylindrical proportions, scene position and repeated
+geometry/topology. The final category is:
+
+- A: separate wheel directly usable;
+- B: wheel automatically separable from a larger mesh;
+- C: minimal manual correction required;
+- D: unsuitable for the requested geometry edits.
+
+The source GLB is hashed before and after execution. Only the imported in-memory
+copy and the diagnostic `.blend` are written. A `.gltf` is never downloaded,
+generated or substituted automatically. If Blender imports unresolved
+textures/resources, the report sets `try_gltf_required` and explains which
+separate URI or buffer would need inspection; otherwise it explicitly states
+that trying glTF is unnecessary.
+
+## Blender wheel preparation handoff
+
+The repository also contains the second-stage prototype that extracts
+`wheel_candidate_05`, creates a canonical wheel, evaluates repair options, and
+renders a deterministic normal/perforation pair:
+
+```powershell
+python scripts/host/run_wheel_preparation.py `
+  --blender 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' `
+  --asset '<path>\24584_Curiosity_static.glb' `
+  --audit-report 'outputs\blender_audit\curiosity_static\reports\audit.json' `
+  --candidate-id wheel_candidate_05 `
+  --output-dir 'outputs\wheel_preparation\curiosity_middle_right'
+```
+
+This stage currently passes structural validation but has not passed final
+visual QA and must not yet be used for bulk dataset generation. Before
+continuing, read [AGENTS.md](AGENTS.md) and the complete
+[Blender anomaly-detection handoff](docs/handoff/blender_anomaly_detection.md).
+The reproducible target is Blender 5.2.0; using 5.1 requires regenerating the
+audit report with 5.1 rather than reusing a 5.2 report.
