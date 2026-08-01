@@ -150,6 +150,9 @@ python -m src.train.train_segmentation model=lcnet3_7 freeze=none model_analysis
 The implementation and experimental contract are documented in
 [QUANTIZATION_PLAN.md](QUANTIZATION_PLAN.md).
 
+An Italian step-by-step execution guide for the Kaggle notebooks is available in
+[GUIDA_NOTEBOOK_KAGGLE.md](GUIDA_NOTEBOOK_KAGGLE.md).
+
 The training notebook supports two modes:
 
 ```python
@@ -167,6 +170,16 @@ Input directory or the exact Google Drive folder ID for that run. QAT uses a
 deterministic train calibration subset, saves NVIDIA Model Optimizer state,
 exports an explicit Q/DQ ONNX model, builds a TensorRT INT8 engine, and
 benchmarks batch size 1 on one GPU.
+
+For `smp/deeplabv3plus/mobilenet_v2`, the QAT configuration automatically
+keeps MobileNetV2's final dilated encoder stage (`features.14` through
+`features.18`) in high precision because its strongly typed INT8 convolutions
+are not supported by TensorRT on the T4. For `smp/deeplabv3/resnet34`, the same
+compatibility rule keeps the two dilated encoder stages (`layer3` and `layer4`)
+in high precision. Other model combinations keep the default INT8
+configuration. The applied exclusions are recorded in calibration, checkpoint,
+and run manifests; these deployments should be reported as mixed-precision QAT
+INT8/high-precision.
 
 Post-training quantization is isolated in:
 

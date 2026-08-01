@@ -8,7 +8,12 @@ from src.quantization.calibration import (
     select_class_coverage_indices,
     select_nested_calibration_indices,
 )
-from src.quantization.config import PTQConfig, QATConfig
+from src.quantization.config import (
+    PTQConfig,
+    QATConfig,
+    build_qat_quantize_config,
+    get_qat_quantizer_exclusions,
+)
 
 
 def test_nested_calibration_subsets_are_deterministic_and_nested():
@@ -46,3 +51,66 @@ def test_configs_validate_modes_and_required_fields():
     with pytest.raises(ValueError, match="source_checkpoint"):
         QATConfig(mode="qat_int8").validate()
     QATConfig(mode="qat_int8", source_checkpoint="best.ckpt").validate()
+
+
+def test_qat_exclusions_target_only_known_t4_incompatible_model_stages():
+    assert get_qat_quantizer_exclusions("smp", "deeplabv3", "resnet34") == (
+        "*encoder.layer3*",
+        "*encoder.layer4*",
+    )
+    expected = (
+        "*encoder.features.14*",
+        "*encoder.features.15*",
+        "*encoder.features.16*",
+        "*encoder.features.17*",
+        "*encoder.features.18*",
+    )
+    assert (
+        get_qat_quantizer_exclusions("smp", "deeplabv3plus", "mobilenet_v2")
+        == expected
+    )
+    assert get_qat_quantizer_exclusions("smp", "unet", "mobilenet_v2") == ()
+    assert get_qat_quantizer_exclusions("smp", "deeplabv3plus", "resnet34") == ()
+    assert get_qat_quantizer_exclusions("smp", "deeplabv3", "mobilenet_v2") == ()
+    assert (
+        get_qat_quantizer_exclusions(
+            "segformer_b0", "deeplabv3plus", "mobilenet_v2"
+        )
+        == ()
+    )
+
+
+@pytest.mark.parametrize(
+    "base_config",
+    [
+        {"quant_cfg": [{"quantizer_name": "*", "enable": True}]},
+        {"quant_cfg": {"*": {"enable": True}}},
+    ],
+)
+def test_qat_config_builder_copies_config_and_appends_selected_exclusion(base_config):
+    original = repr(base_config)
+    config, exclusions = build_qat_quantize_config(
+        base_config,
+        model_name="smp",
+        smp_architecture="deeplabv3plus",
+        smp_encoder_name="mobilenet_v2",
+    )
+    assert exclusions == (
+        "*encoder.features.14*",
+        "*encoder.features.15*",
+        "*encoder.features.16*",
+        "*encoder.features.17*",
+        "*encoder.features.18*",
+    )
+    assert repr(base_config) == original
+    assert config != base_config
+
+
+def test_qat_config_builder_rejects_unknown_modelopt_quant_cfg_shape():
+    with pytest.raises(TypeError, match="quant_cfg"):
+        build_qat_quantize_config(
+            {"quant_cfg": None},
+            model_name="smp",
+            smp_architecture="deeplabv3plus",
+            smp_encoder_name="mobilenet_v2",
+        )

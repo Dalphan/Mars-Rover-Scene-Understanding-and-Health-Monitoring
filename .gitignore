@@ -17,6 +17,7 @@ client_secret*.json
 *.md
 !README.md
 !QUANTIZATION_PLAN.md
+!GUIDA_NOTEBOOK_KAGGLE.md
 
 outputs/
 
