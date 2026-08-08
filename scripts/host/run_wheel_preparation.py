@@ -9,6 +9,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SCRIPT = REPO_ROOT / "scripts" / "blender" / "prepare_wheel.py"
+DEFAULT_BLEND_VALIDATOR = (
+    REPO_ROOT / "scripts" / "blender" / "validate_wheel_blend.py"
+)
 DEFAULT_CONFIG = REPO_ROOT / "configs" / "blender" / "wheel_preparation.json"
 WINDOWS_BLENDER = Path(
     r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
@@ -42,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--asset", required=True, type=Path)
     parser.add_argument("--audit-report", required=True, type=Path)
+    parser.add_argument("--terrain", required=True, type=Path)
     parser.add_argument(
         "--candidate-id",
         default="wheel_candidate_05",
@@ -62,10 +66,12 @@ def main() -> int:
     args = parse_args()
     asset = args.asset.expanduser().resolve()
     audit_report = args.audit_report.expanduser().resolve()
+    terrain = args.terrain.expanduser().resolve()
     config = args.config.expanduser().resolve()
     for label, path in (
         ("asset", asset),
         ("audit report", audit_report),
+        ("terrain", terrain),
         ("configuration", config),
     ):
         if not path.is_file():
@@ -91,6 +97,8 @@ def main() -> int:
         str(asset),
         "--audit-report",
         str(audit_report),
+        "--terrain",
+        str(terrain),
         "--candidate-id",
         args.candidate_id,
         "--output-dir",
@@ -107,19 +115,56 @@ def main() -> int:
             file=sys.stderr,
         )
         return completed.returncode
-    if args.skip_validation:
-        return 0
 
-    result = validate_output(output_dir)
-    for warning in result["warnings"]:
-        print(f"WARNING: {warning}")
-    for error in result["errors"]:
-        print(f"ERROR: {error}", file=sys.stderr)
-    print(
-        f"Validated {result['checked_file_count']} files: "
-        f"{'OK' if result['valid'] else 'FAILED'}"
+    reopen_jobs = (
+        (
+            "canonical",
+            output_dir / "diagnostics" / "wheel_canonical.blend",
+            output_dir / "reports" / "canonical_reopen.json",
+        ),
+        (
+            "perforation",
+            output_dir / "diagnostics" / "perforation_probe.blend",
+            output_dir / "reports" / "perforation_reopen.json",
+        ),
     )
-    return 0 if result["valid"] else 1
+    for kind, blend_path, result_path in reopen_jobs:
+        reopen_command = [
+            str(blender),
+            "--background",
+            str(blend_path),
+            "--python",
+            str(DEFAULT_BLEND_VALIDATOR),
+            "--",
+            "--kind",
+            kind,
+            "--output",
+            str(result_path),
+        ]
+        print("Reopening:", subprocess.list2cmdline(reopen_command), flush=True)
+        reopened = subprocess.run(reopen_command, cwd=REPO_ROOT, check=False)
+        if reopened.returncode != 0:
+            print(
+                f"ERROR: reopened {kind} blend validation exited with code "
+                f"{reopened.returncode}",
+                file=sys.stderr,
+            )
+            return reopened.returncode
+    if args.skip_validation:
+        base_valid = True
+    else:
+        result = validate_output(output_dir)
+        for warning in result["warnings"]:
+            print(f"WARNING: {warning}")
+        for error in result["errors"]:
+            print(f"ERROR: {error}", file=sys.stderr)
+        print(
+            f"Validated {result['checked_file_count']} files: "
+            f"{'OK' if result['valid'] else 'FAILED'}"
+        )
+        base_valid = bool(result["valid"])
+
+    return 0 if base_valid else 1
 
 
 if __name__ == "__main__":

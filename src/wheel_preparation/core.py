@@ -229,6 +229,158 @@ def select_merge_result(
     return min(passing, key=lambda result: float(result.get("tolerance_ratio", math.inf)))
 
 
+def select_cylindrical_skin_faces(
+    face_descriptors: Mapping[int, Mapping[str, float]],
+    component_faces: Sequence[Sequence[int]],
+    *,
+    lower_radius: float,
+    base_radius: float,
+    upper_radius: float,
+    minimum_alignment: float,
+    minimum_component_radial_area_fraction: float = 0.55,
+) -> dict[str, Any]:
+    """Select base-skin faces without swallowing raised grouser geometry.
+
+    Disconnected components that are almost entirely confined to the base-radius
+    band are safe to select in full. Mixed components are handled face by face,
+    using center radius, radial-normal alignment, and the complete vertex-radius
+    interval. This removes base-skin panels welded to a grouser while preserving
+    the grouser top and side walls above the band.
+    """
+
+    if not lower_radius < base_radius < upper_radius:
+        raise ValueError("Expected lower_radius < base_radius < upper_radius")
+    band_width = upper_radius - lower_radius
+    interval_margin = band_width * 0.35
+
+    face_band_selection: set[int] = set()
+    for raw_index, descriptor in face_descriptors.items():
+        face_index = int(raw_index)
+        center_radius = float(descriptor["radius"])
+        alignment = float(descriptor["alignment"])
+        vertex_min = float(descriptor["vertex_radius_min"])
+        vertex_max = float(descriptor["vertex_radius_max"])
+        interval_overlaps = vertex_max >= lower_radius and vertex_min <= upper_radius
+        radial_span = vertex_max - vertex_min
+        interval_compact = radial_span <= band_width * 2.5
+        if (
+            lower_radius <= center_radius <= upper_radius
+            and alignment >= minimum_alignment
+            and interval_overlaps
+            and interval_compact
+        ):
+            face_band_selection.add(face_index)
+
+    component_selection: set[int] = set()
+    component_selection_faces: set[int] = set()
+    component_scores: dict[int, dict[str, float | bool]] = {}
+    for component_index, raw_faces in enumerate(component_faces):
+        faces = [int(index) for index in raw_faces if int(index) in face_descriptors]
+        if not faces:
+            continue
+        total_area = sum(
+            max(float(face_descriptors[index]["area"]), 1e-12)
+            for index in faces
+        )
+        radial_area = sum(
+            max(float(face_descriptors[index]["area"]), 1e-12)
+            for index in faces
+            if index in face_band_selection
+        )
+        radial_fraction = radial_area / total_area
+        maximum_vertex_radius = max(
+            float(face_descriptors[index]["vertex_radius_max"])
+            for index in faces
+        )
+        mean_radius = sum(
+            float(face_descriptors[index]["radius"])
+            * max(float(face_descriptors[index]["area"]), 1e-12)
+            for index in faces
+        ) / total_area
+        confined_to_base_band = maximum_vertex_radius <= upper_radius + interval_margin
+        selected = (
+            radial_fraction >= minimum_component_radial_area_fraction
+            and confined_to_base_band
+            and lower_radius - interval_margin <= mean_radius <= upper_radius
+        )
+        component_scores[component_index] = {
+            "total_area": total_area,
+            "radial_area_fraction": radial_fraction,
+            "mean_radius": mean_radius,
+            "maximum_vertex_radius": maximum_vertex_radius,
+            "confined_to_base_band": confined_to_base_band,
+            "selected": selected,
+        }
+        if selected:
+            component_selection.add(component_index)
+            component_selection_faces.update(faces)
+
+    skin_faces = component_selection_faces | face_band_selection
+    return {
+        "skin_face_indices": skin_faces,
+        "skin_component_indices": component_selection,
+        "component_selected_face_indices": component_selection_faces,
+        "face_band_selected_face_indices": face_band_selection,
+        "selection_overlap_face_indices": (
+            component_selection_faces & face_band_selection
+        ),
+        "component_scores": component_scores,
+    }
+
+
+def select_detail_components_within_wheel_envelope(
+    component_descriptors: Sequence[Mapping[str, Any]],
+    *,
+    axial_min: float,
+    axial_max: float,
+    outer_radius: float,
+    axial_margin_width_ratio: float = 0.02,
+    outer_detail_radius_ratio: float = 0.72,
+) -> dict[str, Any]:
+    """Reject tread fragments and inboard attachments beyond the wheel width.
+
+    Hub and spoke components may protrude, but their center must remain safely
+    inside the fitted wheel. Components centered on/beyond the inboard edge are
+    suspension attachments rather than part of the canonical isolated wheel.
+    """
+
+    width = axial_max - axial_min
+    if width <= 0.0 or outer_radius <= 0.0:
+        raise ValueError("Invalid fitted wheel envelope")
+    margin = width * axial_margin_width_ratio
+    kept: set[int] = set()
+    rejected: set[int] = set()
+    for descriptor in component_descriptors:
+        index = int(descriptor["index"])
+        radial_min = float(descriptor["radial_min"])
+        component_axial_min = float(descriptor["axial_min"])
+        component_axial_max = float(descriptor["axial_max"])
+        component_axial_mean = float(
+            descriptor.get(
+                "axial_mean", (component_axial_min + component_axial_max) * 0.5
+            )
+        )
+        near_tread = radial_min >= outer_radius * outer_detail_radius_ratio
+        outside_axial = (
+            component_axial_max < axial_min - margin
+            or component_axial_min > axial_max + margin
+        )
+        inboard_attachment = (
+            component_axial_min < axial_min - margin
+            and component_axial_mean < axial_min + margin
+        )
+        if (near_tread and outside_axial) or inboard_attachment:
+            rejected.add(index)
+        else:
+            kept.add(index)
+    return {
+        "kept_component_indices": kept,
+        "rejected_component_indices": rejected,
+        "axial_margin": margin,
+        "outer_detail_radius_threshold": outer_radius * outer_detail_radius_ratio,
+    }
+
+
 def _yes_no(value: Any) -> str:
     return "sì" if value is True else "no" if value is False else str(value)
 
@@ -279,6 +431,8 @@ def make_markdown_report(report: Mapping[str, Any]) -> str:
         f"- Boolean EXACT riuscito: **{_yes_no(boolean.get('success'))}**",
         f"- Pelle anomala manifold: **{_yes_no(boolean.get('closed_manifold'))}**",
         f"- Area maschera / ruota: `{mask.get('area_ratio', 'n/a')}`",
+        f"- Cambiamento RGB dentro la maschera: `{mask.get('inside_change_ratio', 'n/a')}`",
+        f"- Differenza RGB media dentro la maschera: `{mask.get('mean_inside_difference', 'n/a')}`",
         f"- Differenza esterna alla maschera dilatata: `{mask.get('outside_change_ratio', 'n/a')}`",
         "",
         "## Artefatti",

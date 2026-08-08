@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "candidate_id": "wheel_candidate_05",
+  "render": {
+    "resolution_x": 800,
+    "resolution_y": 600,
+    "resolution_percentage": 100,
+    "image_format": "PNG"
+  },
+  "probes": {
+    "marker_radius": 0.035,
+    "marker_height": 0.32
+  },
+  "simulator_camera": {
+    "lens_mm": 48.0,
+    "lateral_offset_width_ratio": 0.55,
+    "rear_offset_length_ratio": 0.75,
+    "height_offset_rover_height_ratio": 0.55,
+    "target_height_ratio": 0.42
+  }
+}

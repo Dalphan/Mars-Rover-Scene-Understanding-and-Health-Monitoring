@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "candidate_id": "wheel_candidate_05",
+  "diameter_source": "prepared_wheel",
+  "base_seed": 41000,
+  "variant_count": 12,
+  "families": ["jagged_slit", "branched_tear", "peeled_window"],
+  "orientations": ["axial", "circumferential"],
+  "sizes": ["small", "medium"],
+  "review_camera": {
+    "vertical_drop_m": 0.10,
+    "axial_pullback_m": 0.12,
+    "target_vertical_offset_m": -0.03
+  },
+  "review_fill_light": {
+    "energy": 100.0,
+    "color": [1.0, 0.78, 0.58],
+    "spot_size_degrees": 4.0,
+    "spot_blend": 0.4,
+    "shadow_soft_size_m": 0.005
+  },
+  "geometry": {
+    "minimum_aspect_ratio": 2.0,
+    "maximum_aspect_ratio": 4.5,
+    "minimum_convexity": 0.60,
+    "maximum_convexity": 0.90,
+    "maximum_circularity": 0.78,
+    "minimum_open_area_fraction_after_folds": 0.60,
+    "edge_thickness_ratio": 0.0008,
+    "fold_clearance_ratio": 0.002,
+    "radial_clearance_ratio": 0.006
+  },
+  "through_visibility": {
+    "sample_count": 64,
+    "minimum_central_fraction": 1.0,
+    "reject_immediate_wheel_skin_hit": true,
+    "allow_world_or_any_non_wheel_object": true
+  },
+  "counterfactual": {
+    "maximum_effect_area_ratio": 0.12,
+    "difference_threshold": 0.0235294118,
+    "dilation_pixels": 4
+  },
+  "render": {
+    "engine": "CYCLES",
+    "resolution_x": 800,
+    "resolution_y": 600,
+    "samples": 64,
+    "denoising": true,
+    "views": ["closeup", "oblique"]
+  },
+  "outputs": {
+    "normal": "normal.png",
+    "anomaly": "anomaly.png",
+    "damage_mask": "damage_mask.png",
+    "effect_mask": "effect_mask.png",
+    "difference": "difference.png",
+    "depth": "through_depth.png",
+    "report": "report.json",
+    "contact_sheet": "contact_sheet.png"
+  }
+}

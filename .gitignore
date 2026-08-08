@@ -27,3 +27,4 @@ assets/original/*
 
 # Blender audit runtime artifacts.
 logs/
+gdrive_kaggle_secrets.local.json

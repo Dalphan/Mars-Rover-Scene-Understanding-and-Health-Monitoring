@@ -15,10 +15,14 @@
     "radial_histogram_bins": 96,
     "minimum_radial_normal_alignment": 0.35,
     "radial_band_diameter_ratio": 0.035,
+    "minimum_component_radial_area_fraction": 0.55,
     "merge_tolerance_ratios": [1e-7, 1e-6, 1e-5, 1e-4],
     "shell_angular_segments": 192,
     "minimum_wall_thickness_ratio": 0.003,
-    "maximum_wall_thickness_ratio": 0.02
+    "maximum_wall_thickness_ratio": 0.02,
+    "hybrid_material_max_luminance": 0.025,
+    "detail_axial_margin_width_ratio": 0.02,
+    "minimum_outer_detail_radius_ratio": 0.72
   },
   "perforation": {
     "cutter_segments": 20,
@@ -28,15 +32,31 @@
     "angular_search_bins": 72,
     "mask_dilation_pixels": 4
   },
+  "perforation_library": {
+    "enabled": false,
+    "base_seed": 41000,
+    "variants": 12,
+    "minimum_open_area_fraction": 0.60,
+    "through_visibility_samples": 64,
+    "through_visibility_minimum": 1.0,
+    "edge_thickness_ratio": 0.0008,
+    "fold_clearance_ratio": 0.002
+  },
   "gates": {
     "minimum_silhouette_iou": 0.995,
     "maximum_bbox_relative_error": 0.001,
     "minimum_mask_ratio": 0.002,
     "maximum_mask_ratio": 0.05,
-    "maximum_outside_change_ratio": 0.01
+    "maximum_outside_change_ratio": 0.01,
+    "minimum_inside_change_ratio": 0.20,
+    "minimum_inside_mean_difference": 0.01
   },
   "diagnostics": {
     "pack_resources_in_blend": true
+  },
+  "context": {
+    "terrain_span_in_wheel_diameters": 30.0,
+    "terrain_contact_height_ratio": -0.49
   },
   "logging": {
     "level": "INFO"

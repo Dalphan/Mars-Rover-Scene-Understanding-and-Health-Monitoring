@@ -23,31 +23,433 @@
   "current_milestone": {
     "name": "canonical wheel and first perforation",
     "automatic_validator_passed": true,
-    "visual_qa_passed": false,
+    "visual_qa_passed": true,
     "dataset_ready": false,
-    "repair_strategy": "hybrid_parametric_shell",
-    "last_mask_to_wheel_ratio": 0.005656168804463
+    "repair_strategy": "textured_parametric_shell_with_original_visible_skin",
+    "last_mask_to_wheel_ratio": 0.006153034528052024,
+    "last_inside_change_ratio": 0.9833770778652668,
+    "last_mean_inside_difference": 0.26387732632316435,
+    "last_outside_change_ratio": 0.0,
+    "validated_file_count": 26,
+    "fixed_wheel_attachment": {
+      "object": "Wheel_Attachment",
+      "components": 7,
+      "faces": 71,
+      "rotates_with_wheel": false,
+      "included_in_normal_and_perforation": true
+    },
+    "verified_on": "2026-08-02"
   },
   "known_blockers": [
-    "Base-skin faces remain mixed into Wheel_Details and overlap the replacement shell.",
-    "The hybrid-shell material and fit are not visually acceptable yet.",
-    "The validator does not require a minimum RGB change inside the anomaly mask.",
-    "The generated blend files are not yet reopened and validated headlessly."
+    "Bulk dataset generation is intentionally blocked until one counterfactual broken/missing-grouser pair passes automatic and visual QA.",
+    "Individual grouser clusters have not yet been identified and approved with a contact sheet."
   ],
+  "perforation_library": {
+    "status": "full_m6_library_automatic_gates_passed_pending_visual_selection",
+    "configured_variant_count": 12,
+    "rendered_variant_count": 12,
+    "approved_pilot_variant": "perforation_02_axial_jagged_slit_medium",
+    "orientations": ["axial", "circumferential"],
+    "families": ["jagged_slit", "branched_tear", "peeled_window"],
+    "sizes": ["small", "medium"],
+    "through_visibility_gate": "12/12 variants pass; all 7 or 8 local eroded-profile rays clear both wheel surfaces",
+    "camera_background_gate": "84/84 central camera rays hit TerrainPatch_A after Boolean and folds",
+    "shared_low_wheel_center": [0.0579996, 0.1742993, 0.1562961],
+    "native_opening_clearance_gate": true,
+    "camera_clearance_channel_m": 0.004,
+    "review_fill_light": "shared 100 W, 4-degree warm spot with 5 mm source radius; no external hotspot",
+    "bulk_generation_enabled": false,
+    "source_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m6_feather.blend",
+    "library_blend": "outputs/rover_simulator/curiosity_middle_right/m6_irregular_perforation_library/rover_simulator_m6_irregular_perforation_library.blend",
+    "contact_sheet": "outputs/rover_simulator/curiosity_middle_right/m6_irregular_perforation_library/renders/contact_sheet_closeup.png",
+    "legacy_hole_removed": true,
+    "wheel_details_duplicated": false,
+    "config": "configs/blender/perforation_library.json",
+    "builder": "scripts/blender/build_perforation_library.py",
+    "host_launcher": "scripts/host/run_perforation_library.py",
+    "validator": "src/wheel_preparation/validation.py"
+  },
+  "simulator": {
+    "current_milestone": 1,
+    "name": "static rover hierarchy with visual-only replacement terrain preview",
+    "automatic_validator_passed": true,
+    "visual_qa_passed": false,
+    "visual_qa_scope": "M4 reverted by user; M5 lighting/render preserved; M6 feather pending visual approval",
+    "source_blend_unchanged": true,
+    "candidate_id": "wheel_candidate_05",
+    "probe_count": 4,
+    "terrain_mesh_count": 1,
+    "fixed_wheel_attachment_parented_to_rover_root": true,
+    "controller_enabled": false,
+    "collision_enabled": false,
+    "terrain_status": "m6_feather_built_from_m5_pending_visual_approval",
+    "terrain_preview": {
+      "object": "MartianTerrain",
+      "size_meters": [50.0, 50.0, 0.9],
+      "vertices": 261121,
+      "polygons": 260100,
+      "textures": ["Diffuse.png", "Normal.png", "roughness.png"],
+      "displacement_enabled": false,
+      "collision_enabled": false,
+      "lighting_note": "Dedicated solar lighting removed the central hotspot; normal-map shadows remain pending user decision."
+    },
+    "solar_lighting_preview": {
+      "status": "installed_pending_visual_approval",
+      "light_type": "SUN",
+      "energy": 3.5,
+      "altitude_degrees": 35.0,
+      "angle_degrees": 4.5,
+      "world_background_strength": 0.08,
+      "normal_map_adjusted": true,
+      "pair_scene_lighting_unchanged": true,
+      "visual_note": "The central hotspot is removed; follow-up normal-strength variants were rendered separately."
+    },
+    "normal_strength_comparison": {
+      "status": "selected",
+      "variants": [0.3, 0.15],
+      "saved_material_strength": 0.3,
+      "solar_energy": 3.5,
+      "visual_note": "Both variants remove nearly all black artifacts; 0.30 preserves more micro-relief while 0.15 is smoother."
+    },
+    "approved_visual_rover_pose": {
+      "position": [-18.0, -4.0, 0.342345397069699],
+      "yaw_degrees": 45.0,
+      "four_probe_height_delta_meters": 0.023901939392089844,
+      "mean_slope_degrees": 0.5308178072784638,
+      "collision_enabled": false,
+      "persistent_solver_enabled": false,
+      "status": "installed_pending_visual_approval"
+    },
+    "terrain_detail_pilot": {
+      "status": "multi_patch_material_built_pending_visual_approval",
+      "blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_detailed.blend",
+      "patches": [
+        {"patch_id": "TerrainPatch_A", "profile": "flat_sandy_contact", "seed": 4101, "center_world": [-17.9590, -3.9590], "rock_count": 48},
+        {"patch_id": "TerrainPatch_B", "profile": "rocky_flat", "seed": 4102, "center_world": [0.0, 10.0], "rock_count": 120},
+        {"patch_id": "TerrainPatch_C", "profile": "gentle_slope", "seed": 4103, "center_world": [8.0, -12.0], "rock_count": 60}
+      ],
+      "size_m": 3.0,
+      "grid_step_m": 0.02,
+      "displacement_enabled": true,
+      "material_mode": "procedural_internal_hybrid",
+      "terrain_noise_vector_connected": true,
+      "terrain_roughness_range": [0.88, 0.98],
+      "terrain_bump_multiscale_enabled": true,
+      "rock_materials_enabled": true,
+      "rock_micro_geometry_modifiers": ["SUBSURF_SIMPLE", "DISPLACE"],
+      "detail_scope": "wheel_closeup_patches_only",
+      "persistent_collision_enabled": false,
+      "shared_by_scenes": ["Simulator", "Normal", "Perforation"],
+      "solar_azimuth_degrees": 53.13,
+      "solar_direction_inverted": true,
+      "visual_approval": "pending_batch_review",
+      "visual_note": "A/B/C renders regenerated after connecting Generated coordinates to Mapping/Noise; Normal and Perforation remain pair-identical outside the wheel anomaly.",
+      "renders": [
+        "patch_A/B/C_overview.png",
+        "patch_A/B/C_zenith.png",
+        "patch_A/B/C_normal.png",
+        "patch_A/B/C_perforation.png"
+      ]
+    },
+    "terrain_detail_regolith_pilot_a": {
+      "status": "built_pending_visual_approval",
+      "source_blend_preserved": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_detailed.blend",
+      "backup_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_detailed_backup_before_regolith_pilotA.blend",
+      "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_regolith_pilotA.blend",
+      "scope": "TerrainPatch_A_only",
+      "material_noise_scales": [2.2, 18.0, 115.0],
+      "bump_strength": 0.28,
+      "gravel_count": 233,
+      "gravel_bands": ["fine_1.5-3.5mm", "medium_4-10mm", "coarse_12-26mm"],
+      "rock_family_count": 36,
+      "rock_families": ["angular", "flat", "rounded", "shard"],
+      "contact_dust_attribute": "ContactDust",
+      "contact_extra_depression_m": 0.0025,
+      "pair_context_unchanged": true,
+      "external_resources": [],
+      "renders": [
+        "regolith_pilotA_A_zenith.png",
+        "regolith_pilotA_A_normal.png",
+        "regolith_pilotA_A_perforation.png"
+      ],
+      "visual_approval": "pending_pilot_A_review"
+    },
+    "terrain_detail_regolith_all_patches": {
+      "status": "built_pending_visual_approval",
+      "source_blend_preserved": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_detailed.blend",
+      "backup_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_regolith_all_patches_backup_before_extension.blend",
+      "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_regolith_all_patches.blend",
+      "scope": "TerrainPatch_A,B,C",
+      "rock_minimum_radius_m": {
+        "TerrainPatch_A": 0.010,
+        "TerrainPatch_B": 0.014,
+        "TerrainPatch_C": 0.012
+      },
+      "patches": [
+        {"patch_id": "TerrainPatch_A", "rock_family_count": 36, "gravel_count": 233},
+        {"patch_id": "TerrainPatch_B", "rock_family_count": 64, "gravel_count": 284},
+        {"patch_id": "TerrainPatch_C", "rock_family_count": 48, "gravel_count": 233}
+      ],
+      "pair_context_unchanged": true,
+      "visual_approval": "pending_all_patches_review",
+      "renders": [
+        "regolith_all_A_normal.png",
+        "regolith_all_A_perforation.png",
+        "regolith_all_B_normal.png",
+        "regolith_all_B_perforation.png",
+        "regolith_all_C_normal.png",
+        "regolith_all_C_perforation.png"
+      ]
+    },
+    "terrain_detail_m1_camera_contact": {
+      "status": "approved",
+      "source_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_regolith_all_patches.blend",
+      "backup_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m1_camera_contact_backup.blend",
+      "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m1_camera_contact.blend",
+      "scope": "TerrainPatch_A_and_WheelCamera",
+      "rover_root_pose_synced": true,
+      "contact_margin_m": 0.004,
+      "contact_surface_z_m": 0.07759666442871094,
+      "wheel_lowest_z_m": 0.08159665763378143,
+      "contact_berm_object": "TerrainPatch_A_ContactBerm_M1",
+      "contact_berm_segments": 48,
+      "camera_lens_mm": 50.0,
+      "camera_target_offset_z_m": -0.08,
+      "pair_context_unchanged": true,
+      "lighting_changed": false,
+      "collision_solver_enabled": false,
+      "visual_approval": "approved",
+      "renders": [
+        "m1_approved_A_normal.png",
+        "m1_approved_A_perforation.png"
+      ],
+      "reports": [
+        "terrain_detail_m1_camera_contact.json",
+        "m1_camera_contact_simulator_reopen.json",
+        "m1_camera_contact_pair_reopen.json"
+      ]
+    },
+    "terrain_detail_m2_regolith": {
+      "status": "built_pending_visual_approval",
+      "source_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m1_camera_contact.blend",
+      "backup_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m2_regolith_backup.blend",
+      "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m2_regolith.blend",
+      "scope": "TerrainPatch_A,B,C materials",
+      "layers": ["macro_albedo", "meso_albedo", "micro_bump", "granular_roughness"],
+      "macro_scale": 1.35,
+      "meso_scale": 13.0,
+      "micro_scale": 88.0,
+      "granule_scale": 210.0,
+      "albedo_mix": 0.14,
+      "roughness_mix": 0.42,
+      "bump_strength": 0.34,
+      "bump_distance_m": 0.0012,
+      "roughness_range": [0.88, 0.99],
+      "pair_context_unchanged": true,
+      "camera_changed": false,
+      "lighting_changed": false,
+      "collision_enabled": false,
+      "external_resources": [],
+      "visual_approval": "pending_m2_review",
+      "renders": [
+        "m2_A_normal.png",
+        "m2_A_perforation.png",
+        "m2_A_zenith.png"
+      ],
+      "reports": [
+        "terrain_detail_m2_regolith.json",
+        "m2_regolith_simulator_reopen.json",
+        "m2_regolith_pair_reopen.json"
+      ]
+    },
+    "terrain_detail_m3_rock_library": {
+      "status": "built_pending_visual_approval",
+      "source_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m2_regolith.blend",
+      "backup_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m3_rock_library_backup.blend",
+      "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m3_rock_library.blend",
+      "scope": "TerrainPatch_A,B,C rocks",
+      "families": ["angular", "stratified", "rounded", "shard"],
+      "segments": 10,
+      "bevel_width_m": 0.0015,
+      "bevel_segments": 1,
+      "micro_displace_m": 0.0018,
+      "patches": [
+        {"patch_id": "TerrainPatch_A", "rock_count": 36, "vertex_count": 1512, "polygon_count": 1800, "distribution_preserved": true},
+        {"patch_id": "TerrainPatch_B", "rock_count": 64, "vertex_count": 2688, "polygon_count": 3200, "distribution_preserved": true},
+        {"patch_id": "TerrainPatch_C", "rock_count": 48, "vertex_count": 2016, "polygon_count": 2400, "distribution_preserved": true}
+      ],
+      "pair_context_unchanged": true,
+      "camera_changed": false,
+      "lighting_changed": false,
+      "collision_enabled": false,
+      "external_resources": [],
+      "visual_approval": "pending_m3_review",
+      "renders": [
+        "m3_A_normal.png",
+        "m3_A_perforation.png",
+        "m3_A_zenith.png"
+      ],
+      "reports": [
+        "terrain_detail_m3_rock_library.json",
+        "m3_rock_library_simulator_reopen.json",
+        "m3_rock_library_pair_reopen.json"
+      ]
+    },
+    "terrain_detail_m4_clustered_distribution": {
+      "status": "reverted_not_active",
+      "source_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m3_rock_library.blend",
+      "backup_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m4_clustered_distribution_backup.blend",
+      "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m4_clustered_distribution.blend",
+      "scope": "TerrainPatch_A,B,C rocks and gravel",
+      "cluster_radius_m": 0.30,
+      "cluster_min_distance_m": 0.46,
+      "background_fraction": 0.22,
+      "gravel_cluster_radius_m": 0.34,
+      "gravel_background_fraction": 0.28,
+      "cluster_counts": {
+        "TerrainPatch_A": 6,
+        "TerrainPatch_B": 8,
+        "TerrainPatch_C": 6
+      },
+      "patches": [
+        {"patch_id": "TerrainPatch_A", "rock_count": 36, "gravel_island_count": 233, "cluster_members": [4, 5, 4, 4, 5, 6]},
+        {"patch_id": "TerrainPatch_B", "rock_count": 64, "gravel_island_count": 284, "cluster_members": [6, 8, 4, 6, 6, 6, 8, 6]},
+        {"patch_id": "TerrainPatch_C", "rock_count": 48, "gravel_island_count": 233, "cluster_members": [8, 6, 7, 5, 7, 4]}
+      ],
+      "pair_context_unchanged": true,
+      "camera_changed": false,
+      "lighting_changed": false,
+      "collision_enabled": false,
+      "external_resources": [],
+      "visual_approval": "pending_m4_review",
+      "renders": [
+        "m4_A_normal.png",
+        "m4_A_perforation.png",
+        "m4_A_zenith.png"
+      ],
+      "reports": [
+        "terrain_detail_m4_clustered_distribution.json",
+        "m4_clustered_distribution_simulator_reopen.json",
+        "m4_clustered_distribution_pair_reopen.json"
+      ]
+    },
+    "terrain_detail_m5_lighting_render": {
+      "status": "built_pending_visual_approval",
+      "source_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m3_rock_library.blend",
+      "reverted_m4_reference": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m4_clustered_distribution.blend",
+      "reverted_m3_copy": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_reverted_to_m3.blend",
+      "backup_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m5_lighting_backup_m3.blend",
+      "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m5_lighting.blend",
+      "active_sun": "SimulatorSolarSun",
+      "sun_energy": 3.5,
+      "sun_angle_degrees": 6.0,
+      "sun_color": [1.0, 0.94, 0.88],
+      "world_strength": 0.09,
+      "world_color": [0.05, 0.038, 0.028, 1.0],
+      "exposure_ev": 0.0,
+      "view_transform": "AgX",
+      "look": "AgX - Medium High Contrast",
+      "cycles_samples": 64,
+      "resolution": [800, 600, 100],
+      "m4_active": false,
+      "pair_context_unchanged": true,
+      "camera_changed": false,
+      "terrain_material_changed": false,
+      "collision_enabled": false,
+      "external_resources": [],
+      "visual_approval": "pending_m5_review",
+      "renders": [
+        "m5_A_normal.png",
+        "m5_A_perforation.png",
+        "m5_A_zenith.png"
+      ],
+      "reports": [
+        "terrain_detail_m5_lighting_render.json",
+        "m5_lighting_render_simulator_reopen.json",
+        "m5_lighting_render_pair_reopen.json"
+      ]
+    },
+    "terrain_detail_m6_feather": {
+      "status": "built_pending_visual_approval",
+      "source_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m5_lighting.blend",
+      "backup_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m6_feather_backup.blend",
+      "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m6_feather.blend",
+      "patches": ["TerrainPatch_A", "TerrainPatch_B", "TerrainPatch_C"],
+      "feather_width_m": 0.35,
+      "feather_channels": ["color", "roughness", "bump"],
+      "gravel_density_fade": true,
+      "gravel_keep_floor": 0.2,
+      "gravel_scale_floor": 0.55,
+      "displacement_fade": true,
+      "fallback_plane_for_source_holes": true,
+      "pair_context_unchanged": true,
+      "camera_changed": false,
+      "lighting_changed": false,
+      "collision_enabled": false,
+      "visual_approval": "pending_m6_review",
+      "renders": ["m6_A_normal.png", "m6_A_perforation.png", "m6_A_zenith.png"],
+      "reports": ["terrain_detail_m6_feather.json", "m6_feather_simulator_reopen.json", "m6_feather_pair_reopen.json"]
+    },
+    "mars_clear_day_lighting": {
+      "status": "annotation_1_preset_restored",
+        "sun_strength_watts_per_square_meter": 3.5,
+      "sun_angle_degrees": 4.5,
+      "sun_color": [1.0, 0.88, 0.75],
+      "elevation_degrees": 70.0,
+      "azimuth_degrees": 233.13,
+        "world_strength": 0.08,
+      "view_transform": "AgX",
+      "look": "AgX - Medium High Contrast",
+        "exposure_ev": 0.0,
+      "terrain_emission_strength": 0.0,
+      "shared_by_scenes": ["Simulator", "Normal", "Perforation"],
+      "visual_note": "Restored Annotation 1's simulator-only preview: original terrain diffuse/roughness, normal strength 0.30, warm Sun energy 3.5 at 70-degree elevation, World strength 0.08, and 0 EV exposure."
+    },
+    "shared_terrain_pair_context": {
+      "status": "validated",
+      "terrain_object": "MartianTerrain",
+      "terrain_datablock_shared": true,
+      "material_datablock_shared": true,
+      "world_shared": true,
+      "sun_collection_shared": true,
+      "exposure_identical": true,
+      "normal_strength": 0.25,
+      "roughness_range": [0.9, 0.95],
+      "terrain_base_color": "original Diffuse image",
+      "emission_strength": 0.0
+    },
+    "diagnostic_pose_count": 0,
+    "archived_render_note": "Existing rover PNGs are retained as visual references; the approved M1 camera/contact copy is the current working blend.",
+    "baseline_output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator.blend",
+    "output_blend": "outputs/rover_simulator/curiosity_middle_right/diagnostics/rover_simulator_m6_feather.blend",
+    "verified_on": "2026-08-05",
+    "next_milestone": "approve M6 feather visually, then run final QA before any bulk dataset generation"
+  },
   "next_actions": [
-    "Add face-level cylindrical skin selection and remove every base-skin face from Wheel_Details.",
-    "Refit and darken the texture-free hybrid shell while preserving original hub and grousers.",
-    "Add inside-mask RGB difference gates and unit tests.",
-    "Reopen both blend outputs headlessly and validate scene invariants.",
-    "Rerun on the real GLB and require both validator success and manual visual QA.",
-    "Only then start individual grouser clustering and breakage."
+    "Review the labeled M6 contact sheet and select which of the 12 perforation profiles to retain; do not enable bulk generation yet.",
+    "Cluster individual grousers cylindrically and render a labeled contact sheet.",
+    "Select one approved grouser without changing wheel_candidate_05.",
+    "Create the first removed/broken-grouser counterfactual pair.",
+    "Apply the existing mask-area, inside-change, outside-change, reopen, and visual-QA gates.",
+    "Use the integrated full-rover/Mars-terrain context for visual QA, then add parameterized domain randomization only after the grouser pair passes."
   ],
   "entrypoints": {
     "audit_blender": "scripts/blender/audit_asset.py",
     "audit_host": "scripts/host/run_blender_audit.py",
     "prepare_blender": "scripts/blender/prepare_wheel.py",
     "prepare_host": "scripts/host/run_wheel_preparation.py",
-    "prepare_validator": "scripts/host/validate_wheel_preparation.py"
+    "prepare_validator": "scripts/host/validate_wheel_preparation.py",
+    "perforation_library_builder": "scripts/blender/build_perforation_library.py",
+    "perforation_library_host": "scripts/host/run_perforation_library.py",
+    "blend_reopen_validator": "scripts/blender/validate_wheel_blend.py",
+    "detail_component_renderer": "scripts/blender/render_detail_components.py",
+    "regolith_m2_builder": "scripts/blender/build_regolith_m2.py",
+    "rock_library_m3_builder": "scripts/blender/build_rock_library_m3.py",
+    "rock_distribution_m4_builder": "scripts/blender/build_rock_distribution_m4.py",
+    "lighting_render_m5_builder": "scripts/blender/tune_lighting_render_m5.py",
+    "feather_m6_builder": "scripts/blender/apply_feather_m6.py",
+    "simulator_builder": "scripts/host/build_rover_simulator.py",
+    "simulator_reopen_validator": "scripts/blender/validate_rover_simulator.py"
   },
   "documentation": "docs/handoff/blender_anomaly_detection.md"
 }

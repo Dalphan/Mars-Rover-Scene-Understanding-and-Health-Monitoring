@@ -28,6 +28,8 @@ from src.wheel_preparation.core import (
     canonical_axis_from_candidates,
     find_candidate,
     make_markdown_report,
+    select_cylindrical_skin_faces,
+    select_detail_components_within_wheel_envelope,
     select_merge_result,
     sha256_file,
     validate_audit_compatibility,
@@ -51,10 +53,14 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "radial_histogram_bins": 96,
         "minimum_radial_normal_alignment": 0.35,
         "radial_band_diameter_ratio": 0.035,
+        "minimum_component_radial_area_fraction": 0.55,
         "merge_tolerance_ratios": [1e-7, 1e-6, 1e-5, 1e-4],
         "shell_angular_segments": 192,
         "minimum_wall_thickness_ratio": 0.003,
         "maximum_wall_thickness_ratio": 0.02,
+        "hybrid_material_max_luminance": 0.025,
+        "detail_axial_margin_width_ratio": 0.02,
+        "minimum_outer_detail_radius_ratio": 0.72,
     },
     "perforation": {
         "cutter_segments": 20,
@@ -64,14 +70,30 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "angular_search_bins": 72,
         "mask_dilation_pixels": 4,
     },
+    "perforation_library": {
+        "enabled": False,
+        "base_seed": 41000,
+        "variants": 12,
+        "minimum_open_area_fraction": 0.60,
+        "through_visibility_samples": 64,
+        "through_visibility_minimum": 1.0,
+        "edge_thickness_ratio": 0.0008,
+        "fold_clearance_ratio": 0.002,
+    },
     "gates": {
         "minimum_silhouette_iou": 0.995,
         "maximum_bbox_relative_error": 0.001,
         "minimum_mask_ratio": 0.002,
         "maximum_mask_ratio": 0.05,
         "maximum_outside_change_ratio": 0.01,
+        "minimum_inside_change_ratio": 0.20,
+        "minimum_inside_mean_difference": 0.01,
     },
     "diagnostics": {"pack_resources_in_blend": True},
+    "context": {
+        "terrain_span_in_wheel_diameters": 30.0,
+        "terrain_contact_height_ratio": -0.49,
+    },
     "logging": {"level": "INFO"},
 }
 
@@ -89,6 +111,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--asset", required=True, type=Path)
     parser.add_argument("--audit-report", required=True, type=Path)
+    parser.add_argument("--terrain", required=True, type=Path)
     parser.add_argument("--candidate-id", default="wheel_candidate_05")
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--config", type=Path)
@@ -102,6 +125,7 @@ def create_output_tree(root: Path) -> dict[str, Path]:
         "diagnostics": root / "diagnostics",
         "extraction": root / "renders" / "extraction",
         "topology": root / "renders" / "topology",
+        "separation": root / "renders" / "separation",
         "perforation": root / "renders" / "perforation",
         "logs": root / "logs",
     }
@@ -301,6 +325,14 @@ def import_glb(asset: Path) -> list[bpy.types.Object]:
     return imported
 
 
+def import_gltf_scene(asset: Path) -> list[bpy.types.Object]:
+    before = set(bpy.data.objects)
+    result = bpy.ops.import_scene.gltf(filepath=str(asset))
+    if "FINISHED" not in result:
+        raise RuntimeError(f"Terrain glTF import failed: {result}")
+    return [obj for obj in bpy.data.objects if obj not in before]
+
+
 def available_render_engines(scene: bpy.types.Scene) -> list[str]:
     engines: set[str] = set()
     try:
@@ -416,7 +448,7 @@ def make_rig(
     scene.camera = camera
 
     area_data = bpy.data.lights.new("KeyArea", "AREA")
-    area_data.energy = 650.0
+    area_data.energy = 300.0
     area_data.shape = "DISK"
     area_data.size = max(diameter * 1.8, 0.1)
     area = bpy.data.objects.new("KeyArea", area_data)
@@ -425,7 +457,7 @@ def make_rig(
     look_at(area, Vector((0.0, 0.0, 0.0)))
 
     sun_data = bpy.data.lights.new("FillSun", "SUN")
-    sun_data.energy = 2.0
+    sun_data.energy = 0.8
     sun_data.angle = math.radians(18.0)
     sun = bpy.data.objects.new("FillSun", sun_data)
     sun.rotation_euler = (math.radians(25), math.radians(-20), math.radians(-35))
@@ -489,7 +521,8 @@ def create_emission_material(name: str, color: Sequence[float]) -> bpy.types.Mat
 
 def derive_hybrid_skin_material(
     source: bpy.types.Material | None,
-) -> bpy.types.Material:
+    config: Mapping[str, Any],
+) -> tuple[bpy.types.Material, dict[str, Any]]:
     """Create a stable metal material derived from the NASA wheel material.
 
     The GLB wheel texture is an atlas and cannot be remapped cylindrically
@@ -527,12 +560,22 @@ def derive_hybrid_skin_material(
             if samples:
                 break
     if samples:
-        color = tuple(
+        sampled_color = tuple(
             min(0.42, max(0.10, sum(sample[channel] for sample in samples) / len(samples)))
             for channel in range(3)
         )
     else:
-        color = (0.22, 0.20, 0.18)
+        sampled_color = (0.22, 0.20, 0.18)
+    luminance = (
+        sampled_color[0] * 0.2126
+        + sampled_color[1] * 0.7152
+        + sampled_color[2] * 0.0722
+    )
+    maximum_luminance = float(
+        config["skin"].get("hybrid_material_max_luminance", 0.18)
+    )
+    scale = min(1.0, maximum_luminance / max(luminance, 1e-12))
+    color = tuple(min(0.20, max(0.015, channel * scale)) for channel in sampled_color)
 
     material = bpy.data.materials.new("Wheel_Skin_Hybrid_Material")
     if material.node_tree is None:
@@ -543,12 +586,26 @@ def derive_hybrid_skin_material(
     output = nodes.new("ShaderNodeOutputMaterial")
     principled = nodes.new("ShaderNodeBsdfPrincipled")
     principled.inputs["Base Color"].default_value = (*color, 1.0)
-    principled.inputs["Metallic"].default_value = 0.68
-    principled.inputs["Roughness"].default_value = 0.38
+    principled.inputs["Metallic"].default_value = 0.55
+    principled.inputs["Roughness"].default_value = 0.48
     links.new(principled.outputs["BSDF"], output.inputs["Surface"])
     material["derived_from"] = source.name if source is not None else "fallback"
-    material["derivation"] = "sampled average color; texture atlas intentionally disconnected"
-    return material
+    material["derivation"] = (
+        "sampled atlas average, luminance-capped; texture atlas intentionally disconnected"
+    )
+    metadata = {
+        "source_material": source.name if source is not None else None,
+        "derivation": str(material["derivation"]),
+        "sample_count": len(samples),
+        "sampled_base_color_linear": [float(value) for value in sampled_color],
+        "final_base_color_linear": [float(value) for value in color],
+        "sampled_luminance": luminance,
+        "maximum_luminance": maximum_luminance,
+        "metallic": 0.55,
+        "roughness": 0.48,
+        "texture_atlas_connected": False,
+    }
+    return material, metadata
 
 
 def image_pixels(path: Path) -> tuple[int, int, list[float]]:
@@ -609,7 +666,7 @@ def extract_candidate(
     source_obj: bpy.types.Object,
     selected_vertices: set[int],
     canonical_matrix: Matrix,
-) -> bpy.types.Object:
+) -> tuple[bpy.types.Object, bpy.types.Object]:
     """Separate selected vertices from a full duplicate using Blender/BMesh data."""
 
     scene = bpy.context.scene
@@ -667,8 +724,133 @@ def extract_candidate(
     extracted.data.transform(canonical_matrix)
     extracted.matrix_world = Matrix.Identity(4)
     extracted.data.update(calc_edges=True)
-    bpy.data.objects.remove(remainder, do_unlink=True)
-    return extracted
+    remainder.name = "Rover_Without_Selected_Wheel"
+    remainder.data.name = "Rover_Without_Selected_Wheel_Mesh"
+    remainder.data.transform(canonical_matrix)
+    remainder.matrix_world = Matrix.Identity(4)
+    remainder.data.update(calc_edges=True)
+    return extracted, remainder
+
+
+def transfer_original_wheel_appearance(
+    target: bpy.types.Object,
+    source_skin: bpy.types.Object,
+) -> dict[str, Any]:
+    """Project the original wheel atlas UVs onto the watertight replacement shell."""
+
+    if not source_skin.data.uv_layers:
+        raise RuntimeError("Original wheel skin has no UV map to transfer")
+    source_uv = source_skin.data.uv_layers.active or source_skin.data.uv_layers[0]
+    source_skin.data.uv_layers.active = source_uv
+    source_uv.active_render = True
+
+    material_areas: Counter[int] = Counter()
+    for polygon in source_skin.data.polygons:
+        material_areas[int(polygon.material_index)] += float(polygon.area)
+    material_index = material_areas.most_common(1)[0][0]
+    if material_index >= len(source_skin.data.materials):
+        raise RuntimeError("Dominant original wheel material slot is missing")
+    material = source_skin.data.materials[material_index]
+    if material is None:
+        raise RuntimeError("Dominant original wheel material is empty")
+
+    target.data.materials.clear()
+    target.data.materials.append(material)
+    for polygon in target.data.polygons:
+        polygon.material_index = 0
+    while target.data.uv_layers:
+        target.data.uv_layers.remove(target.data.uv_layers[0])
+    target_uv = target.data.uv_layers.new(name=source_uv.name)
+    target.data.uv_layers.active = target_uv
+    target_uv.active_render = True
+
+    modifier = target.modifiers.new("Transfer_Original_Wheel_UV", "DATA_TRANSFER")
+    modifier.object = source_skin
+    modifier.use_loop_data = True
+    modifier.data_types_loops = {"UV"}
+    modifier.loop_mapping = "POLYINTERP_NEAREST"
+    for obj in bpy.context.selected_objects:
+        obj.select_set(False)
+    target.select_set(True)
+    bpy.context.view_layer.objects.active = target
+    result = bpy.ops.object.modifier_apply(modifier=modifier.name)
+    if "FINISHED" not in result or not target.data.uv_layers:
+        raise RuntimeError(f"Original wheel UV transfer failed: {result}")
+    transferred_uv = target.data.uv_layers.active or target.data.uv_layers[0]
+    transferred_uv.name = source_uv.name
+    transferred_uv.active_render = True
+    return {
+        "strategy": "nearest-surface loop interpolation from original wheel skin",
+        "source_uv_layer": source_uv.name,
+        "target_uv_layer": transferred_uv.name,
+        "material": material.name,
+        "source_material_slot": material_index,
+    }
+
+
+def place_terrain_context(
+    terrain_objects: Sequence[bpy.types.Object],
+    diameter: float,
+    config: Mapping[str, Any],
+) -> dict[str, Any]:
+    meshes = [obj for obj in terrain_objects if obj.type == "MESH"]
+    if not meshes:
+        raise RuntimeError("Imported terrain contains no mesh objects")
+    points = [obj.matrix_world @ Vector(corner) for obj in meshes for corner in obj.bound_box]
+    minimum = Vector(tuple(min(point[i] for point in points) for i in range(3)))
+    maximum = Vector(tuple(max(point[i] for point in points) for i in range(3)))
+    dimensions = maximum - minimum
+    horizontal_span = max(float(dimensions.x), float(dimensions.y))
+    if horizontal_span <= 0.0:
+        raise RuntimeError("Imported terrain has zero horizontal extent")
+    desired_span = diameter * float(config["context"]["terrain_span_in_wheel_diameters"])
+    scale = desired_span / horizontal_span
+    center = (minimum + maximum) * 0.5
+    contact_z = diameter * float(config["context"]["terrain_contact_height_ratio"])
+    translation = Vector((-center.x * scale, -center.y * scale, contact_z - maximum.z * scale))
+    transform = Matrix.Translation(translation) @ Matrix.Scale(scale, 4)
+    terrain_set = set(terrain_objects)
+    roots = [obj for obj in terrain_objects if obj.parent not in terrain_set]
+    for obj in roots:
+        obj.matrix_world = transform @ obj.matrix_world
+    adjusted_materials: set[bpy.types.Material] = set()
+    for obj in terrain_objects:
+        obj["role"] = "mars_terrain_context"
+        if obj.type == "MESH":
+            for material in obj.data.materials:
+                if (
+                    material is None
+                    or material.node_tree is None
+                    or material in adjusted_materials
+                ):
+                    continue
+                adjusted_materials.add(material)
+                for node in material.node_tree.nodes:
+                    if node.type != "BSDF_PRINCIPLED":
+                        continue
+                    base = node.inputs.get("Base Color")
+                    if base is not None and base.is_linked:
+                        source_socket = base.links[0].from_socket
+                        material.node_tree.links.remove(base.links[0])
+                        tint = material.node_tree.nodes.new("ShaderNodeMixRGB")
+                        tint.name = "Mars_Terrain_Tint"
+                        tint.blend_type = "MULTIPLY"
+                        tint.inputs[0].default_value = 1.0
+                        tint.inputs[2].default_value = (0.62, 0.16, 0.055, 1.0)
+                        material.node_tree.links.new(source_socket, tint.inputs[1])
+                        material.node_tree.links.new(tint.outputs[0], base)
+                    elif base is not None:
+                        base.default_value = (0.32, 0.075, 0.025, 1.0)
+                    roughness = node.inputs.get("Roughness")
+                    if roughness is not None and not roughness.is_linked:
+                        roughness.default_value = 0.88
+    return {
+        "mesh_count": len(meshes),
+        "root_object_count": len(roots),
+        "uniform_scale": scale,
+        "desired_span": desired_span,
+        "contact_z": contact_z,
+    }
 
 
 def copy_faces(
@@ -783,6 +965,13 @@ def classify_skin_faces(
     for polygon in mesh.polygons:
         center = face_center(mesh, polygon)
         radius = math.hypot(float(center.y), float(center.z))
+        vertex_radii = [
+            math.hypot(
+                float(mesh.vertices[int(vertex_index)].co.y),
+                float(mesh.vertices[int(vertex_index)].co.z),
+            )
+            for vertex_index in polygon.vertices
+        ]
         radial = Vector((0.0, center.y, center.z))
         alignment = (
             abs(float(polygon.normal.dot(radial.normalized())))
@@ -793,6 +982,8 @@ def classify_skin_faces(
             "radius": radius,
             "alignment": alignment,
             "area": float(polygon.area),
+            "vertex_radius_min": min(vertex_radii),
+            "vertex_radius_max": max(vertex_radii),
         }
         radius_fraction = radius / max(maximum_radius, 1e-12)
         if 0.68 <= radius_fraction <= 0.985 and alignment >= minimum_alignment:
@@ -804,54 +995,47 @@ def classify_skin_faces(
     base_radius = (peak_index + 0.5) / bins * maximum_radius
     band = float(config["skin"]["radial_band_diameter_ratio"]) * diameter
     lower_radius = base_radius - band * 0.75
-    upper_radius = base_radius + band * 0.20
+    upper_radius = base_radius + band * 0.45
 
-    component_scores: dict[int, dict[str, float]] = {}
-    skin_components: set[int] = set()
-    for component_index, face_indices in enumerate(data["faces"]):
-        if not face_indices:
-            continue
-        total_area = sum(face_descriptors[index]["area"] for index in face_indices)
-        radial_area = sum(
-            face_descriptors[index]["area"]
-            for index in face_indices
-            if lower_radius <= face_descriptors[index]["radius"] <= upper_radius
-            and face_descriptors[index]["alignment"] >= minimum_alignment
-        )
-        mean_radius = sum(
-            face_descriptors[index]["radius"]
-            * face_descriptors[index]["area"]
-            for index in face_indices
-        ) / max(total_area, 1e-12)
-        radial_fraction = radial_area / max(total_area, 1e-12)
-        component_scores[component_index] = {
-            "total_area": total_area,
-            "radial_area_fraction": radial_fraction,
-            "mean_radius": mean_radius,
-        }
-        if (
-            radial_fraction >= 0.20
-            and lower_radius <= mean_radius <= base_radius + band * 0.45
-        ):
-            skin_components.add(component_index)
-
-    skin_faces = {
-        face_index
-        for component_index in skin_components
-        for face_index in data["faces"][component_index]
-    }
+    selection = select_cylindrical_skin_faces(
+        face_descriptors,
+        data["faces"],
+        lower_radius=lower_radius,
+        base_radius=base_radius,
+        upper_radius=upper_radius,
+        minimum_alignment=minimum_alignment,
+        minimum_component_radial_area_fraction=float(
+            config["skin"].get("minimum_component_radial_area_fraction", 0.55)
+        ),
+    )
+    skin_faces = set(selection["skin_face_indices"])
+    skin_components = set(selection["skin_component_indices"])
+    face_band_faces = set(selection["face_band_selected_face_indices"])
+    component_faces = set(selection["component_selected_face_indices"])
     if not skin_faces:
         raise RuntimeError("Skin classifier selected no faces")
-    skin_vertices = {
+    fit_faces = face_band_faces
+    if not fit_faces:
+        raise RuntimeError("Skin classifier found no radial base faces for shell fit")
+    fit_vertices = {
         int(vertex_index)
-        for face_index in skin_faces
+        for face_index in fit_faces
         for vertex_index in mesh.polygons[face_index].vertices
     }
-    axial_values = [float(mesh.vertices[index].co.x) for index in skin_vertices]
+    fit_vertex_radii = [
+        math.hypot(
+            float(mesh.vertices[index].co.y),
+            float(mesh.vertices[index].co.z),
+        )
+        for index in fit_vertices
+    ]
+    fitted_base_radius = percentile(fit_vertex_radii, 0.50)
+    axial_values = [float(mesh.vertices[index].co.x) for index in fit_vertices]
     return {
         "skin_face_indices": skin_faces,
         "skin_component_indices": skin_components,
-        "base_radius": base_radius,
+        "histogram_base_radius": base_radius,
+        "base_radius": fitted_base_radius,
         "maximum_radius": maximum_radius,
         "diameter": diameter,
         "lower_radius": lower_radius,
@@ -860,10 +1044,101 @@ def classify_skin_faces(
         "axial_max": percentile(axial_values, 0.99),
         "skin_face_count": len(skin_faces),
         "skin_component_count": len(skin_components),
+        "component_selected_face_count": len(component_faces),
+        "face_band_selected_face_count": len(face_band_faces),
+        "selection_overlap_face_count": len(
+            selection["selection_overlap_face_indices"]
+        ),
+        "fit_face_count": len(fit_faces),
+        "fit_vertex_count": len(fit_vertices),
+        "fit_vertex_radius_p10": percentile(fit_vertex_radii, 0.10),
+        "fit_vertex_radius_p50": percentile(fit_vertex_radii, 0.50),
+        "fit_vertex_radius_p90": percentile(fit_vertex_radii, 0.90),
+        "radius_fit_method": (
+            "median vertex radius of face-level radial base selection"
+        ),
         "detail_face_count": len(mesh.polygons) - len(skin_faces),
         "histogram_peak_index": peak_index,
-        "component_scores": component_scores,
+        "component_scores": selection["component_scores"],
     }
+
+
+def filter_detail_faces_to_wheel_envelope(
+    obj: bpy.types.Object,
+    detail_faces: set[int],
+    skin_analysis: Mapping[str, Any],
+    config: Mapping[str, Any],
+) -> tuple[set[int], set[int], dict[str, Any]]:
+    mesh = obj.data
+    data = component_data(mesh)
+    descriptors: list[dict[str, Any]] = []
+    faces_by_component: dict[int, set[int]] = {}
+    for component_index, component_face_indices in enumerate(data["faces"]):
+        faces = {int(index) for index in component_face_indices} & detail_faces
+        if not faces:
+            continue
+        vertices = {
+            int(vertex_index)
+            for face_index in faces
+            for vertex_index in mesh.polygons[face_index].vertices
+        }
+        coordinates = [mesh.vertices[index].co for index in vertices]
+        radii = [math.hypot(float(point.y), float(point.z)) for point in coordinates]
+        descriptors.append(
+            {
+                "index": component_index,
+                "face_count": len(faces),
+                "vertex_count": len(vertices),
+                "axial_min": min(float(point.x) for point in coordinates),
+                "axial_max": max(float(point.x) for point in coordinates),
+                "axial_mean": sum(float(point.x) for point in coordinates)
+                / len(coordinates),
+                "radial_min": min(radii),
+                "radial_max": max(radii),
+            }
+        )
+        faces_by_component[component_index] = faces
+    selection = select_detail_components_within_wheel_envelope(
+        descriptors,
+        axial_min=float(skin_analysis["axial_min"]),
+        axial_max=float(skin_analysis["axial_max"]),
+        outer_radius=float(skin_analysis["base_radius"]),
+        axial_margin_width_ratio=float(
+            config["skin"].get("detail_axial_margin_width_ratio", 0.02)
+        ),
+        outer_detail_radius_ratio=float(
+            config["skin"].get("minimum_outer_detail_radius_ratio", 0.72)
+        ),
+    )
+    rejected_components = set(selection["rejected_component_indices"])
+    rejected_faces = {
+        face
+        for component_index in rejected_components
+        for face in faces_by_component[component_index]
+    }
+    kept_faces = detail_faces - rejected_faces
+    report = {
+        "input_face_count": len(detail_faces),
+        "output_face_count": len(kept_faces),
+        "attachment_face_count": len(rejected_faces),
+        "input_component_count": len(descriptors),
+        "attachment_component_count": len(rejected_components),
+        "attachment_component_indices": sorted(rejected_components),
+        "attachment_components": [
+            descriptor
+            for descriptor in descriptors
+            if int(descriptor["index"]) in rejected_components
+        ],
+        "axial_margin": float(selection["axial_margin"]),
+        "outer_detail_radius_threshold": float(
+            selection["outer_detail_radius_threshold"]
+        ),
+        "method": (
+            "separate components outside the rotating wheel envelope and preserve "
+            "them as the fixed inboard wheel attachment"
+        ),
+    }
+    return kept_faces, rejected_faces, report
 
 
 def merge_sweep(
@@ -1077,16 +1352,19 @@ def create_cutter(
             )
             vertices.append(tuple(float(value) for value in point))
     faces: list[tuple[int, ...]] = []
-    faces.append(tuple(reversed(range(segments))))
-    faces.append(tuple(range(segments, segments * 2)))
+    # The ring basis is (axial, tangent), whose positive winding points toward
+    # -radial. Keep the near cap in that order, reverse the far cap, and wind
+    # the walls consistently outward so Boolean Difference sees a solid volume.
+    faces.append(tuple(range(segments)))
+    faces.append(tuple(reversed(range(segments, segments * 2))))
     for index in range(segments):
         next_index = (index + 1) % segments
         faces.append(
             (
                 index,
-                next_index,
-                segments + next_index,
                 segments + index,
+                segments + next_index,
+                next_index,
             )
         )
     mesh = bpy.data.meshes.new(f"{name}_Mesh")
@@ -1195,16 +1473,21 @@ def create_pair_scenes(
     rig_collection: bpy.types.Collection,
     normal_objects: Sequence[bpy.types.Object],
     anomaly_objects: Sequence[bpy.types.Object],
+    context_objects: Sequence[bpy.types.Object],
     camera: bpy.types.Object,
 ) -> dict[str, bpy.types.Scene]:
     normal_collection = bpy.data.collections.new("PAIR_NORMAL")
     anomaly_collection = bpy.data.collections.new("PAIR_ANOMALY")
+    context_collection = bpy.data.collections.new("PAIR_CONTEXT")
     for obj in normal_objects:
         if obj.name not in normal_collection.objects:
             normal_collection.objects.link(obj)
     for obj in anomaly_objects:
         if obj.name not in anomaly_collection.objects:
             anomaly_collection.objects.link(obj)
+    for obj in context_objects:
+        if obj.name not in context_collection.objects:
+            context_collection.objects.link(obj)
 
     normal_scene = bpy.data.scenes.get("Normal")
     if normal_scene is None:
@@ -1219,10 +1502,59 @@ def create_pair_scenes(
         for collection in list(scene.collection.children):
             scene.collection.children.unlink(collection)
         scene.collection.children.link(rig_collection)
+        scene.collection.children.link(context_collection)
         scene.collection.children.link(variant)
         scene.camera = camera
         configure_scene(scene, config, engine="BLENDER_EEVEE")
     return {"normal": normal_scene, "perforation": anomaly_scene}
+
+
+def lock_counterfactual_to_mask(
+    normal_path: Path,
+    anomaly_path: Path,
+    mask_path: Path,
+    dilation_pixels: int,
+) -> None:
+    """Keep anomaly pixels only near the mask, eliminating boolean normal drift."""
+
+    width, height, normal = image_pixels(normal_path)
+    width_a, height_a, anomaly = image_pixels(anomaly_path)
+    width_m, height_m, mask = image_pixels(mask_path)
+    if len({(width, height), (width_a, height_a), (width_m, height_m)}) != 1:
+        raise RuntimeError("Counterfactual lock image dimensions differ")
+    flags = bytearray(
+        int(max(mask[index * 4 : index * 4 + 3]) > 0.5)
+        for index in range(width * height)
+    )
+    dilated = bytearray(flags)
+    radius = max(0, int(dilation_pixels))
+    for index, active in enumerate(flags):
+        if not active:
+            continue
+        y, x = divmod(index, width)
+        for dy in range(-radius, radius + 1):
+            yy = y + dy
+            if not 0 <= yy < height:
+                continue
+            span = int(math.sqrt(max(0, radius * radius - dy * dy)))
+            left = max(0, x - span)
+            right = min(width - 1, x + span)
+            row = yy * width
+            for xx in range(left, right + 1):
+                dilated[row + xx] = 1
+    output = list(anomaly)
+    for index, active in enumerate(dilated):
+        if not active:
+            offset = index * 4
+            output[offset : offset + 4] = normal[offset : offset + 4]
+    image = bpy.data.images.new(
+        "LockedCounterfactual", width=width, height=height, alpha=True
+    )
+    image.pixels.foreach_set(output)
+    image.filepath_raw = str(anomaly_path)
+    image.file_format = "PNG"
+    image.save()
+    bpy.data.images.remove(image)
 
 
 def write_difference_and_metrics(
@@ -1278,12 +1610,23 @@ def write_difference_and_metrics(
         for mask_value, wheel_value in zip(mask_flags, wheel_flags)
         if mask_value and wheel_value
     )
+    difference_threshold = 2.0 / 255.0
+    inside_differences = [
+        difference
+        for difference, mask_value, wheel_value in zip(
+            differences, mask_flags, wheel_flags
+        )
+        if mask_value and wheel_value
+    ]
+    changed_inside = sum(
+        1 for difference in inside_differences if difference > difference_threshold
+    )
     changed_outside = sum(
         1
         for difference, excluded, wheel_value in zip(
             differences, dilated, wheel_flags
         )
-        if wheel_value and not excluded and difference > (2.0 / 255.0)
+        if wheel_value and not excluded and difference > difference_threshold
     )
     image = bpy.data.images.new(
         "CounterfactualDifference", width=width, height=height, alpha=True
@@ -1302,12 +1645,37 @@ def write_difference_and_metrics(
         "wheel_visible_pixels": wheel_pixels,
         "mask_visible_pixels": mask_pixels,
         "area_ratio": mask_pixels / wheel_pixels if wheel_pixels else 0.0,
+        "changed_inside_mask_pixels": changed_inside,
+        "inside_change_ratio": (
+            changed_inside / mask_pixels if mask_pixels else 0.0
+        ),
+        "mask_difference_intersection_ratio": (
+            changed_inside / mask_pixels if mask_pixels else 0.0
+        ),
+        "minimum_inside_difference": (
+            min(inside_differences) if inside_differences else 0.0
+        ),
+        "p10_inside_difference": (
+            percentile(inside_differences, 0.10) if inside_differences else 0.0
+        ),
+        "mean_inside_difference": (
+            sum(inside_differences) / len(inside_differences)
+            if inside_differences
+            else 0.0
+        ),
+        "maximum_inside_difference": (
+            max(inside_differences) if inside_differences else 0.0
+        ),
+        "maximum_image_difference": max(differences, default=0.0),
+        "images_identical": not any(
+            difference > difference_threshold for difference in differences
+        ),
         "dilation_pixels": radius,
         "changed_outside_mask_pixels": changed_outside,
         "outside_change_ratio": (
             changed_outside / wheel_pixels if wheel_pixels else 1.0
         ),
-        "difference_threshold": 2.0 / 255.0,
+        "difference_threshold": difference_threshold,
     }
 
 
@@ -1417,6 +1785,54 @@ def render_extraction_diagnostics(
     )
 
 
+def render_separation_diagnostics(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+    skin: bpy.types.Object,
+    details: bpy.types.Object,
+    attachment: bpy.types.Object,
+    diameter: float,
+    paths: Mapping[str, Path],
+    config: Mapping[str, Any],
+) -> list[str]:
+    """Render rotating wheel geometry and its fixed attachment."""
+
+    configure_scene(scene, config, engine="BLENDER_EEVEE")
+    position_camera(
+        camera,
+        (0.82, -0.92, 0.48),
+        (0.0, 0.0, 0.0),
+        diameter,
+        distance_scale=2.65,
+    )
+    outputs: list[str] = []
+    for label, objects in (
+        ("skin_only", [skin]),
+        ("details_only", [details]),
+        ("attachment_only", [attachment]),
+        ("composite", [details, skin]),
+        ("assembly_with_attachment", [attachment, details, skin]),
+    ):
+        output = paths["separation"] / f"{label}.png"
+        state = set_mesh_visibility(objects)
+        render_still(scene, output)
+        restore_visibility(state)
+        outputs.append(relative(output, paths["root"]))
+    position_camera(
+        camera,
+        (-0.82, -0.92, 0.48),
+        (0.0, 0.0, 0.0),
+        diameter,
+        distance_scale=2.65,
+    )
+    inboard_output = paths["separation"] / "assembly_inboard.png"
+    state = set_mesh_visibility([attachment, details, skin])
+    render_still(scene, inboard_output)
+    restore_visibility(state)
+    outputs.append(relative(inboard_output, paths["root"]))
+    return outputs
+
+
 def prepare(args: argparse.Namespace) -> int:
     started = time.perf_counter()
     started_utc = utc_now()
@@ -1431,6 +1847,7 @@ def prepare(args: argparse.Namespace) -> int:
     errors: list[str] = []
     asset = args.asset.expanduser().resolve()
     audit_path = args.audit_report.expanduser().resolve()
+    terrain_path = args.terrain.expanduser().resolve()
     sha_before: str | None = None
     report: dict[str, Any] = {
         "schema_version": str(config["schema_version"]),
@@ -1438,6 +1855,7 @@ def prepare(args: argparse.Namespace) -> int:
         "started_utc": started_utc,
         "asset": {"path": str(asset)},
         "audit_report": {"path": str(audit_path)},
+        "terrain": {"path": str(terrain_path)},
         "candidate": {"id": args.candidate_id},
         "configuration": config,
         "warnings": warnings,
@@ -1445,7 +1863,11 @@ def prepare(args: argparse.Namespace) -> int:
         "artifacts": {},
     }
     try:
-        for label, path in (("asset", asset), ("audit report", audit_path)):
+        for label, path in (
+            ("asset", asset),
+            ("audit report", audit_path),
+            ("terrain", terrain_path),
+        ):
             if not path.is_file():
                 raise FileNotFoundError(f"{label} not found: {path}")
         if asset.suffix.lower() != ".glb":
@@ -1529,7 +1951,9 @@ def prepare(args: argparse.Namespace) -> int:
             for index in selected_faces
         )
 
-        raw = extract_candidate(source_obj, selected_vertices, canonical_matrix)
+        raw, rover_context = extract_candidate(
+            source_obj, selected_vertices, canonical_matrix
+        )
         raw_counts = mesh_counts(raw.data)
         raw_components = component_data(raw.data)
         if raw_counts["vertex_count"] != expected_counts["vertex_count"]:
@@ -1623,9 +2047,30 @@ def prepare(args: argparse.Namespace) -> int:
             int(index) for index in skin_analysis["skin_component_indices"]
         )
         skin_analysis.pop("component_scores", None)
+        logger.info(
+            "Skin selection: %d final faces (%d component, %d face-band, %d overlap); "
+            "fit radius %.6f, axial [%.6f, %.6f]",
+            skin_analysis["skin_face_count"],
+            skin_analysis["component_selected_face_count"],
+            skin_analysis["face_band_selected_face_count"],
+            skin_analysis["selection_overlap_face_count"],
+            skin_analysis["base_radius"],
+            skin_analysis["axial_min"],
+            skin_analysis["axial_max"],
+        )
         original_skin = copy_faces(raw, skin_face_indices, "Wheel_Skin_Original")
         detail_faces = set(range(len(raw.data.polygons))) - skin_face_indices
+        detail_faces, attachment_faces, detail_filter = filter_detail_faces_to_wheel_envelope(
+            raw, detail_faces, skin_analysis, config
+        )
+        logger.info(
+            "Detail envelope: %d -> %d rotating faces; preserved %d attachment component(s)",
+            detail_filter["input_face_count"],
+            detail_filter["output_face_count"],
+            detail_filter["attachment_component_count"],
+        )
         details = copy_faces(raw, detail_faces, "Wheel_Details")
+        attachment = copy_faces(raw, attachment_faces, "Wheel_Attachment")
         merge_records, prepared_skin = merge_sweep(
             original_skin, diameter, config
         )
@@ -1653,15 +2098,14 @@ def prepare(args: argparse.Namespace) -> int:
                 thickness_measurement,
             ),
         )
+        appearance_metadata: dict[str, Any] | None = None
         if prepared_skin is None:
-            strategy = "hybrid_parametric_shell"
+            strategy = "textured_parametric_shell"
             warnings.append(
                 "Original skin did not pass the closed-manifold repair gate; "
-                "using the configured hybrid parametric shell."
+                "using a watertight parametric shell with projected original UVs."
             )
             logger.warning(warnings[-1])
-            source_wheel_material = select_wheel_material(source_mesh)
-            hybrid_material = derive_hybrid_skin_material(source_wheel_material)
             prepared_skin = create_shell_mesh(
                 name="Wheel_Skin",
                 outer_radius=float(skin_analysis["base_radius"]),
@@ -1669,31 +2113,52 @@ def prepare(args: argparse.Namespace) -> int:
                 axial_min=float(skin_analysis["axial_min"]),
                 axial_max=float(skin_analysis["axial_max"]),
                 segments=int(config["skin"]["shell_angular_segments"]),
-                material=hybrid_material,
+                material=None,
+            )
+            appearance_metadata = transfer_original_wheel_appearance(
+                prepared_skin, original_skin
             )
         else:
             strategy = "repaired_original_skin"
+            appearance_metadata = {
+                "strategy": "original topology, materials and UVs retained"
+            }
         final_topology = topology_metrics(prepared_skin.data)
         if not final_topology["closed_manifold"]:
             raise RuntimeError(
                 "Prepared skin is not closed manifold after the selected repair"
             )
 
+        separation_renders = render_separation_diagnostics(
+            scene,
+            camera,
+            prepared_skin,
+            details,
+            attachment,
+            diameter,
+            paths,
+            config,
+        )
+
         raw_collection = create_collection("RAW_REFERENCE", scene)
         canonical_collection = create_collection("WHEEL_CANONICAL", scene)
         move_object_to_collection(raw, raw_collection)
         move_object_to_collection(original_skin, raw_collection)
         move_object_to_collection(details, canonical_collection)
+        move_object_to_collection(attachment, canonical_collection)
         move_object_to_collection(prepared_skin, canonical_collection)
         raw.hide_render = True
         raw.hide_viewport = True
         original_skin.hide_render = True
         original_skin.hide_viewport = True
         details.hide_render = False
+        attachment.hide_render = False
         prepared_skin.hide_render = False
         raw["role"] = "immutable_extracted_reference"
         original_skin["role"] = "classified_original_skin_reference"
         details["role"] = "original_hub_spokes_and_grouser_details"
+        attachment["role"] = "fixed_inboard_wheel_attachment"
+        attachment["rotates_with_wheel"] = False
         prepared_skin["role"] = "boolean_ready_skin"
         prepared_skin["repair_strategy"] = strategy
         scene["canonical_axis"] = "X"
@@ -1734,8 +2199,22 @@ def prepare(args: argparse.Namespace) -> int:
         if not boolean_result.get("closed_manifold"):
             raise RuntimeError("Boolean Difference produced a non-manifold skin")
 
-        mask_proxy = prepared_skin.copy()
-        mask_proxy.data = prepared_skin.data.copy()
+        visual_anomaly_skin = original_skin.copy()
+        visual_anomaly_skin.data = original_skin.data.copy()
+        visual_anomaly_skin.name = "Wheel_Skin_Original_Perforated"
+        visual_anomaly_skin.data.name = "Wheel_Skin_Original_Perforated_Mesh"
+        scene.collection.objects.link(visual_anomaly_skin)
+        visual_boolean_result = apply_boolean(
+            visual_anomaly_skin, cutter, "DIFFERENCE"
+        )
+        if not visual_boolean_result.get("success"):
+            raise RuntimeError(
+                "Boolean Difference failed on the original textured skin: "
+                f"{visual_boolean_result}"
+            )
+
+        mask_proxy = original_skin.copy()
+        mask_proxy.data = original_skin.data.copy()
         mask_proxy.name = "AnomalyMaskProxy"
         mask_proxy.data.name = "AnomalyMaskProxy_Mesh"
         scene.collection.objects.link(mask_proxy)
@@ -1763,22 +2242,71 @@ def prepare(args: argparse.Namespace) -> int:
             distance_scale=2.35,
         )
         configure_scene(scene, config, engine="BLENDER_EEVEE")
+        terrain_objects = import_gltf_scene(terrain_path)
+        terrain_metadata = place_terrain_context(terrain_objects, diameter, config)
+        rover_context["role"] = "full_rover_context_without_selected_wheel"
+        context_objects = [rover_context, attachment, *terrain_objects]
         normal_path = paths["perforation"] / "normal.png"
         anomaly_path = paths["perforation"] / "anomaly.png"
+        normal_skin_only_path = paths["perforation"] / "normal_skin_only.png"
+        anomaly_skin_only_path = paths["perforation"] / "anomaly_skin_only.png"
+        details_at_hole_path = paths["perforation"] / "details_at_hole.png"
         mask_path = paths["perforation"] / "anomaly_mask.png"
         wheel_mask_path = paths["perforation"] / "wheel_mask.png"
         difference_path = paths["perforation"] / "difference.png"
+        overview_path = paths["perforation"] / "context_overview.png"
 
-        state = set_mesh_visibility([details, prepared_skin])
+        state = set_mesh_visibility([original_skin])
+        render_still(scene, normal_skin_only_path)
+        restore_visibility(state)
+        state = set_mesh_visibility([visual_anomaly_skin])
+        render_still(scene, anomaly_skin_only_path)
+        restore_visibility(state)
+        state = set_mesh_visibility([details])
+        render_still(scene, details_at_hole_path)
+        restore_visibility(state)
+        state = set_mesh_visibility([*context_objects, details, original_skin])
         render_still(scene, normal_path)
         restore_visibility(state)
-        state = set_mesh_visibility([details, anomaly_skin])
+        closeup_camera_matrix = camera.matrix_world.copy()
+        rover_points = [
+            rover_context.matrix_world @ Vector(corner)
+            for corner in rover_context.bound_box
+        ]
+        rover_minimum = Vector(
+            tuple(min(point[index] for point in rover_points) for index in range(3))
+        )
+        rover_maximum = Vector(
+            tuple(max(point[index] for point in rover_points) for index in range(3))
+        )
+        rover_target = (rover_minimum + rover_maximum) * 0.5
+        rover_extent = max(rover_maximum - rover_minimum)
+        position_camera(
+            camera,
+            (1.15, -1.35, 0.72),
+            rover_target,
+            rover_extent,
+            distance_scale=1.45,
+        )
+        state = set_mesh_visibility([*context_objects, details, original_skin])
+        render_still(scene, overview_path)
+        restore_visibility(state)
+        camera.matrix_world = closeup_camera_matrix
+        state = set_mesh_visibility(
+            [*context_objects, details, visual_anomaly_skin]
+        )
         render_still(scene, anomaly_path)
         restore_visibility(state)
         render_binary_mask(
-            scene, [details, prepared_skin], wheel_mask_path, white_material
+            scene, [details, original_skin], wheel_mask_path, white_material
         )
         render_binary_mask(scene, [mask_proxy], mask_path, white_material)
+        lock_counterfactual_to_mask(
+            normal_path,
+            anomaly_path,
+            mask_path,
+            int(config["perforation"]["mask_dilation_pixels"]),
+        )
         mask_metrics = write_difference_and_metrics(
             normal_path,
             anomaly_path,
@@ -1794,17 +2322,18 @@ def prepare(args: argparse.Namespace) -> int:
         anomaly_scene_details = details.copy()
         anomaly_scene_details.data = details.data
         anomaly_scene_details.name = "Wheel_Details_Perforation"
-        normal_scene_skin = prepared_skin.copy()
-        normal_scene_skin.data = prepared_skin.data
+        normal_scene_skin = original_skin.copy()
+        normal_scene_skin.data = original_skin.data
         normal_scene_skin.name = "Wheel_Skin_Normal"
-        anomaly_scene_skin = anomaly_skin.copy()
-        anomaly_scene_skin.data = anomaly_skin.data
+        anomaly_scene_skin = visual_anomaly_skin.copy()
+        anomaly_scene_skin.data = visual_anomaly_skin.data
         anomaly_scene_skin.name = "Wheel_Skin_Anomaly"
         pair_scenes = create_pair_scenes(
             config,
             rig_collection,
             [normal_scene_details, normal_scene_skin],
             [anomaly_scene_details, anomaly_scene_skin],
+            context_objects,
             camera,
         )
         for pair_scene in pair_scenes.values():
@@ -1827,6 +2356,13 @@ def prepare(args: argparse.Namespace) -> int:
         outside_valid = float(mask_metrics["outside_change_ratio"]) <= float(
             config["gates"]["maximum_outside_change_ratio"]
         )
+        inside_ratio_valid = float(mask_metrics["inside_change_ratio"]) >= float(
+            config["gates"]["minimum_inside_change_ratio"]
+        )
+        inside_mean_valid = float(mask_metrics["mean_inside_difference"]) >= float(
+            config["gates"]["minimum_inside_mean_difference"]
+        )
+        images_differ = not bool(mask_metrics["images_identical"])
         validation_errors = []
         if not mask_valid:
             validation_errors.append(
@@ -1836,6 +2372,18 @@ def prepare(args: argparse.Namespace) -> int:
             validation_errors.append(
                 "Counterfactual difference outside the dilated mask exceeds gate"
             )
+        if not inside_ratio_valid:
+            validation_errors.append(
+                "RGB change intersects too little of the visible anomaly mask: "
+                f"{mask_metrics['inside_change_ratio']}"
+            )
+        if not inside_mean_valid:
+            validation_errors.append(
+                "Mean RGB difference inside the anomaly mask is below gate: "
+                f"{mask_metrics['mean_inside_difference']}"
+            )
+        if not images_differ:
+            validation_errors.append("Normal and anomaly renders are identical")
         if validation_errors:
             raise RuntimeError("; ".join(validation_errors))
 
@@ -1851,6 +2399,15 @@ def prepare(args: argparse.Namespace) -> int:
                 "sha256_after": sha_after,
                 "unchanged": sha_before == sha_after,
                 "source_writes_performed": False,
+            },
+            "terrain": {
+                "path": str(terrain_path),
+                "license": "CC-BY-SA-4.0",
+                "credit": (
+                    '"Mars Terrain Model" by John Davies, licensed under '
+                    "CC-BY-SA-4.0"
+                ),
+                **terrain_metadata,
             },
             "audit_report": {
                 "path": str(audit_path),
@@ -1917,6 +2474,7 @@ def prepare(args: argparse.Namespace) -> int:
                 ),
             },
             "skin_analysis": skin_analysis,
+            "detail_filter": detail_filter,
             "repair": {
                 "strategy": strategy,
                 "merge_sweep": merge_records,
@@ -1925,21 +2483,11 @@ def prepare(args: argparse.Namespace) -> int:
                 "wall_thickness": thickness,
                 "axial_min": float(skin_analysis["axial_min"]),
                 "axial_max": float(skin_analysis["axial_max"]),
-                "uv_strategy": (
-                    "original"
-                    if strategy == "repaired_original_skin"
-                    else "new cylindrical UV on replacement skin only"
-                ),
-                "material_strategy": (
-                    "original"
-                    if strategy == "repaired_original_skin"
-                    else (
-                        "NASA wheel material retained on original details; "
-                        "replacement shell uses a texture-free metal derived "
-                        "from the atlas average to avoid unrelated atlas regions"
-                    )
-                ),
+                "uv_strategy": "original wheel UVs retained or surface-projected",
+                "material_strategy": "original NASA wheel material retained",
+                "appearance": appearance_metadata,
                 "original_details_preserved": True,
+                "original_fixed_attachment_preserved": True,
                 "voxel_remesh_used": False,
                 "retopology_used": False,
                 "final_topology": final_topology,
@@ -1947,6 +2495,7 @@ def prepare(args: argparse.Namespace) -> int:
             "perforation": {
                 "placement": hole,
                 "boolean": boolean_result,
+                "visual_original_skin_boolean": visual_boolean_result,
                 "mask_proxy_boolean": mask_boolean,
                 "mask": mask_metrics,
                 "pair": {
@@ -1966,6 +2515,9 @@ def prepare(args: argparse.Namespace) -> int:
                 "boolean": True,
                 "mask_area": mask_valid,
                 "counterfactual_outside_mask": outside_valid,
+                "counterfactual_inside_mask_ratio": inside_ratio_valid,
+                "counterfactual_inside_mask_intensity": inside_mean_valid,
+                "normal_anomaly_images_differ": images_differ,
                 "blend_resources_packed": packed,
             },
             "artifacts": {
@@ -1980,12 +2532,17 @@ def prepare(args: argparse.Namespace) -> int:
                     for path in sorted(paths["extraction"].glob("verification_*.png"))
                 ],
                 "topology_renders": topology_renders,
+                "separation_renders": separation_renders,
                 "perforation_renders": [
                     relative(normal_path, paths["root"]),
                     relative(anomaly_path, paths["root"]),
+                    relative(normal_skin_only_path, paths["root"]),
+                    relative(anomaly_skin_only_path, paths["root"]),
+                    relative(details_at_hole_path, paths["root"]),
                     relative(mask_path, paths["root"]),
                     relative(difference_path, paths["root"]),
                     relative(wheel_mask_path, paths["root"]),
+                    relative(overview_path, paths["root"]),
                 ],
             },
             "warnings": warnings,
