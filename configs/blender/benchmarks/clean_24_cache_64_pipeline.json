@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "source": {
+    "blend": "outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend",
+    "sha256": "9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030"
+  },
+  "domain_randomization_config": "configs/blender/domain_randomization.json",
+  "range": {"start_index": 78, "count": 24},
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "blender_major_minor": [5, 2],
+    "resolution": [1200, 900],
+    "samples": 64,
+    "passes": ["rgb", "target_wheel_mask"]
+  },
+  "execution": {"chunk_size": 100, "max_chunk_retries": 1, "async_postprocess": true, "async_queue_depth": 4},
+  "output": {"root": "outputs/anomaly_detection_2/benchmark/clean_24"},
+  "benchmark": {
+    "enabled": true,
+    "geometry_cache": true,
+    "async_postprocess": true,
+    "png_compression_level": 4,
+    "scene_png_compression": 15,
+    "reuse_matrix_audit": "outputs/anomaly_detection_2/clean_batch/smoke_v2_terrain_contact_final/matrix_audit.json"
+  }
+}

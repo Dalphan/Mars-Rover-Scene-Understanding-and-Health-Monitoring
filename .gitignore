@@ -20,6 +20,7 @@ outputs/
 outputs/
 
 .agents/
+.codex/
 
 # Original 3D assets stay local and immutable; only the directory marker is tracked.
 assets/original/*

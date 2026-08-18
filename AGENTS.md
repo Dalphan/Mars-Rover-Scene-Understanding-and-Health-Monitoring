@@ -1,8 +1,14 @@
 # Codex repository guide
 
-Read `docs/handoff/blender_anomaly_detection.md` and
-`docs/handoff/codex_context.json` before changing the Blender pipeline. They
-contain the last verified run, known visual failures, and the ordered roadmap.
+Before working on files, configs, scripts, or outputs belonging to
+`anomaly_detection_2`, read `docs/anomaly_detection_2/INDEX.md` first and use
+its topic routing to select the milestone-specific documentation.
+
+Files under `docs/handoff/` are a historical archive for the legacy Blender
+pipeline. Read them only when working on that legacy pipeline or when a task
+explicitly requires reconstructing an older decision, failure, or run. Do not
+update handoff files for routine `anomaly_detection_2` milestones; update its
+`INDEX.md` and the relevant milestone document instead.
 
 ## Repository boundaries
 
@@ -53,3 +59,10 @@ not sufficient: inspect `normal.png`, `anomaly.png`, `anomaly_mask.png`, and
 
 Preserve unrelated user changes and keep documentation synchronized with any
 new gate, fallback, output schema, or Blender-version requirement.
+
+## Critical reanalysis rule
+
+Before implementing a proposed design or approach, perform a second-pass
+adversarial review. Identify likely failure modes, side effects, scale and
+performance risks, and data-validity risks; then revise the approach before
+implementation and record any material tradeoffs.

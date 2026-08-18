@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "source_blend": "outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend",
+  "output_directory": "outputs/anomaly_detection_2/lighting_pilot",
+  "frame": {
+    "target_wheel": "wheel_middle_left",
+    "camera_pose": "A_overhead",
+    "roll_degrees": 0.0,
+    "resolution": [1200, 900]
+  },
+  "terrain_grade": {
+    "enabled": true,
+    "material_prefixes": ["GaleTerrain"],
+    "hue": 0.48,
+    "saturation": 1.30,
+    "value": 0.80,
+    "factor": 1.0
+  },
+  "comparison_ids": [
+    "mars_clear",
+    "mars_clear_refined",
+    "mars_dusty_reference",
+    "mars_dusty_refined"
+  ],
+  "dataset_roles": {
+    "primary_realistic": "mars_dusty_refined",
+    "domain_variation": ["mars_clear_refined"],
+    "shadow_softening": {
+      "selected_level": "L5",
+      "selection_status": "visually_approved",
+      "dusty_world_strength": 0.84,
+      "dusty_sun_energy": 3.50,
+      "clear_world_strength": 0.78,
+      "clear_sun_energy": 3.60
+    }
+  },
+  "presets": [
+    {
+      "id": "current",
+      "label": "Current pilot",
+      "description": "Existing nominal Gale light plus the temporary 220 W warm pilot fill.",
+      "use_source_sun_world": true,
+      "pilot_fill": true,
+      "dust_layer": false,
+      "camera_post": false,
+      "look": "AgX - Medium High Contrast",
+      "exposure_ev": 0.0
+    },
+    {
+      "id": "mars_clear",
+      "label": "Mars clear open-cover",
+      "description": "Higher Sun, physically small solar disc, warm direct light and diffuse dusty sky; no artificial fill.",
+      "use_source_sun_world": false,
+      "pilot_fill": false,
+      "sun": {
+        "azimuth_deg": 25.5,
+        "elevation_deg": 60.0,
+        "energy": 4.5,
+        "angle_deg": 0.40,
+        "color": [1.0, 0.94, 0.86]
+      },
+      "world": {
+        "strength": 0.35,
+        "color": [0.16, 0.085, 0.045, 1.0]
+      },
+      "dust_layer": false,
+      "camera_post": false,
+      "look": "AgX - Medium Low Contrast",
+      "exposure_ev": 0.10
+    },
+    {
+      "id": "mars_dusty_reference",
+      "label": "Mars dusty reference",
+      "description": "Clear preset plus deposited surface dust and a restrained warm camera veil inspired by the supplied image.",
+      "use_source_sun_world": false,
+      "pilot_fill": false,
+      "sun": {
+        "azimuth_deg": 25.5,
+        "elevation_deg": 60.0,
+        "energy": 4.1,
+        "angle_deg": 0.40,
+        "color": [1.0, 0.91, 0.80]
+      },
+      "world": {
+        "strength": 0.42,
+        "color": [0.18, 0.09, 0.04, 1.0]
+      },
+      "dust_layer": true,
+      "dust": {
+        "color": [0.22, 0.09, 0.035, 1.0],
+        "coverage": 0.38,
+        "roughness": 0.89,
+        "noise_scale": 12.0,
+        "noise_detail": 3.0,
+        "micro_bump_strength": 0.10,
+        "micro_bump_distance_m": 0.0007
+      },
+      "camera_post": true,
+      "post": {
+        "saturation": 0.95,
+        "value": 0.96,
+        "veil_factor": 0.04,
+        "veil_color": [0.12, 0.065, 0.03, 1.0]
+      },
+      "look": "AgX - Medium Low Contrast",
+      "exposure_ev": 0.0
+    },
+    {
+      "id": "mars_clear_refined",
+      "label": "Mars clear refined",
+      "description": "Clear open-cover refinement with the visually approved L5 diffuse-sky balance for wheel-shadow readability.",
+      "use_source_sun_world": false,
+      "pilot_fill": false,
+      "sun": {
+        "azimuth_deg": 25.5,
+        "elevation_deg": 60.0,
+        "energy": 3.6,
+        "angle_deg": 0.40,
+        "color": [1.0, 0.95, 0.88]
+      },
+      "world": {
+        "strength": 0.78,
+        "color": [0.22, 0.13, 0.075, 1.0]
+      },
+      "dust_layer": false,
+      "camera_post": false,
+      "look": "AgX - Medium Low Contrast",
+      "exposure_ev": 0.45
+    },
+    {
+      "id": "mars_dusty_refined",
+      "label": "Mars dusty refined",
+      "description": "Dusty refinement with the visually approved L5 diffuse-sky balance, restrained optical veil and retained surface contrast.",
+      "use_source_sun_world": false,
+      "pilot_fill": false,
+      "sun": {
+        "azimuth_deg": 25.5,
+        "elevation_deg": 60.0,
+        "energy": 3.5,
+        "angle_deg": 0.40,
+        "color": [1.0, 0.92, 0.82]
+      },
+      "world": {
+        "strength": 0.84,
+        "color": [0.20, 0.11, 0.06, 1.0]
+      },
+      "dust_layer": true,
+      "dust": {
+        "color": [0.22, 0.09, 0.035, 1.0],
+        "coverage": 0.32,
+        "roughness": 0.87,
+        "noise_scale": 12.0,
+        "noise_detail": 3.0,
+        "micro_bump_strength": 0.09,
+        "micro_bump_distance_m": 0.0007
+      },
+      "camera_post": true,
+      "post": {
+        "saturation": 0.95,
+        "value": 1.0,
+        "veil_factor": 0.025,
+        "veil_color": [0.12, 0.065, 0.03, 1.0]
+      },
+      "look": "AgX - Medium Low Contrast",
+      "exposure_ev": 0.30
+    }
+  ]
+}

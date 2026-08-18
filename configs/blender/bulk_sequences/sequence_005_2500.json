@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "sequence_id": "sequence_005_2500",
+  "status_path": "outputs/anomaly_detection_2/bulk/sequences/sequence_005_2500/status.json",
+  "steps": [
+    {
+      "runner": "clean",
+      "config": "configs/blender/bulk_waves/wave_005_clean_remaining_1150.json",
+      "run_id": "wave_005_clean_remaining_1150"
+    },
+    {
+      "runner": "anomaly",
+      "config": "configs/blender/bulk_waves/wave_006_pairs_675.json",
+      "run_id": "wave_006_pairs_675"
+    }
+  ]
+}

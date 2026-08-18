@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "seed": 240519,
+  "source": {
+    "blend": "outputs/anomaly_detection_2/microterrain/level3/microterrain_L3.blend",
+    "required_microterrain_level": 3
+  },
+  "output": {
+    "directory": "outputs/anomaly_detection_2/pose_sampling",
+    "blend_name": "wheel_roll_pose_sampling.blend"
+  },
+  "wheels": [
+    "wheel_front_left",
+    "wheel_front_right",
+    "wheel_middle_left",
+    "wheel_middle_right",
+    "wheel_rear_left",
+    "wheel_rear_right"
+  ],
+  "normal_sampling": {
+    "roll_degrees": [0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]
+  },
+  "anomaly_sampling": {
+    "target_jitter_degrees": [-8.0, 0.0, 8.0],
+    "visibility_search_offsets_degrees": [0.0, -12.0, 12.0, -24.0, 24.0, -36.0, 36.0, -48.0, 48.0],
+    "upper_bias": 0.65,
+    "max_upper_angle_degrees": 52.0,
+    "min_camera_facing_dot": 0.30,
+    "frame_margin_fraction": 0.04,
+    "occlusion_epsilon_m": 0.004,
+    "require_anchor": true,
+    "require_normal": true,
+    "required_visible_probe_fraction": 1.0
+  },
+  "physical_validation": {
+    "origin_center_tolerance_m": 0.00001,
+    "maximum_clearance_loss_from_base_m": 0.001,
+    "low_vertex_probe_count": 8
+  }
+}

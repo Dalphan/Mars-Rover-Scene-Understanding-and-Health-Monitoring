@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "source_blend": "outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend",
+  "output_directory": "outputs/anomaly_detection_2/surface_wear_pilot",
+  "lighting_config": "configs/blender/mars_lighting_pilot.json",
+  "pose_config": "configs/blender/wheel_camera_poses.json",
+  "sampling_config": "configs/blender/wheel_pose_sampling.json",
+  "lighting_role": "primary_realistic",
+  "frame": {
+    "target_wheel": "wheel_middle_left",
+    "camera_pose": "A_overhead",
+    "roll_degrees": 0.0,
+    "resolution": [1200, 900]
+  },
+  "mask_generation": {
+    "resolution": 4096,
+    "seed": 731903,
+    "dominant_direction_degrees": 72.0,
+    "direction_spread_degrees": 24.0,
+    "cross_scratch_probability": 0.22,
+    "length_pixels": [34, 230],
+    "width_pixels": [2, 7],
+    "intensity": [180, 255],
+    "coverage_threshold": 32
+  },
+  "shader": {
+    "projection": {
+      "mode": "wheel_local_box",
+      "location": [0.5, 0.5, 0.5],
+      "scale": [1.6, 1.6, 1.6],
+      "blend": 0.18
+    },
+    "surface_exposure": {
+      "mode": "outer_tread_and_outboard_shoulder",
+      "radial_start_fraction": 0.72,
+      "radial_full_fraction": 0.86,
+      "tread_normal_start": 0.08,
+      "tread_normal_full": 0.58,
+      "shoulder_position_start_fraction": 0.52,
+      "shoulder_position_full_fraction": 0.82,
+      "shoulder_normal_start": 0.12,
+      "shoulder_normal_full": 0.62
+    },
+    "scratch_color": [0.34, 0.29, 0.24, 1.0],
+    "opacity": 0.68,
+    "roughness": 0.46,
+    "metallic": 0.62,
+    "bump_strength": 0.12,
+    "bump_distance_m": 0.00025,
+    "invert_bump": true
+  },
+  "variants": [
+    {
+      "id": "surface_current",
+      "label": "Superficie attuale",
+      "wear_enabled": false,
+      "target_mask_coverage": 0.0,
+      "mask_filename": null
+    },
+    {
+      "id": "wear_light",
+      "label": "Usura leggera",
+      "wear_enabled": true,
+      "target_mask_coverage": 0.0100,
+      "mask_filename": "scratch_mask_light.png"
+    },
+    {
+      "id": "wear_evident",
+      "label": "Usura piu evidente",
+      "wear_enabled": true,
+      "target_mask_coverage": 0.0250,
+      "mask_filename": "scratch_mask_evident.png"
+    }
+  ],
+  "dataset_sampling": {
+    "enabled_after_visual_approval": false,
+    "weights": {
+      "surface_current": 0.35,
+      "wear_light": 0.45,
+      "wear_evident": 0.20
+    },
+    "independent_of_anomaly_label": true,
+    "counterfactual_pair_uses_same_variant_and_seed": true,
+    "wear_mask_is_not_anomaly_mask": true
+  }
+}

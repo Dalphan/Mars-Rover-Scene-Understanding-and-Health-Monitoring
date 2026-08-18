@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "product": {
+    "id": "DTEEC_010573_1755_010639_1755_U01",
+    "stereo_observations": [
+      "PSP_010573_1755",
+      "PSP_010639_1755"
+    ],
+    "credit": "NASA/JPL-Caltech/UArizona",
+    "base_url": "https://hirise-pds.lpl.arizona.edu/PDS/DTM/PSP/ORB_010500_010599/PSP_010573_1755_PSP_010639_1755",
+    "files": [
+      {
+        "name": "DTEEC_010573_1755_010639_1755_U01.IMG",
+        "role": "dtm",
+        "bytes": 471200392,
+        "sha256": "c0bd01539df571e49a06b1667291d2711eab301c5191f35681da6ea53b6f2136"
+      },
+      {
+        "name": "PSP_010639_1755_IRB_A_01_ORTHO.JP2",
+        "role": "irb_ortho",
+        "bytes": 197664218,
+        "sha256": "68a8852f9349afdeda6a839dd22af985c3b5d0a886aa02940f251a62cba41912"
+      },
+      {
+        "name": "PSP_010639_1755_IRB_A_01_ORTHO.LBL",
+        "role": "irb_label",
+        "bytes": 5401,
+        "sha256": "eb7b4b371403488ac1a68ec0e29a7aa9824fd5139ae51ed672d4d69bedda0fd9"
+      },
+      {
+        "name": "PSP_010639_1755_MRGB.JP2",
+        "role": "mrgb",
+        "url": "https://hirise-pds.lpl.arizona.edu/download/PDS/EXTRAS/RDR/PSP/ORB_010600_010699/PSP_010639_1755/PSP_010639_1755_MRGB.JP2",
+        "bytes": 260088380,
+        "sha256": "a4cfded87ef4baa8b41075a1fe8dfa69b379ac8f69edbd3537652f6f4b4cf91c"
+      },
+      {
+        "name": "PSP_010639_1755_MRGB.LBL",
+        "role": "mrgb_label",
+        "url": "https://hirise-pds.lpl.arizona.edu/PDS/EXTRAS/RDR/PSP/ORB_010600_010699/PSP_010639_1755/PSP_010639_1755_MRGB.LBL",
+        "bytes": 8209,
+        "sha256": "2f63bc3fcab27c6c7589be29fc73d5c9a1da0446a9fdd75009ea873b918906e5"
+      }
+    ]
+  },
+  "crop": {
+    "projected_bounds_m": [-366.0, -266538.0, -110.0, -266282.0],
+    "dtm_shape": [256, 256],
+    "ortho_shape": [1024, 1024],
+    "heightfield_shape": [257, 257],
+    "minimum_valid_fraction": 0.999,
+    "maximum_vertical_exaggeration": 1.0
+  },
+  "color_coregistration": {
+    "comparison_resolution_m": 1.0,
+    "maximum_search_shift_m": 8.0,
+    "maximum_accepted_shift_m": 1.0,
+    "minimum_gradient_correlation": 0.2,
+    "mrgb_color_chroma_threshold_dn": 8,
+    "minimum_mrgb_color_coverage": 0.999,
+    "palette_percentiles": [2.0, 98.0]
+  },
+  "terrain": {
+    "visual_object": "GaleTerrainVisual",
+    "collision_object": "GaleTerrainCollision",
+    "visual_step_m": 1.0,
+    "collision_step_m": 4.0,
+    "roughness": 0.9
+  },
+  "microterrain": {
+    "enabled": true,
+    "level": 3,
+    "target_wheel": "wheel_middle_left",
+    "patch_size_m": 4.0,
+    "grid_spacing_m": 0.0025,
+    "edge_transition_m": 0.15,
+    "seed": 42,
+    "meso_relief": {
+      "enabled": true,
+      "large_scale": {
+        "wavelength_m": 0.09,
+        "amplitude_m": 0.001,
+        "components": 9
+      },
+      "medium_scale": {
+        "wavelength_m": 0.03,
+        "amplitude_m": 0.00035,
+        "components": 13
+      },
+      "fine_scale": {
+        "wavelength_m": 0.01,
+        "amplitude_m": 0.0001,
+        "components": 17
+      },
+      "anisotropy": 0.25,
+      "ripple_strength": 0.08,
+      "ripple_wavelength_m": 0.07,
+      "ripple_direction_deg": 28.0,
+      "depression_density_m2": 3.0,
+      "depression_radius_m": [0.02, 0.06],
+      "depression_depth_m": [0.0005, 0.0018],
+      "crust_patch_density_m2": 0.75,
+      "crust_radius_m": [0.05, 0.16],
+      "crust_flattening": 0.7,
+      "crust_raise_m": 0.00035,
+      "maximum_abs_displacement_m": 0.006
+    },
+    "clasts": {
+      "enabled": true,
+      "library_variants": {
+        "fine_grains": 6,
+        "fragments": 6,
+        "coarse_clasts": 8
+      },
+      "fine_grains": {
+        "density_m2": 1200.0,
+        "size_min_m": 0.0005,
+        "size_max_m": 0.002,
+        "maximum_tilt_deg": 35.0,
+        "buried_fraction": [0.25, 0.60]
+      },
+      "fragments": {
+        "density_m2": 150.0,
+        "size_min_m": 0.001,
+        "size_max_m": 0.007,
+        "maximum_tilt_deg": 60.0,
+        "buried_fraction": [0.22, 0.55]
+      },
+      "coarse_clasts": {
+        "density_m2": 30.0,
+        "size_min_m": 0.006,
+        "size_max_m": 0.150,
+        "maximum_tilt_deg": 45.0,
+        "minimum_center_spacing_factor": 0.55,
+        "size_classes": [
+          {
+            "name": "small",
+            "fraction": 0.60,
+            "size_min_m": 0.006,
+            "size_max_m": 0.015,
+            "buried_fraction": [0.25, 0.60]
+          },
+          {
+            "name": "medium",
+            "fraction": 0.25,
+            "size_min_m": 0.015,
+            "size_max_m": 0.035,
+            "buried_fraction": [0.20, 0.50]
+          },
+          {
+            "name": "large",
+            "fraction": 0.125,
+            "size_min_m": 0.035,
+            "size_max_m": 0.070,
+            "buried_fraction": [0.15, 0.40]
+          },
+          {
+            "name": "very_large",
+            "fraction": 0.025,
+            "size_min_m": 0.070,
+            "size_max_m": 0.150,
+            "buried_fraction": [0.12, 0.32]
+          }
+        ]
+      },
+      "clustering_strength": 0.55,
+      "microrelief_correlation": 0.30,
+      "cluster_wavelength_m": 0.32,
+      "edge_margin_m": 0.012,
+      "wheel_exclusion_padding_m": 0.003,
+      "maximum_instances": 30000,
+      "material_palette": [
+        {"name": "rust", "base_color": [0.22, 0.085, 0.035, 1.0], "roughness": 0.88},
+        {"name": "dark", "base_color": [0.07, 0.05, 0.038, 1.0], "roughness": 0.82},
+        {"name": "light", "base_color": [0.32, 0.17, 0.085, 1.0], "roughness": 0.92},
+        {"name": "clean", "base_color": [0.16, 0.075, 0.045, 1.0], "roughness": 0.68}
+      ]
+    },
+    "material": {
+      "enabled": true,
+      "dust_amount": 0.18,
+      "dust_color": [0.24, 0.105, 0.055, 1.0],
+      "dust_roughness": 0.94,
+      "coarse_albedo_wavelength_m": 0.065,
+      "coarse_albedo_strength": 0.10,
+      "medium_albedo_wavelength_m": 0.012,
+      "medium_albedo_strength": 0.045,
+      "fine_roughness_wavelength_m": 0.0025,
+      "very_fine_roughness_wavelength_m": 0.0008,
+      "roughness_variation": 0.14,
+      "micro_bump_wavelength_m": 0.00045,
+      "micro_bump_secondary_wavelength_m": 0.00018,
+      "micro_bump_strength": 0.38,
+      "micro_bump_distance_m": 0.00016,
+      "clast_dust_fraction": 0.55,
+      "clast_bump_wavelength_m": 0.00035,
+      "clast_bump_strength": 0.32,
+      "clast_bump_distance_m": 0.00010,
+      "clast_roughness_variation": 0.11,
+      "validation_distances_m": [0.05, 0.10]
+    },
+    "validation_camera": {
+      "name": "MicroterrainValidationCamera",
+      "distances_m": [0.10, 0.30],
+      "azimuth_deg": 35.0,
+      "elevation_deg": 40.0,
+      "resolution": [1000, 800],
+      "focal_length_mm": 20.0,
+      "sensor_width_mm": 13.2
+    }
+  },
+  "rover": {
+    "semantic_blend": "outputs/anomaly_detection_2/curiosity_semantic_clean.blend",
+    "root_object": "Rover",
+    "clearance_m": 0.01
+  },
+  "camera": {
+    "name": "MAHLI_Camera",
+    "target_wheel": "wheel_middle_left",
+    "resolution": [1600, 1200],
+    "focal_length_mm": 20.0,
+    "sensor_width_mm": 13.2,
+    "distance_m": 1.35,
+    "azimuth_deg": 55.0,
+    "elevation_deg": 18.0,
+    "target_offset_local_m": [0.0, 0.0, 0.0]
+  },
+  "lighting": {
+    "sun_name": "GaleNominalSun",
+    "azimuth_deg": 25.5,
+    "elevation_deg": 34.0,
+    "energy": 4.5,
+    "angle_deg": 0.53,
+    "ambient_strength": 0.18,
+    "ambient_color": [0.055, 0.04, 0.03, 1.0]
+  },
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution_percentage": 100,
+    "samples": 64
+  }
+}

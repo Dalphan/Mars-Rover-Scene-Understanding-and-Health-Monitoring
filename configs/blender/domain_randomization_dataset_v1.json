@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "master_seed": 20260810,
+  "source_blend": "outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend",
+  "output_directory": "outputs/anomaly_detection_2/domain_randomization_preview",
+  "lighting_config": "configs/blender/mars_lighting_pilot.json",
+  "wear_config": "configs/blender/wheel_surface_wear_pilot.json",
+  "pose_config": "configs/blender/wheel_camera_poses.json",
+  "sampling_config": "configs/blender/wheel_pose_sampling.json",
+  "distributions": {
+    "lighting": {
+      "mars_dusty_refined": 0.75,
+      "mars_clear_refined": 0.25
+    },
+    "surface_wear": {
+      "surface_current": 0.20,
+      "wear_light": 0.45,
+      "wear_evident": 0.35
+    },
+    "camera_pose": {
+      "A_overhead": 0.40,
+      "C_leading_three_quarter": 0.275,
+      "C_trailing_three_quarter": 0.275,
+      "D_upper_detail": 0.05
+    },
+    "target_wheel": {
+      "wheel_front_left": 0.16666666666666666,
+      "wheel_front_right": 0.16666666666666666,
+      "wheel_middle_left": 0.16666666666666666,
+      "wheel_middle_right": 0.16666666666666666,
+      "wheel_rear_left": 0.16666666666666666,
+      "wheel_rear_right": 0.16666666666666666
+    },
+    "healthy_roll_degrees": [0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]
+  },
+  "jitter": {
+    "lighting": {
+      "sun_azimuth_degrees": 8.0,
+      "sun_elevation_degrees": 5.0,
+      "sun_energy_fraction": 0.08,
+      "world_strength_fraction": 0.10,
+      "exposure_ev": 0.15
+    },
+    "camera": {
+      "maximum_position_offset_m": 0.02,
+      "maximum_aim_offset_degrees": 1.5,
+      "focal_length_fraction": 0.02
+    }
+  },
+  "gates": {
+    "maximum_camera_resample_attempts": 64,
+    "terrain_patch_object": "MicroterrainPatch_L1",
+    "terrain_alignment": {
+      "mode": "translate_rover_target_to_anchor_xy",
+      "rover_root_object": "Rover",
+      "anchor_wheel_object": "wheel_middle_left",
+      "translation_axes": ["x", "y", "z"],
+      "record_world_translation": true,
+      "vertical_contact": {
+        "enabled": true,
+        "outer_radius_fraction": 0.95,
+        "maximum_contact_samples": 256,
+        "minimum_contact_samples": 16,
+        "target_penetration_m": 0.004,
+        "maximum_penetration_m": 0.006,
+        "maximum_gap_m": 0.001
+      }
+    },
+    "terrain_minimum_edge_margin_m": 0.15,
+    "full_wheel_frame_margin_fraction": 0.0,
+    "full_wheel_bbox_area_fraction": [0.24, 0.85],
+    "detail_minimum_visible_bbox_area_fraction": 0.35,
+    "detail_target_frame_margin_fraction": 0.08,
+    "source_checksum_immutable": true,
+    "future_anomaly_visibility_gate_required": true,
+    "future_photometric_contrast_gate_required": true
+  },
+  "pair_lock": {
+    "same_parameters_for_healthy_and_anomaly": true,
+    "independent_of_anomaly_label": true,
+    "anomaly_roll_may_override_healthy_roll_only_through_visibility_sampler": true
+  },
+  "preview": {
+    "sample_count": 12,
+    "candidate_pool_size": 800,
+    "resolution": [1200, 900],
+    "stratify_categories": ["lighting", "surface_wear", "camera_pose", "target_wheel"],
+    "target_counts": {
+      "lighting": {"mars_dusty_refined": 9, "mars_clear_refined": 3},
+      "surface_wear": {"surface_current": 4, "wear_light": 5, "wear_evident": 3},
+      "camera_pose": {"A_overhead": 5, "C_leading_three_quarter": 3, "C_trailing_three_quarter": 3, "D_upper_detail": 1},
+      "target_wheel": {
+        "wheel_front_left": 2,
+        "wheel_front_right": 2,
+        "wheel_middle_left": 2,
+        "wheel_middle_right": 2,
+        "wheel_rear_left": 2,
+        "wheel_rear_right": 2
+      }
+    },
+    "contact_sheet_columns": 3
+  }
+}

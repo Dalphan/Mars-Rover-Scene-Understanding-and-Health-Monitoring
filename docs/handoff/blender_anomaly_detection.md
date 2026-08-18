@@ -512,7 +512,177 @@ non iniziare ancora il controller WASD.
   rimossi. Il launcher dedicato usa direttamente il validator testabile in
   `src/wheel_preparation/validation.py`.
 
+## Branch anomaly-detection-2 — microterrain 4 x 4 m
+
+Il 10 agosto 2026 la pipeline separata sotto `outputs/anomaly_detection_2` e
+stata rigenerata dopo l'estensione della patch locale da 2 x 2 m a 4 x 4 m:
+
+- griglia Level 1 a passo 2,5 mm: 2.563.201 vertici e 2.560.000 facce;
+- firma displacement Level 1
+  `b5a07ae03c1f5c3cea082bd63edbbe762e2b234e6aaa5acd95f5395a8847c338`;
+- densita ridotte a 1.200 granelli fini/m2 e 150 frammenti/m2;
+- densita rocce preservata a 30/m2: 480 rocce, incluse 12 very-large;
+- totale Level 2: 22.080 istanze non realizzate, firma
+  `0c77345239666732b2b0286104648e300b12924e4adef216512d7a29f3748400`;
+- Level 3 rigenerato con geometria Level 2 invariata e firma materiale
+  `fed526160039b3c6ee59857887191f101fc0796923237a5101633ae71ce7359e`;
+- pose pilota attive: A a 1,50 m, C1/C2 a 1,52 m e D a 0,70 m; B rimossa;
+- la patch 4 x 4 m contiene i footprint a terra di tutte le pose deterministiche;
+  C1 mantiene il margine minimo, circa 0,19-0,21 m dal bordo, appena oltre il
+  feather da 0,15 m. Qualsiasi jitter futuro richiede un nuovo audit;
+- validator Level 1/2/3 e 52 test host superati. Le pose A, C1, C2 e D sono
+  state approvate dall'utente; bulk generation resta disabilitata.
+
+### Pose sampling deterministico delle ruote (10 agosto 2026)
+
+- creato l'asset derivato
+  `outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend`
+  dal Level 3, senza modificare il sorgente (SHA-256 sorgente verificato prima
+  e dopo build e riapertura);
+- le origini delle sei ruote sono gia centrate sull'asse: il roll usa
+  `base_matrix_local @ RotX(angle)` senza pivot, re-parenting o modifiche mesh;
+- campionamento sano stratificato in otto fasi da 45 gradi, applicando la stessa
+  fase di avanzamento alle sei ruote;
+- camera resa indipendente dal roll: `up` e `forward` sono definiti nel frame
+  mondo/rover, non dagli assi locali Y/Z che girano col battistrada;
+- per campioni anomali anchor locale e normale uscente sono obbligatori. Il
+  sampler cerca deterministicamente una posa e accetta solo settore superiore,
+  normale rivolta alla camera, margine immagine e ray-cast non occluso;
+- test Blender senza render: 576 combinazioni (6 ruote x 4 camere x 8 anchor x
+  3 jitter), 576 valide. 480 usano l'angolo preferito, 96 evitano un'occlusione
+  della vista A con una correzione di soli +/-12 gradi;
+- le otto fasi non peggiorano il contatto col terreno rispetto alla posa base
+  oltre `7,45e-8 m`; riapertura valida, UV/materiali preservati e posa salvata a
+  roll zero;
+- non e richiesto controllo visivo per questo stage. Bulk generation resta
+  disabilitata finche l'iniettore reale non passa i propri probe di anomalia
+  all'API `select_visible_anomaly_roll()`.
+
+Comando:
+
+```powershell
+python scripts/host/run_wheel_pose_sampling.py `
+  --blender-executable 'D:\Programmi\Blender Foundation\Blender 5.2\blender.exe'
+```
+
+### Pilot illuminazione marziana (10 agosto 2026)
+
+- prodotto un confronto non distruttivo sullo stesso frame A/roll zero:
+  `current`, `mars_clear` e `mars_dusty_reference`;
+- camera e matrice ruota sono identiche tra le tre varianti (delta massimo 0);
+- `mars_clear` rimuove il fill pilota e usa Sole alto, disco da 0,40 gradi,
+  cielo diffuso caldo e AgX Medium Low Contrast;
+- `mars_dusty_reference` aggiunge uno strato procedurale di polvere depositata
+  sui materiali rover e una risposta camera calda moderata;
+- il primo tentativo troppo scuro/saturo e stato ricalibrato considerando che i
+  colori World Blender sono lineari. Il preset dusty finale raggiunge
+  saturazione mediana 0,53 contro 0,57 della reference, ma resta piu scuro per
+  la grande cavita nera presente nel frame sintetico;
+- sorgente pose-sampling non modificato; report e contact sheet sotto
+  `outputs/anomaly_detection_2/lighting_pilot`. Nessun preset e ancora
+  approvato per il bulk.
+- aggiunte senza sovrascrivere i baseline le varianti `mars_clear_refined` e
+  `mars_dusty_refined`: piu luce diffusa ed esposizione controllata recuperano
+  i mezzitoni, mentre nel dusty la copertura di polvere e il velo camera sono
+  stati ridotti;
+- il confronto prima/dopo e in
+  `outputs/anomaly_detection_2/lighting_pilot/refinement_contact_sheet.png`.
+  Le mediane di luminanza passano 37,77 -> 47,06 per clear e 60,75 -> 67,75
+  per dusty; camera e ruota restano identiche (delta massimo 0). Entrambe le
+  versioni refined sono state approvate visivamente: `mars_dusty_refined` e il
+  preset realistico principale, mentre `mars_clear_refined` e la variante per
+  la domain variation del dataset. Il bulk resta subordinato al gate di
+  contrasto fotometrico dell'anomalia.
+
+### Pilot usura superficiale ruote (10 agosto 2026)
+
+- renderizzato sullo stesso frame A/roll zero con illuminazione
+  `mars_dusty_refined`: superficie attuale, usura leggera e usura piu
+  evidente;
+- maschere deterministiche annidate: copertura 1,080% per light e 2,550% per
+  evident. Il secondo livello contiene il primo piu graffi aggiuntivi;
+- il primo mapping UV e stato scartato per una chiazza causata dalla densita
+  non uniforme dell'atlante. La versione candidata usa box projection nello
+  spazio locale della ruota e non presenta l'artefatto;
+- camera, posa e geometria identiche; materiali copiati solo per
+  `wheel_middle_left`; sorgente pose-sampling invariata con SHA-256
+  `9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030`;
+- aggiunta una exposure mask geometrica nello spazio ruota: distanza dall'asse
+  e normale radiale selezionano il battistrada esterno; posizione e normale
+  assiale selezionano la sola spalla esterna. Mozzo, raggi e cavita interna
+  restano esclusi;
+- politica dataset proposta ma disabilitata fino ad approvazione: 35%
+  superficie attuale, 45% light, 20% evident, sempre indipendente dalla classe
+  e condivisa nella coppia controfattuale;
+- contact sheet:
+  `outputs/anomaly_detection_2/surface_wear_pilot/surface_wear_contact_sheet.png`.
+  Il precedente tradeoff dei graffi nella cavita interna e risolto.
+
+### Pilot domain randomization finale (10 agosto 2026)
+
+- aggiunto il contratto deterministico in
+  `configs/blender/domain_randomization.json`: luce 75/25, usura 35/45/20,
+  camere 40/27,5/27,5/5, ruote uniformi e otto fasi di roll;
+- jitter massimo: camera 2 cm, aim 1,5 gradi, focale 2%; Sole 8/5 gradi,
+  energia 8%, World 10%, esposizione 0,15 EV;
+- un preflight Blender testa framing e copertura della patch prima del render:
+  450/800 candidati validi, margine minimo nei 12 selezionati 0,187 m;
+- la patch 4x4 e centrata sul lato sinistro. Per le ruote destre viene traslato
+  temporaneamente il rover fino alla posizione della controparte sinistra; il
+  terreno resta fisso e la traslazione viene registrata nei metadati;
+- la tavola visuale usa quote rappresentative (5 A, 3 C1, 3 C2, 1 D; due
+  campioni per ruota) e non sostituisce le probabilita di produzione;
+- tutti i 12 render superano gate di framing e terreno; sorgente pose-sampling
+  invariata con SHA-256
+  `9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030`;
+- il bulk resta disabilitato finche non sono integrati il sampler di visibilita
+  dell'anomalia e il gate di contrasto fotometrico. Dettagli in
+  `docs/anomaly_detection_2/domain_randomization.md`.
+- L5 e stato scelto e promosso nei preset definitivi: dusty World 0,84/Sole
+  3,50; clear World 0,78/Sole 3,60. Il rerender completo dei 12 campioni passa
+  i gate, non presenta pixel sopra luminanza 239 e conserva mediane 30--66.
+  Configurazioni, script e output dei livelli scartati sono stati rimossi.
+
 ## Comandi di riproduzione con Blender 5.2
+
+### Clean Batch Generator v1 (11 agosto 2026)
+
+- aggiunta la fabbrica deterministica clean con piano JSONL materializzato,
+  manifest append-only, commit atomico degli artefatti e resume fail-closed;
+- la sorgente immutabile e
+  `outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend`,
+  SHA-256 `9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030`;
+- ogni processo apre la scena una volta, prepara materiali/camera/compositor/AOV
+  una volta e renderizza fino a 100 campioni senza drift di datablock;
+- ogni campione usa una sola chiamata Eevee e produce RGB PNG 8-bit 1200x900
+  piu maschera binaria occlusion-aware della ruota target;
+- il custom shader AOV viene codificato temporaneamente nell'alpha 0,5--1 con
+  premoltiplicazione coerente. Questo evita il fringe chiaro osservato nel
+  primo packing alpha 0--1 e conserva l'RGB approvato;
+- allineamento finale: `RoverRoot` viene traslato temporaneamente in XY fino
+  all'anchor fisso di `wheel_middle_left`; terreno e georeferenziazione non si
+  muovono e la traslazione e registrata;
+- audit completo ruota/posa: 24/24 combinazioni accettate;
+- smoke definitivo `smoke_v1_contract_final`: 24/24 coppie validate,
+  fingerprint
+  `2aeabcbed2cfbded72aac78da8f96ba9e8cd48a74a87acf69b39c6c804b95324`,
+  `source_open_count=1`, `render_call_count=24`;
+- probe A--B--A: hash RGB e mask identici per A, metadati/trasformazioni
+  identici e B distinto; resume completo senza variazioni a hash o timestamp
+  dei 48 artefatti;
+- nessuna anomalia, anomaly mask, depth/normal o generazione da 10.000 immagini
+  e stata introdotta. Dettagli in
+  `docs/anomaly_detection_2/clean_batch_generator.md`.
+
+```powershell
+python scripts/host/run_clean_batch.py `
+  --config configs/blender/clean_batch.json `
+  --run-id smoke_v1_contract_final `
+  --blender-executable 'D:\Programmi\Blender Foundation\Blender 5.2\blender.exe'
+
+python scripts/host/validate_clean_batch.py `
+  --run-dir outputs/anomaly_detection_2/clean_batch/smoke_v1_contract_final
+```
 
 Collocare il GLB localmente senza committarlo. Dalla root della repo:
 

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "dataset_id": "curiosity_wheel_hole_v1_10000",
+  "composition_config": "configs/blender/dataset_composition_v1.json",
+  "planning_units": "outputs/anomaly_detection_2/datasets/curiosity_wheel_hole_v1_10000/planning/bulk_v1/units.jsonl",
+  "preassembled_pool_manifests": [],
+  "clean_runs": [
+    "outputs/anomaly_detection_2/prebulk_200/clean_batch/clean_150_v1",
+    "outputs/anomaly_detection_2/bulk/waves/clean/wave_001_train_clean_1000",
+    "outputs/anomaly_detection_2/bulk/waves/clean/wave_002_train_clean_500",
+    "outputs/anomaly_detection_2/bulk/waves/clean/wave_003_train_clean_2500",
+    "outputs/anomaly_detection_2/bulk/waves/clean/wave_004_train_clean_2200",
+    "outputs/anomaly_detection_2/bulk/waves/clean/wave_005_clean_remaining_1150"
+  ],
+  "anomaly_runs": [
+    "outputs/anomaly_detection_2/prebulk_200/anomaly_batch/pairs_25_v1",
+    "outputs/anomaly_detection_2/bulk/waves/anomaly/wave_006_pairs_675_photometric_diagnostic",
+    "outputs/anomaly_detection_2/bulk/waves/anomaly/wave_007_pairs_220_test",
+    "outputs/anomaly_detection_2/bulk/waves/anomaly/wave_008_pairs_220_test",
+    "outputs/anomaly_detection_2/bulk/waves/anomaly/wave_009_pairs_110_test_final"
+  ],
+  "materialization": "hardlink",
+  "verify_source_sha256": true
+}
