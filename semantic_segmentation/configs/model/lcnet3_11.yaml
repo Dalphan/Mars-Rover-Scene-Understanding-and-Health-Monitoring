@@ -1,0 +1,16 @@
+# @package model
+name: lcnet
+run_name: lcnet3_11
+variant: lcnet3_11
+in_channels: 3
+base_channels: 32
+partial_rate: 0.5
+stage1_blocks: 3
+stage2_blocks: 11
+num_classes: 9
+ignore_index: -100
+input_size: [512, 512]
+image_mean: [0.485, 0.456, 0.406]
+image_std: [0.229, 0.224, 0.225]
+pretrained: false
+log_shapes: false

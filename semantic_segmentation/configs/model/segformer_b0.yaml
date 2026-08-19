@@ -1,0 +1,27 @@
+# @package model
+
+# Default model config.
+# Switch to the SMP wrapper with:
+#   python -m src.train.train_segmentation model=smp
+name: segformer_b0
+run_name: segformer_b0
+
+# Hugging Face checkpoint used for SegFormer-B0.
+pretrained_name: nvidia/segformer-b0-finetuned-ade-512-512
+
+# Mars-Bench / S5Mars:
+# labels are already encoded as 0..8.
+# class 0 is ignored by cross-entropy and metrics.
+# Generalized Dice, when selected, includes class 0.
+num_classes: 9
+ignore_index: -100
+
+# Required input resolution.
+input_size: [512, 512]
+
+# Use ImageNet normalization for the pretrained SegFormer backbone.
+image_mean: [0.485, 0.456, 0.406]
+image_std: [0.229, 0.224, 0.225]
+
+# Enable optional debug logging for tensor shapes.
+log_shapes: true

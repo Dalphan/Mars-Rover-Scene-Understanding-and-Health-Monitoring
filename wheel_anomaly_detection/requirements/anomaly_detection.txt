@@ -1,0 +1,2 @@
+# Le dipendenze ML verranno fissate insieme al primo baseline riproducibile.
+# Mantenere questo ambiente separato dal Python incluso in Blender.
