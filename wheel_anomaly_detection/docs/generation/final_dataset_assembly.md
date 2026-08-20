@@ -105,3 +105,11 @@ anomaly mask.
 I sorgenti e le configurazioni dei benchmark rimangono nel repository: sono
 piccoli e servono a riprodurre le misure documentate, anche se i raster
 benchmark non vengono conservati.
+
+## Export Kaggle
+
+L'export minimale per Kaggle e disponibile in
+`outputs/anomaly_detection_2/kaggle_export/curiosity_wheel_hole_v1_10000`.
+Contiene un unico ZIP con `images/`, `masks/` e `samples.csv`; il README breve
+resta accanto allo ZIP. L'archivio usa compressione ZIP veloce, mantiene il
+train in una sola cartella ed e stato verificato integralmente con 7-Zip.

@@ -25,8 +25,11 @@ archivio storico. Non aggiornarli per milestone ordinarie: aggiornare invece
   `wheel_anomaly_detection/scripts/blender/`.
 - La logica pura della generazione vive nei package esistenti sotto
   `wheel_anomaly_detection/src/`.
-- Il nuovo codice ML vive in `wheel_anomaly_detection/src/anomaly_detection/`;
-  i notebook devono consumarlo, non sostituirlo.
+- Il codice ML autorevole vive in
+  `wheel_anomaly_detection/src/anomaly_detection/`; il notebook Kaggle è
+  autosufficiente e duplica esplicitamente il codice necessario, così da non
+  dipendere dai sorgenti del repository. Moduli e notebook devono restare
+  sincronizzati.
 - Le configurazioni Blender restano in
   `wheel_anomaly_detection/configs/blender/`; quelle ML stanno in
   `wheel_anomaly_detection/configs/anomaly_detection/`.

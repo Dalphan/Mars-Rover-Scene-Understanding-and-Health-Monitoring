@@ -1,0 +1,27 @@
+# @package model
+
+name: patchcore
+run_name: patchcore_${model.backbone}
+
+# Temporary direct-resize baseline. A square resize distorts the native 4:3
+# images, so this remains configurable for the later resolution study.
+input_size: [256, 256]
+image_mean: [0.485, 0.456, 0.406]
+image_std: [0.229, 0.224, 0.225]
+
+# PatchCore stores clean feature vectors directly in its memory bank. Random
+# augmentation would change that reference distribution and is disabled.
+train_augmentations_enabled: false
+
+# ResNet-18 is the lightweight project default. The original paper uses
+# wide_resnet50_2 and can still be selected with a Hydra override.
+backbone: resnet18
+pretrained: true
+layers: [layer2, layer3]
+
+# These parameters will be consumed when memory-bank fitting is added.
+coreset_sampling_ratio: 0.1
+num_neighbors: 9
+
+# Local patch aggregation applied independently to every selected feature map.
+pool_kernel_size: 3

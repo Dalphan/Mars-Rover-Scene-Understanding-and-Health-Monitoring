@@ -35,6 +35,7 @@ senza rileggere tutti i documenti o affidarsi a note ormai superate.
 | Seconda wave paired test da 220 | [bulk_wave_008.md](bulk_wave_008.md) | Ulteriori 440 immagini test; restano 110 coppie |
 | Wave finale da 110 coppie | [bulk_wave_009.md](bulk_wave_009.md) | Ultimi 220 render pianificati e passaggio all'assemblaggio finale |
 | Dataset finale assemblato | [final_dataset_assembly.md](final_dataset_assembly.md) | Vista ordinata hardlink, manifest, split, conteggi e regole d'uso |
+| Export per Kaggle | [final_dataset_assembly.md](final_dataset_assembly.md#export-kaggle) | ZIP minimale, CSV dei campioni e README esterno |
 
 ## Percorsi rapidi
 
@@ -137,6 +138,9 @@ senza rileggere tutti i documenti o affidarsi a note ormai superate.
 - Pulizia post-assemblaggio completata: rimossi benchmark raster, revisioni
   visive superate, smoke v1, dipendenze generate e log/PID falliti. Run bulk,
   pre-bulk, pilot T3, probe di drift e sorgenti riproducibili sono conservati.
+- Export Kaggle verificato in
+  `outputs/anomaly_detection_2/kaggle_export/curiosity_wheel_hole_v1_10000`:
+  un solo ZIP con 21.250 PNG e `samples.csv`; README mantenuto fuori dallo ZIP.
 
 ## Regola di manutenzione
 

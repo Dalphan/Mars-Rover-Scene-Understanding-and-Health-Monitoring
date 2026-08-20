@@ -1,0 +1,60 @@
+defaults:
+  - model: patchcore
+  - _self_
+
+seed: 42
+
+dataset:
+  # Required CLI override, for example: dataset.root=D:/datasets/curiosity_wheel_hole_v1_10000
+  root: ???
+  splits:
+    train: train
+    validation: validation
+    test: test
+
+dataloader:
+  batch_size: 4
+  num_workers: 2
+  pin_memory: true
+
+preprocessing:
+  # Input geometry and normalization are owned by the selected model config.
+  train:
+    resize: ${model.input_size}
+    normalize_mean: ${model.image_mean}
+    normalize_std: ${model.image_std}
+    augmentations_enabled: ${model.train_augmentations_enabled}
+    brightness: 0.08
+    contrast: 0.08
+    gamma: 0.08
+    saturation: 0.06
+    sensor_noise: 0.004
+    gaussian_noise: 0.004
+    gaussian_blur: [0.1, 0.5]
+
+  evaluation:
+    resize: ${model.input_size}
+    normalize_mean: ${model.image_mean}
+    normalize_std: ${model.image_std}
+    augmentations_enabled: false
+    brightness: null
+    contrast: null
+    gamma: null
+    saturation: null
+    sensor_noise: null
+    gaussian_noise: null
+    gaussian_blur: null
+
+# PatchCore is non-parametric: fitting builds a memory bank without gradients.
+optimizer:
+  name: none
+
+scheduler:
+  name: none
+
+evaluation:
+  # Ranking metrics do not require selecting an operating threshold.
+  metrics: [image_auroc, image_average_precision, pixel_auroc, pixel_average_precision]
+  histogram_bins: 2048
+  # Enabling this assumes a wheel mask is also available at deployment time.
+  restrict_pixels_to_target_mask: false

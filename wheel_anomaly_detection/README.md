@@ -64,7 +64,7 @@ first reproducible ML baseline is defined.
 ```text
 assets/original/             Local, immutable source asset placeholder
 configs/blender/             Generation and rendering contracts
-configs/anomaly_detection/   Reserved ML configuration area
+configs/anomaly_detection/   Hydra configuration for ML experiments
 docs/generation/             Authoritative dataset and pipeline documentation
 docs/anomaly_detection/      ML protocol and benchmark documentation
 scripts/blender/             Blender-side entry points
@@ -85,3 +85,22 @@ python -m unittest tests.test_wheel_preparation_core tests.test_wheel_preparatio
 Generation changes also require the real-asset pipeline and the milestone
 validator specified in the relevant document. JSON reports alone do not
 replace visual render quality assurance.
+
+## Anomaly-detection dataloader
+
+The ML dataloader loads the extracted Kaggle dataset and supports optional
+resize, normalization, photometric augmentation, sensor noise, Gaussian noise,
+and Gaussian blur. Hydra keeps terminal settings in one reproducible config:
+
+```bash
+python scripts/anomaly_detection/inspect_dataloaders.py \
+  dataset.root=/path/to/curiosity_wheel_hole_v1_10000
+```
+
+See [`docs/anomaly_detection/dataloader.md`](docs/anomaly_detection/dataloader.md)
+for the Hydra configuration and batch contract.
+
+The first model preset is a lightweight PatchCore baseline with model-specific
+preprocessing, a common anomaly-output interface, four essential image/pixel
+metrics, and optional Kaggle-to-Google-Drive artifact persistence. See
+[`docs/anomaly_detection/README.md`](docs/anomaly_detection/README.md).

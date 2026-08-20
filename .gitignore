@@ -22,5 +22,5 @@ assets/original/*
 !assets/original/.gitkeep
 
 # Local notes and user-specific instruction drafts.
-/prova.md
 /SKILLS.md
+/AGENTS.md
