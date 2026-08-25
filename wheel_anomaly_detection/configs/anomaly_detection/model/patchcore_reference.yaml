@@ -1,0 +1,26 @@
+defaults:
+  - /model/patchcore@_here_
+  - _self_
+
+# Single-backbone IM224 baseline from amazon-science/patchcore-inspection.
+run_name: patchcore_reference_wr50_224
+input_size: [224, 224]
+resize: null
+resize_shorter_side: 256
+center_crop: ${model.input_size}
+
+backbone: wide_resnet50_2
+layers: [layer2, layer3]
+patch_size: 3
+patch_stride: 1
+pretrain_embed_dimension: 1024
+target_embed_dimension: 1024
+coreset_sampling_ratio: 0.1
+num_neighbors: 1
+projection_dim: 128
+sampling_seed: 0
+
+# Keep the project reservoir bounded for the 7,000-image training split.
+max_patches_per_image: 128
+max_training_embeddings: 50000
+max_memory_bank_size: 2048

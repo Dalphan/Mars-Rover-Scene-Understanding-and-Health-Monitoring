@@ -15,6 +15,7 @@ from src.anomaly_detection.data import (
     PreprocessingConfig,
     WheelPreprocessor,
     build_dataloaders,
+    select_imagenet_penalty_shards,
 )
 
 
@@ -114,6 +115,21 @@ class AnomalyDataloaderTests(unittest.TestCase):
             "sector": "leading" if condition == "hole" else "",
         }
 
+    def test_imagenet_penalty_shard_selection_is_deterministic(self) -> None:
+        first = select_imagenet_penalty_shards(
+            total_shards=294, num_shards=18, seed=42
+        )
+        second = select_imagenet_penalty_shards(
+            total_shards=294, num_shards=18, seed=42
+        )
+
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 18)
+        self.assertEqual(len(set(first)), 18)
+        self.assertEqual(first, tuple(sorted(first)))
+        self.assertTrue(all(path.startswith("data/train-") for path in first))
+        self.assertTrue(all(path.endswith("-of-00294.parquet") for path in first))
+
     def test_clean_sample_has_stable_zero_mask_schema(self) -> None:
         sample = CuriosityWheelDataset(self.root, "train")[0]
 
@@ -143,7 +159,7 @@ class AnomalyDataloaderTests(unittest.TestCase):
         self.assertEqual(len(validation_loader.dataset), 2)
         self.assertEqual(len(test_loader.dataset), 2)
         validation_batch = next(iter(validation_loader))
-        self.assertEqual(validation_batch["image"].shape, (2, 3, 256, 256))
+        self.assertEqual(validation_batch["image"].shape, (2, 3, 384, 512))
         self.assertEqual(validation_batch["label"].tolist(), [0, 1])
         self.assertEqual(validation_batch["has_anomaly_mask"].tolist(), [False, True])
 
@@ -228,6 +244,30 @@ class AnomalyDataloaderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must be set together"):
             PreprocessingConfig(normalize_mean=(0.5, 0.5, 0.5))
 
+
+    def test_reference_resize_crop_is_aligned_across_rgb_and_masks(self) -> None:
+        preprocessor = WheelPreprocessor(
+            PreprocessingConfig(
+                resize_shorter_side=256,
+                center_crop=(224, 224),
+                normalize_mean=IMAGENET_MEAN,
+                normalize_std=IMAGENET_STD,
+                augmentations_enabled=False,
+            )
+        )
+        image = torch.zeros(3, 600, 800, dtype=torch.uint8)
+        target_mask = torch.zeros(1, 600, 800, dtype=torch.uint8)
+        target_mask[:, 200:400, 300:500] = 255
+        anomaly_mask = target_mask.clone()
+
+        image, target_mask, anomaly_mask = preprocessor(
+            image, target_mask, anomaly_mask
+        )
+
+        self.assertEqual(image.shape, (3, 224, 224))
+        self.assertEqual(target_mask.shape, (1, 224, 224))
+        self.assertTrue(torch.equal(target_mask, anomaly_mask))
+
     def test_train_and_evaluation_can_use_different_preprocessing(self) -> None:
         cfg = self._dataloader_config(batch_size=1)
         cfg.preprocessing.train.augmentations_enabled = True
@@ -244,7 +284,7 @@ class AnomalyDataloaderTests(unittest.TestCase):
         cfg = self._dataloader_config(batch_size=1)
         train_loader, validation_loader, _ = build_dataloaders(cfg)
 
-        self.assertEqual(tuple(cfg.model.input_size), (256, 256))
+        self.assertEqual(tuple(cfg.model.input_size), (384, 512))
         self.assertFalse(cfg.model.train_augmentations_enabled)
         self.assertFalse(train_loader.dataset.preprocessing.config.augmentations_enabled)
         self.assertFalse(
@@ -357,9 +397,10 @@ class AnomalyDataloaderTests(unittest.TestCase):
         self.assertIn("self._validate_manifest_rows(rows)", source)
         self.assertIn("Duplicate image_id in samples.csv", source)
         self.assertIn("EXPECTED_SPLIT_CONDITION_COUNTS", source)
-        self.assertIn("evaluation_preprocessing=EVALUATION_PREPROCESSING", source)
+        self.assertIn("evaluation_preprocessing=evaluation_preprocessing", source)
         self.assertIn("# Configuration", source)
-        self.assertIn("IMAGE_SIZE = (256, 256)", source)
+        self.assertIn('PATCHCORE_PRESET = "light"', source)
+        self.assertIn('"reference": {', source)
         self.assertIn("TRAIN_AUGMENTATIONS_ENABLED = False", source)
         self.assertIn("images must be finite float32 tensors", source)
 

@@ -8,7 +8,7 @@ import torch
 from hydra import compose, initialize_config_dir
 
 from src.anomaly_detection.evaluation import (
-    EssentialAnomalyMetrics,
+    AnomalyMetrics,
     ExactBinaryMetrics,
     build_metrics,
 )
@@ -54,7 +54,7 @@ class AnomalyInterfaceMetricsTests(unittest.TestCase):
             ],
             dtype=torch.uint8,
         )
-        metrics = EssentialAnomalyMetrics(histogram_bins=32)
+        metrics = AnomalyMetrics(histogram_bins=32)
         metrics.update(prediction, torch.tensor([0, 1]), anomaly_masks)
 
         result = metrics.compute()
@@ -93,7 +93,7 @@ class AnomalyInterfaceMetricsTests(unittest.TestCase):
             self.assertTrue(torch.equal(restored.memory_bank, model.memory_bank))
             self.assertEqual(metadata, {"run_name": "test"})
 
-            incompatible = PatchCore(pretrained=False, pool_kernel_size=5)
+            incompatible = PatchCore(pretrained=False, patch_size=5)
             with self.assertRaisesRegex(ValueError, "configuration does not match"):
                 incompatible.load(path)
 
@@ -123,12 +123,18 @@ class AnomalyInterfaceMetricsTests(unittest.TestCase):
 
         self.assertIn("class AnomalyPrediction", source)
         self.assertIn("class ExactBinaryMetrics", source)
-        self.assertIn("class EssentialAnomalyMetrics", source)
+        self.assertIn("class AnomalyMetrics", source)
+        self.assertIn("def plot_anomaly_visualizations", source)
+        self.assertIn("def save_anomaly_visualizations", source)
+        self.assertIn("class AnomalyDiagnostics", source)
+        self.assertIn("class PerRegionOverlap", source)
+        self.assertIn("random_pixel_ap_baseline", source)
         self.assertIn("self.image = ExactBinaryMetrics()", source)
         self.assertIn("def persist_run_artifacts", source)
         self.assertIn('get_kaggle_secret("GDRIVE_FOLDER_ID", required=True)', source)
         self.assertIn('detector.save(OUTPUT_DIR / "model.ckpt"', source)
         self.assertIn('OUTPUT_DIR / "metrics.json"', source)
+        self.assertIn('OUTPUT_DIR / f"{split}_examples.png"', source)
         self.assertIn('"model_config": self.checkpoint_config()', source)
         self.assertIn('"manifest_sha256": sha256_file(DATASET_ROOT / "samples.csv")', source)
 

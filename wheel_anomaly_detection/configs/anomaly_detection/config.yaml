@@ -3,6 +3,8 @@ defaults:
   - _self_
 
 seed: 42
+resume: false
+resume_run_dir: null
 
 dataset:
   # Required CLI override, for example: dataset.root=D:/datasets/curiosity_wheel_hole_v1_10000
@@ -20,7 +22,9 @@ dataloader:
 preprocessing:
   # Input geometry and normalization are owned by the selected model config.
   train:
-    resize: ${model.input_size}
+    resize: ${model.resize}
+    resize_shorter_side: ${model.resize_shorter_side}
+    center_crop: ${model.center_crop}
     normalize_mean: ${model.image_mean}
     normalize_std: ${model.image_std}
     augmentations_enabled: ${model.train_augmentations_enabled}
@@ -33,7 +37,9 @@ preprocessing:
     gaussian_blur: [0.1, 0.5]
 
   evaluation:
-    resize: ${model.input_size}
+    resize: ${model.resize}
+    resize_shorter_side: ${model.resize_shorter_side}
+    center_crop: ${model.center_crop}
     normalize_mean: ${model.image_mean}
     normalize_std: ${model.image_std}
     augmentations_enabled: false
@@ -45,7 +51,8 @@ preprocessing:
     gaussian_noise: null
     gaussian_blur: null
 
-# PatchCore is non-parametric: fitting builds a memory bank without gradients.
+# Trainable roadmap models own optimization inside fit; PatchCore remains
+# non-parametric. These fields keep the external helper backward compatible.
 optimizer:
   name: none
 
@@ -58,3 +65,19 @@ evaluation:
   histogram_bins: 2048
   # Enabling this assumes a wheel mask is also available at deployment time.
   restrict_pixels_to_target_mask: false
+  diagnostics:
+    enabled: true
+    group_fields: [severity, camera_pose, lighting, wear]
+    num_extreme_examples: 6
+    pro_bins: 256
+    pro_max_fpr: 0.30
+  visualization:
+    enabled: true
+    num_clean: 3
+    num_anomalous: 3
+    colormap: magma
+    overlay_alpha: 0.55
+    dpi: 150
+
+output:
+  root: outputs/anomaly_detection

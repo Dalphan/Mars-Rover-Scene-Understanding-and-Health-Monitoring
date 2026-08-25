@@ -104,3 +104,13 @@ The first model preset is a lightweight PatchCore baseline with model-specific
 preprocessing, a common anomaly-output interface, four essential image/pixel
 metrics, and optional Kaggle-to-Google-Drive artifact persistence. See
 [`docs/anomaly_detection/README.md`](docs/anomaly_detection/README.md).
+
+Run the complete lightweight `384x512` PatchCore experiment from the project directory:
+
+```bash
+python scripts/anomaly_detection/run_experiment.py \
+  dataset.root=/path/to/curiosity_wheel_hole_v1_10000
+```
+
+Add `model=patchcore_reference` for the Amazon-compatible IM224 preprocessing
+and embedding preset, or `model=patchcore_256` for the historical comparison.

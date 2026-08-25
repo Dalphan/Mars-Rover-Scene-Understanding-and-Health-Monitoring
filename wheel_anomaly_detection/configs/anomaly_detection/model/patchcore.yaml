@@ -1,11 +1,14 @@
 # @package model
 
 name: patchcore
-run_name: patchcore_${model.backbone}
+run_name: patchcore_light_${model.backbone}_384x512
 
-# Temporary direct-resize baseline. A square resize distorts the native 4:3
-# images, so this remains configurable for the later resolution study.
-input_size: [256, 256]
+# Lightweight project baseline: preserve the native 4:3 frame without cropping
+# wheel context. The reference preset overrides this with Resize(256)+Crop(224).
+input_size: [384, 512]
+resize: ${model.input_size}
+resize_shorter_side: null
+center_crop: null
 image_mean: [0.485, 0.456, 0.406]
 image_std: [0.229, 0.224, 0.225]
 
@@ -13,15 +16,29 @@ image_std: [0.229, 0.224, 0.225]
 # augmentation would change that reference distribution and is disabled.
 train_augmentations_enabled: false
 
-# ResNet-18 is the lightweight project default. The original paper uses
-# wide_resnet50_2 and can still be selected with a Hydra override.
+# ResNet-18 and a 384-dimensional embedding bound both extraction and NN cost.
 backbone: resnet18
 pretrained: true
 layers: [layer2, layer3]
 
-# These parameters will be consumed when memory-bank fitting is added.
+# PatchCore scoring and bounded memory-bank construction.
 coreset_sampling_ratio: 0.1
 num_neighbors: 9
+patch_size: 3
+patch_stride: 1
+pretrain_embed_dimension: 384
+target_embed_dimension: 384
+max_patches_per_image: 128
+max_training_embeddings: 50000
+max_memory_bank_size: 2048
+projection_dim: 64
+sampling_seed: ${seed}
 
-# Local patch aggregation applied independently to every selected feature map.
-pool_kernel_size: 3
+# Calibrate normalized outputs on clean train scores only.
+calibration_quantile: 0.99
+calibration_batches: 20
+
+# Bound temporary nearest-neighbour distance matrices.
+distance_query_chunk_size: 512
+distance_bank_chunk_size: 2048
+gaussian_sigma: 4.0

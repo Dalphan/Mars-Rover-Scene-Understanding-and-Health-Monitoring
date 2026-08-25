@@ -48,6 +48,9 @@ class AnomalyDetector(nn.Module):
         train_loader: Iterable[Mapping[str, Any]],
         *,
         device: torch.device | str,
+        validation_loader: Iterable[Mapping[str, Any]] | None = None,
+        work_dir: str | Path | None = None,
+        resume: bool = False,
     ) -> AnomalyDetector:
         raise NotImplementedError
 

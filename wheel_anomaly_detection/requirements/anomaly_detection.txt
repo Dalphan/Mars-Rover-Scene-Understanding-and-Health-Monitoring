@@ -1,7 +1,10 @@
 # Use an environment separate from Blender's bundled Python.
 torch
 torchvision
+numpy
 pillow
 matplotlib
+tqdm
+datasets[vision]>=4.0,<5
 hydra-core==1.3.2
 omegaconf==2.3.0

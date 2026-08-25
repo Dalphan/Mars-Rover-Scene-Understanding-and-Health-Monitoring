@@ -2,17 +2,29 @@
 
 from .audit import audit_preprocessing
 from .curiosity_wheel_dataset import CuriosityWheelDataset
-from .dataloaders import build_dataloader, build_dataloaders, build_preprocessing
+from .dataloaders import (
+    ImageNetPenaltyDataset,
+    build_dataloader,
+    build_dataloaders,
+    build_imagenet_penalty_loader,
+    build_preprocessing,
+    prepare_imagenet_penalty_cache,
+    select_imagenet_penalty_shards,
+)
 from .preprocessing import IMAGENET_MEAN, IMAGENET_STD, PreprocessingConfig, WheelPreprocessor
 
 __all__ = [
     "CuriosityWheelDataset",
     "IMAGENET_MEAN",
     "IMAGENET_STD",
+    "ImageNetPenaltyDataset",
     "PreprocessingConfig",
     "WheelPreprocessor",
     "audit_preprocessing",
     "build_dataloader",
     "build_dataloaders",
+    "build_imagenet_penalty_loader",
     "build_preprocessing",
+    "prepare_imagenet_penalty_cache",
+    "select_imagenet_penalty_shards",
 ]

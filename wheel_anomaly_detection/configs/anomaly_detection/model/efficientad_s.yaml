@@ -1,0 +1,32 @@
+# @package model
+name: efficientad_s
+run_name: efficientad_s_full
+input_size: [256, 256]
+resize: ${model.input_size}
+resize_shorter_side: null
+center_crop: null
+# EfficientAD performs ImageNet normalization inside teacher, student and AE.
+image_mean: null
+image_std: null
+train_augmentations_enabled: false
+train_batch_size: 1
+evaluation_batch_size: 8
+
+# Download teacher_small.pth from the pinned nelson1425 source before training.
+teacher_weights_path: null
+require_teacher_weights: true
+channels: 384
+max_steps: 70000
+learning_rate: 0.0001
+weight_decay: 0.00001
+hard_quantile: 0.999
+checkpoint_interval: 1000
+
+# Deterministic partial cache of the official ImageNet-1k train Parquet shards.
+penalty_dataset_id: ILSVRC/imagenet-1k
+penalty_dataset_revision: 49e2ee26f3810fb5a7536bbf732a7b07389a47b5a
+penalty_token_env: HF_TOKEN
+penalty_cache_dir: data/cache/imagenet_penalty
+penalty_total_shards: 294
+penalty_cache_num_shards: 18
+penalty_shuffle_buffer_size: 10000

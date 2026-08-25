@@ -1,0 +1,34 @@
+# @package model
+name: supersimplenet
+run_name: supersimplenet_full
+input_size: [256, 256]
+resize: ${model.input_size}
+resize_shorter_side: null
+center_crop: null
+image_mean: [0.485, 0.456, 0.406]
+image_std: [0.229, 0.224, 0.225]
+train_augmentations_enabled: false
+train_batch_size: 32
+evaluation_batch_size: 8
+
+backbone: wide_resnet50_2
+pretrained: true
+weights_name: IMAGENET1K_V1
+layers: [layer2, layer3]
+patch_size: 3
+epochs: 300
+noise_std: 0.015
+perlin_threshold: 0.2
+adaptor_learning_rate: 0.0001
+segmentation_learning_rate: 0.0002
+decision_learning_rate: 0.0002
+scheduler_gamma: 0.4
+stop_grad: true
+adapt_classification_features: false
+gradient_clip: false
+margin: 0.5
+gaussian_sigma: 4.0
+fixed_training_duration: true
+validation_interval: 4
+validation_batches: 64
+max_samples_per_epoch: null

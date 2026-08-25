@@ -137,7 +137,7 @@ class BinaryHistogramMetrics:
         }
 
 
-class EssentialAnomalyMetrics:
+class AnomalyMetrics:
     """Accumulate the four project metrics at image and pixel level."""
 
     def __init__(self, histogram_bins: int = 2048) -> None:
@@ -187,18 +187,18 @@ class EssentialAnomalyMetrics:
         }
 
 
-def build_metrics(cfg: DictConfig) -> EssentialAnomalyMetrics:
+def build_metrics(cfg: DictConfig) -> AnomalyMetrics:
     """Build the fixed essential metric set from Hydra."""
     configured = tuple(str(name) for name in cfg.evaluation.metrics)
     if configured != ESSENTIAL_METRIC_NAMES:
         raise ValueError(
             f"evaluation.metrics must be exactly {ESSENTIAL_METRIC_NAMES}, got {configured}"
         )
-    return EssentialAnomalyMetrics(histogram_bins=int(cfg.evaluation.histogram_bins))
+    return AnomalyMetrics(histogram_bins=int(cfg.evaluation.histogram_bins))
 
 
 def update_metrics_from_batch(
-    metrics: EssentialAnomalyMetrics,
+    metrics: AnomalyMetrics,
     prediction: AnomalyPrediction,
     batch: dict[str, torch.Tensor],
     *,

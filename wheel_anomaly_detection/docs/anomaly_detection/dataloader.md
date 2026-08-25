@@ -24,7 +24,8 @@ validation e test non usano shuffle.
 
 `PreprocessingConfig` lascia ogni passaggio disabilitato con `None` e supporta:
 
-- resize `(height, width)`, applicato anche alle mask;
+- resize diretto `(height, width)` oppure resize del lato corto;
+- center crop opzionale, applicato in modo identico a RGB e mask;
 - normalizzazione RGB tramite mean/std;
 - jitter di luminosita, contrasto, gamma e saturazione;
 - rumore sensore dipendente dal segnale;
@@ -35,10 +36,11 @@ trasformazioni fotometriche non modificano le mask. Il builder accetta
 `train_preprocessing` ed `evaluation_preprocessing` separati, per evitare di
 applicare augmentation stocastica a validation e test.
 
-Dimensione, media, deviazione standard e abilitazione delle augmentation train
-sono proprietà della configurazione del modello. Il default PatchCore esegue un
-resize diretto a `256x256`, usa la normalizzazione ImageNet e disabilita le
-augmentation casuali per non contaminare la distribuzione della memory bank.
+Dimensione, geometria e normalizzazione appartengono al preset del modello.
+`model=patchcore_light` usa un resize diretto a `384x512`, preservando il
+rapporto nativo `4:3`; `model=patchcore_reference` replica la geometria Amazon
+con resize del lato corto a `256` e center crop `224x224`. Entrambi usano la
+normalizzazione ImageNet e disabilitano le augmentation train.
 
 La conversione RGB a `float32` in `[0, 1]` e sempre applicata, così train,
 validation e test condividono lo stesso contratto numerico. La normalizzazione,
@@ -75,7 +77,8 @@ parametri modificabili sono raccolti nella cella iniziale `Configuration`.
 
 ## Configurazione corrente del notebook
 
-- Il resize diretto a `256x256` è un baseline temporaneo e configurabile.
+- `PATCHCORE_PRESET="light"` usa `384x512`; `"reference"` usa
+  `Resize(256) + CenterCrop(224)`.
 - Train, validation e test usano la normalizzazione ImageNet. È coerente con i
   backbone preaddestrati di PatchCore/PaDiM e con il preprocessing di
   EfficientAD.
@@ -85,9 +88,10 @@ parametri modificabili sono raccolti nella cella iniziale `Configuration`.
 
 ## Trade-off della milestone
 
-- Non vengono ancora applicati crop o ROI.
-- Il resize quadrato deforma il rapporto nativo `4:3`; consente però un baseline
-  semplice, riproducibile e confrontabile prima dello studio della risoluzione.
+- Il center crop è applicato solo nel preset reference per confrontabilità con
+  Amazon; il preset light conserva tutto il frame `4:3`.
+- Una ROI basata sulla target mask non viene usata, perché tale mask potrebbe
+  non essere disponibile al deployment.
 - Le anomaly mask mancanti dei clean diventano maschere zero per mantenere uno
   schema di batch uniforme.
 - Le immagini hanno dimensioni uniformi nel dataset corrente; il collate
