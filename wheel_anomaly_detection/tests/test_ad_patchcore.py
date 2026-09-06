@@ -140,6 +140,11 @@ class PatchCoreTests(unittest.TestCase):
                 "image_average_precision",
                 "pixel_auroc",
                 "pixel_average_precision",
+                "target_wheel_pixel_auroc",
+                "target_wheel_pixel_average_precision",
+                "normalized_image_scores_at_zero",
+                "normalized_image_scores_at_one",
+                "normalized_image_score_saturation_fraction",
             },
         )
 

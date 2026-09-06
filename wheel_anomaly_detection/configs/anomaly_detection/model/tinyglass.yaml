@@ -1,7 +1,7 @@
 # @package model
 name: tinyglass
-run_name: tinyglass_full
-input_size: [256, 256]
+run_name: tinyglass_poseA_crop720_input384_layer2_sigma1_hole_small70_lowlr_frozen
+input_size: [384, 384]
 resize: ${model.input_size}
 resize_shorter_side: null
 center_crop: null
@@ -15,21 +15,39 @@ pretrained: true
 weights_name: IMAGENET1K_V1
 patch_size: 3
 epochs: 640
-learning_rate: 0.0001
+learning_rate: 0.00005
 weight_decay: 0.01
 noise_std: 0.015
 radius_quantile: 0.75
 hard_mining_quantile: 0.5
 gas_steps: 20
 gas_step_size: 0.001
-hypersphere_projection: true
+hypersphere_projection: false
+feature_grid_resolution: layer2
 max_samples_per_epoch: 392
 # Local runs must override this with the extracted DTD dtd/images directory.
 texture_root: null
-require_texture_dataset: true
+require_texture_dataset: false
 blend_mean: 0.5
 blend_std: 0.1
-gaussian_sigma: 4.0
-fixed_training_duration: true
+gaussian_sigma: 1.0
+pose_crop_enabled: true
+las_restrict_to_target_mask: true
+# LAS variants: texture (official DTD/Perlin), hole, or mixed.
+# The current experiment uses only clean images and clean target-wheel masks.
+las_mode: hole
+las_hole_probability: 0.5
+las_hole_luminance_range: [0.18, 0.32]
+# Sampling weights for small, medium, and large synthetic holes.
+las_hole_severity_weights: [0.70, 0.25, 0.05]
+freeze_backbone: true
+backbone_learning_rate: 0.00001
+fixed_training_duration: false
 validation_interval: 1
-validation_batches: 64
+# null evaluates the complete validation split when selecting the best epoch.
+validation_batches: null
+cache_validation_features: true
+# Number of validation checks without AUROC improvement; null disables stopping.
+early_stopping_patience: 40
+early_stopping_min_delta: 0.0
+checkpoint_interval: 1

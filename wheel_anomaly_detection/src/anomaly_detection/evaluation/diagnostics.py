@@ -364,7 +364,7 @@ class AnomalyDiagnostics:
                     accumulator = ExactBinaryMetrics()
                     accumulator.update(
                         torch.tensor(
-                            [row["normalized_image_score"] for row in records],
+                            [row["raw_image_score"] for row in records],
                             dtype=torch.float32,
                         ),
                         labels,

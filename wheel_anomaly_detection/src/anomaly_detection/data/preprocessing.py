@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 
 import torch
 from torchvision.transforms import InterpolationMode
@@ -10,6 +11,7 @@ from torchvision.transforms import functional as TF
 RGBTriplet = tuple[float, float, float]
 ImageSize = tuple[int, int]
 SigmaRange = tuple[float, float]
+CropBox = tuple[int, int, int, int]
 IMAGENET_MEAN: RGBTriplet = (0.485, 0.456, 0.406)
 IMAGENET_STD: RGBTriplet = (0.229, 0.224, 0.225)
 
@@ -26,6 +28,8 @@ class PreprocessingConfig:
     resize: ImageSize | None = None
     resize_shorter_side: int | None = None
     center_crop: ImageSize | None = None
+    pose_crop_enabled: bool = False
+    pose_crops: Mapping[str, CropBox | None] = field(default_factory=dict)
     normalize_mean: RGBTriplet | None = None
     normalize_std: RGBTriplet | None = None
     augmentations_enabled: bool = True
@@ -48,6 +52,17 @@ class PreprocessingConfig:
         if self.center_crop is not None:
             if len(self.center_crop) != 2 or any(value < 1 for value in self.center_crop):
                 raise ValueError("center_crop must be a positive (height, width) pair")
+        for pose, crop in self.pose_crops.items():
+            if not pose:
+                raise ValueError("pose crop names cannot be empty")
+            if crop is None:
+                continue
+            if len(crop) != 4:
+                raise ValueError("pose crops must be (top, left, height, width)")
+            if crop[2] < 1 or crop[3] < 1:
+                raise ValueError("pose crop height and width must be positive")
+            if crop[2] != crop[3]:
+                raise ValueError("pose crops must be square")
 
         if (self.normalize_mean is None) != (self.normalize_std is None):
             raise ValueError("normalize_mean and normalize_std must be set together")
@@ -102,8 +117,33 @@ class WheelPreprocessor:
         image: torch.Tensor,
         target_mask: torch.Tensor,
         anomaly_mask: torch.Tensor,
+        *,
+        camera_pose: str | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         config = self.config
+
+        if config.pose_crop_enabled:
+            if camera_pose is None:
+                raise ValueError(
+                    "camera_pose is required when pose cropping is enabled"
+                )
+            if camera_pose not in config.pose_crops:
+                raise ValueError(f"No pose crop configured for {camera_pose!r}")
+            crop = config.pose_crops[camera_pose]
+            if crop is not None:
+                top, left, height, width = crop
+                image_height, image_width = image.shape[-2:]
+                if height > image_height or width > image_width:
+                    raise ValueError(
+                        f"Pose crop {crop!r} for {camera_pose!r} cannot fit "
+                        f"inside the input image {(image_height, image_width)!r} "
+                        "without padding"
+                    )
+                top = min(max(top, 0), image_height - height)
+                left = min(max(left, 0), image_width - width)
+                image = TF.crop(image, top, left, height, width)
+                target_mask = TF.crop(target_mask, top, left, height, width)
+                anomaly_mask = TF.crop(anomaly_mask, top, left, height, width)
 
         if config.resize is not None:
             image = TF.resize(

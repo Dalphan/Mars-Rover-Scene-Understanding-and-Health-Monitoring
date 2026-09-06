@@ -1,6 +1,6 @@
 # @package model
 name: supersimplenet
-run_name: supersimplenet_full
+run_name: supersimplenet_poseA_crop_input256_wheelmask_perlin06_score1pct_earlystop
 input_size: [256, 256]
 resize: ${model.input_size}
 resize_shorter_side: null
@@ -8,7 +8,8 @@ center_crop: null
 image_mean: [0.485, 0.456, 0.406]
 image_std: [0.229, 0.224, 0.225]
 train_augmentations_enabled: false
-train_batch_size: 32
+pose_crop_enabled: true
+train_batch_size: 16
 evaluation_batch_size: 8
 
 backbone: wide_resnet50_2
@@ -16,9 +17,10 @@ pretrained: true
 weights_name: IMAGENET1K_V1
 layers: [layer2, layer3]
 patch_size: 3
-epochs: 300
+epochs: 100
 noise_std: 0.015
 perlin_threshold: 0.2
+restrict_synthetic_anomalies_to_target_mask: true
 adaptor_learning_rate: 0.0001
 segmentation_learning_rate: 0.0002
 decision_learning_rate: 0.0002
@@ -28,7 +30,14 @@ adapt_classification_features: false
 gradient_clip: false
 margin: 0.5
 gaussian_sigma: 4.0
-fixed_training_duration: true
+# Pre-registered after the exploratory 256x256 aggregation study.
+image_score_mode: topk_fraction_mean
+image_score_fraction: 0.01
+fixed_training_duration: false
 validation_interval: 4
-validation_batches: 64
-max_samples_per_epoch: null
+validation_batches: null
+# Number of validation checks without a material Image-AUROC improvement.
+early_stopping_patience: 5
+early_stopping_min_delta: 0.001
+max_samples_per_epoch: 1024
+checkpoint_interval: 1

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -10,10 +11,16 @@ from torch.nn import functional as F
 from torchvision.models import get_model, get_model_weights
 from torchvision.models.feature_extraction import create_feature_extractor
 from torchvision.transforms.functional import gaussian_blur
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .base import AnomalyDetector, AnomalyPrediction
-from .trainable import _clean_images, _validation_auc
+from .trainable import (
+    _capture_training_rng_state,
+    _clean_images,
+    _restore_training_rng_state,
+    _save_checkpoint_atomic,
+    _validation_auc,
+)
 
 
 # Ported from the MIT-licensed official implementation:
@@ -205,8 +212,10 @@ class SuperSimpleAnomalyGenerator(nn.Module):
         power_width = 1 << (width - 1).bit_length()
         masks = []
         for _ in range(batch_size):
-            scale_y = 2 ** int(torch.randint(*self.perlin_range, (1,)).item())
-            scale_x = 2 ** int(torch.randint(*self.perlin_range, (1,)).item())
+            max_y = min(self.perlin_range[1], int(math.log2(power_height)) + 1)
+            max_x = min(self.perlin_range[1], int(math.log2(power_width)) + 1)
+            scale_y = 2 ** int(torch.randint(self.perlin_range[0], max_y, (1,)).item())
+            scale_x = 2 ** int(torch.randint(self.perlin_range[0], max_x, (1,)).item())
             noise = _rand_perlin_2d(
                 (power_height, power_width), (scale_y, scale_x), device=device
             )
@@ -222,11 +231,25 @@ class SuperSimpleAnomalyGenerator(nn.Module):
 
     def forward(
         self, features: torch.Tensor, adapted: torch.Tensor,
+        target_masks: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         batch, _, height, width = adapted.shape
         features = torch.cat((features, features), dim=0)
         adapted = torch.cat((adapted, adapted), dim=0)
         mask = self._masks(batch * 2, height, width, adapted.device)
+        if target_masks is not None:
+            expected_shape = (batch, 1, height, width)
+            if target_masks.shape != expected_shape:
+                raise ValueError(
+                    "SuperSimpleNet target masks must match the feature grid: "
+                    f"expected {expected_shape}, got {tuple(target_masks.shape)}"
+                )
+            target_masks = (target_masks > 0).to(mask.dtype)
+            if not target_masks.flatten(1).any(1).all():
+                raise ValueError(
+                    "SuperSimpleNet target masks must contain the target wheel"
+                )
+            mask = mask * torch.cat((target_masks, target_masks), dim=0)
         noise = torch.normal(0, self.noise_std, size=adapted.shape, device=adapted.device)
         return features + noise * mask, adapted + noise * mask, mask
 
@@ -246,8 +269,13 @@ class SuperSimpleNet(AnomalyDetector):
         stop_grad: bool = True, adapt_classification_features: bool = False,
         gradient_clip: bool = False, margin: float = 0.5,
         gaussian_sigma: float = 4.0, fixed_training_duration: bool = True,
-        validation_interval: int = 4, validation_batches: int = 64,
-        max_samples_per_epoch: int | None = None,
+        image_score_mode: str = "classification_head",
+        image_score_fraction: float = 0.01,
+        validation_interval: int = 4, validation_batches: int | None = 64,
+        early_stopping_patience: int | None = 5,
+        early_stopping_min_delta: float = 0.001,
+        restrict_synthetic_anomalies_to_target_mask: bool = False,
+        max_samples_per_epoch: int | None = None, checkpoint_interval: int = 1,
     ) -> None:
         super().__init__()
         self.backbone_name = backbone
@@ -268,10 +296,33 @@ class SuperSimpleNet(AnomalyDetector):
         self.gradient_clip = gradient_clip
         self.margin = margin
         self.gaussian_sigma = gaussian_sigma
+        if image_score_mode not in {"classification_head", "topk_fraction_mean"}:
+            raise ValueError(
+                "image_score_mode must be classification_head or "
+                "topk_fraction_mean"
+            )
+        if not 0 < image_score_fraction <= 1:
+            raise ValueError("image_score_fraction must be in (0, 1]")
+        self.image_score_mode = image_score_mode
+        self.image_score_fraction = float(image_score_fraction)
         self.fixed_training_duration = fixed_training_duration
+        if validation_interval < 1:
+            raise ValueError("validation_interval must be at least 1")
         self.validation_interval = validation_interval
         self.validation_batches = validation_batches
+        if early_stopping_patience is not None and early_stopping_patience < 1:
+            raise ValueError("early_stopping_patience must be positive or None")
+        if early_stopping_min_delta < 0:
+            raise ValueError("early_stopping_min_delta cannot be negative")
+        self.early_stopping_patience = early_stopping_patience
+        self.early_stopping_min_delta = early_stopping_min_delta
+        self.restrict_synthetic_anomalies_to_target_mask = bool(
+            restrict_synthetic_anomalies_to_target_mask
+        )
         self.max_samples_per_epoch = max_samples_per_epoch
+        if checkpoint_interval < 1:
+            raise ValueError("checkpoint_interval must be at least 1")
+        self.checkpoint_interval = checkpoint_interval
 
         self.features = SuperSimpleFeatureExtractor(
             backbone=backbone, pretrained=pretrained, weights_name=weights_name,
@@ -311,11 +362,28 @@ class SuperSimpleNet(AnomalyDetector):
             "adapt_classification_features": self.adapt_classification_features,
             "gradient_clip": self.gradient_clip, "margin": self.margin,
             "gaussian_sigma": self.gaussian_sigma,
+            "image_score_mode": self.image_score_mode,
+            "image_score_fraction": self.image_score_fraction,
             "fixed_training_duration": self.fixed_training_duration,
             "validation_interval": self.validation_interval,
             "validation_batches": self.validation_batches,
+            "early_stopping_patience": self.early_stopping_patience,
+            "early_stopping_min_delta": self.early_stopping_min_delta,
+            "restrict_synthetic_anomalies_to_target_mask": (
+                self.restrict_synthetic_anomalies_to_target_mask
+            ),
             "max_samples_per_epoch": self.max_samples_per_epoch,
         }
+
+    def _training_state(self) -> dict[str, Any]:
+        return {
+            "adaptor": self.adaptor.state_dict(),
+            "discriminator": self.discriminator.state_dict(),
+        }
+
+    def _load_training_state(self, state: dict[str, Any]) -> None:
+        self.adaptor.load_state_dict(state["adaptor"])
+        self.discriminator.load_state_dict(state["discriminator"])
 
     def _logits(self, images: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         features = self.features(images)
@@ -323,13 +391,20 @@ class SuperSimpleNet(AnomalyDetector):
         classification = adapted if self.adapt_classification_features else features
         return self.discriminator(adapted, classification)
 
+    def _image_score_components(
+        self, images: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return self._logits(images)
+
     def fit(
         self, train_loader, *, device, validation_loader=None,
         work_dir=None, resume=False,
     ) -> SuperSimpleNet:
-        if resume:
-            raise NotImplementedError("SuperSimpleNet resume is not implemented")
         device = torch.device(device)
+        if not self.fixed_training_duration and validation_loader is None:
+            raise ValueError(
+                "SuperSimpleNet early stopping requires validation_loader"
+            )
         self.to(device)
         segmentation_parameters, decision_parameters = self.discriminator.parameter_groups()
         optimizer = torch.optim.AdamW([
@@ -346,12 +421,60 @@ class SuperSimpleNet(AnomalyDetector):
         )
         best_auc = -math.inf
         best_state = None
+        best_epoch = None
+        validation_history: list[dict[str, Any]] = []
+        no_improvement_validations = 0
+        stopped_early = False
         steps = 0
+        start_epoch = 0
+        completed_epoch = 0
+        checkpoint_path = (
+            None if work_dir is None
+            else Path(work_dir) / "supersimplenet_training.ckpt"
+        )
+        if resume:
+            if checkpoint_path is None or not checkpoint_path.is_file():
+                raise FileNotFoundError(
+                    "resume=true requires work_dir/supersimplenet_training.ckpt"
+                )
+            checkpoint = torch.load(
+                checkpoint_path, map_location="cpu", weights_only=False
+            )
+            if checkpoint.get("format") != "supersimplenet_training_v1":
+                raise ValueError("Unsupported SuperSimpleNet training checkpoint")
+            if checkpoint.get("model_config") != self.checkpoint_config():
+                raise ValueError("SuperSimpleNet training checkpoint config mismatch")
+            self._load_training_state(checkpoint["model"])
+            optimizer.load_state_dict(checkpoint["optimizer"])
+            scheduler.load_state_dict(checkpoint["scheduler"])
+            start_epoch = int(checkpoint["epoch"])
+            completed_epoch = start_epoch
+            if not 0 <= start_epoch <= self.epochs:
+                raise ValueError("Invalid epoch in SuperSimpleNet training checkpoint")
+            steps = int(checkpoint.get("steps", 0))
+            best_auc = float(checkpoint.get("best_auc", -math.inf))
+            best_state = checkpoint.get("best_state")
+            best_epoch = checkpoint.get("best_epoch")
+            validation_history = list(checkpoint.get("validation_history", []))
+            no_improvement_validations = int(
+                checkpoint.get("no_improvement_validations", 0)
+            )
+            stopped_early = bool(checkpoint.get("stopped_early", False))
+            _restore_training_rng_state(checkpoint, train_loader)
+        remaining_epochs = (
+            () if stopped_early else range(start_epoch + 1, self.epochs + 1)
+        )
         epoch_progress = tqdm(
-            range(1, self.epochs + 1), desc="SuperSimpleNet training",
-            unit="epoch", dynamic_ncols=True,
+            remaining_epochs,
+            initial=start_epoch,
+            total=self.epochs,
+            desc="SuperSimpleNet training",
+            unit="epoch",
+            dynamic_ncols=True,
+            leave=True,
         )
         for epoch in epoch_progress:
+            completed_epoch = epoch
             self.train(True)
             samples = 0
             produced = False
@@ -361,8 +484,22 @@ class SuperSimpleNet(AnomalyDetector):
                 with torch.no_grad():
                     features = self.features(images)
                 adapted = self.adaptor(features)
+                target_masks = None
+                if self.restrict_synthetic_anomalies_to_target_mask:
+                    if "target_mask" not in batch:
+                        raise KeyError(
+                            "restrict_synthetic_anomalies_to_target_mask=true "
+                            "requires target_mask in every training batch"
+                        )
+                    target_masks = F.interpolate(
+                        batch["target_mask"].to(
+                            device, non_blocking=True, dtype=torch.float32
+                        ),
+                        size=adapted.shape[-2:],
+                        mode="nearest",
+                    )
                 noisy_features, noisy_adapted, target_mask = self.anomaly_generator(
-                    features, adapted
+                    features, adapted, target_masks=target_masks
                 )
                 classification = (
                     noisy_adapted if self.adapt_classification_features
@@ -389,15 +526,16 @@ class SuperSimpleNet(AnomalyDetector):
                 if self.gradient_clip:
                     torch.nn.utils.clip_grad_norm_(self.parameters(), 1.0)
                 optimizer.step()
-                epoch_progress.set_postfix(
-                    loss=f"{loss.detach().item():.4f}", refresh=False
-                )
                 steps += 1
                 samples += images.shape[0]
                 if self.max_samples_per_epoch and samples >= self.max_samples_per_epoch:
                     break
             if not produced:
                 raise ValueError("train_loader produced no images")
+            epoch_progress.set_postfix(
+                loss=f"{loss.detach().item():.4f}",
+                refresh=True,
+            )
             scheduler.step()
             if (
                 not self.fixed_training_duration
@@ -407,19 +545,90 @@ class SuperSimpleNet(AnomalyDetector):
                 auc = _validation_auc(
                     self, validation_loader, device, self.validation_batches
                 )
-                if not math.isnan(auc) and auc > best_auc:
-                    best_auc = auc
-                    best_state = copy.deepcopy(self.state_dict())
+                validation_history.append({
+                    "epoch": epoch,
+                    "image_auroc": auc,
+                })
+                epoch_progress.set_postfix(
+                    val_auc=f"{auc:.4f}",
+                    refresh=True,
+                )
+                if not math.isnan(auc):
+                    if auc > best_auc + self.early_stopping_min_delta:
+                        best_auc = auc
+                        best_epoch = epoch
+                        best_state = copy.deepcopy(self._training_state())
+                        no_improvement_validations = 0
+                    else:
+                        no_improvement_validations += 1
+                    if (
+                        self.early_stopping_patience is not None
+                        and no_improvement_validations
+                        >= self.early_stopping_patience
+                    ):
+                        stopped_early = True
+            if (
+                checkpoint_path is not None
+                and (
+                    epoch % self.checkpoint_interval == 0
+                    or epoch == self.epochs
+                    or stopped_early
+                )
+            ):
+                _save_checkpoint_atomic({
+                    "format": "supersimplenet_training_v1",
+                    "model_config": self.checkpoint_config(),
+                    "model": self._training_state(),
+                    "optimizer": optimizer.state_dict(),
+                    "scheduler": scheduler.state_dict(),
+                    "epoch": epoch,
+                    "steps": steps,
+                    "best_auc": best_auc,
+                    "best_state": best_state,
+                    "best_epoch": best_epoch,
+                    "validation_history": validation_history,
+                    "no_improvement_validations": no_improvement_validations,
+                    "stopped_early": stopped_early,
+                    **_capture_training_rng_state(train_loader),
+                }, checkpoint_path)
+            if stopped_early:
+                break
         if best_state is not None:
-            self.load_state_dict(best_state)
+            self._load_training_state(best_state)
         self.fitted.fill_(True)
+        self.eval()
         self.fit_summary = {
             "epochs": self.epochs, "steps": steps,
+            "epochs_completed": completed_epoch,
             "fixed_training_duration": self.fixed_training_duration,
             "selected_validation_image_auroc": (
                 None if self.fixed_training_duration or best_state is None else best_auc
             ),
+            "selected_epoch": best_epoch,
+            "stopped_early": stopped_early,
+            "no_improvement_validations": no_improvement_validations,
+            "validation_history": validation_history,
+            "restrict_synthetic_anomalies_to_target_mask": (
+                self.restrict_synthetic_anomalies_to_target_mask
+            ),
         }
+        if checkpoint_path is not None:
+            _save_checkpoint_atomic({
+                "format": "supersimplenet_training_v1",
+                "model_config": self.checkpoint_config(),
+                "model": self._training_state(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict(),
+                "epoch": completed_epoch,
+                "steps": steps,
+                "best_auc": best_auc,
+                "best_state": best_state,
+                "best_epoch": best_epoch,
+                "validation_history": validation_history,
+                "no_improvement_validations": no_improvement_validations,
+                "stopped_early": stopped_early,
+                **_capture_training_rng_state(train_loader),
+            }, checkpoint_path)
         return self
 
     @torch.no_grad()
@@ -427,7 +636,17 @@ class SuperSimpleNet(AnomalyDetector):
         if not self.is_fitted:
             raise RuntimeError("SuperSimpleNet must be fitted before predict")
         self.eval()
-        raw_map, raw_score = self._logits(images)
+        native_raw_map, classification_raw_score = self._logits(images)
+        if self.image_score_mode == "classification_head":
+            raw_score = classification_raw_score
+        else:
+            flattened = native_raw_map.flatten(1)
+            topk = min(
+                flattened.shape[1],
+                max(1, math.ceil(self.image_score_fraction * flattened.shape[1])),
+            )
+            raw_score = flattened.topk(topk, dim=1).values.mean(dim=1)
+        raw_map = native_raw_map
         raw_map = F.interpolate(
             raw_map, images.shape[-2:], mode="bilinear", align_corners=False
         )

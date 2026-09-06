@@ -1,0 +1,19 @@
+# @package _global_
+
+dataset:
+  camera_poses: [A_overhead]
+
+model:
+  run_name: efficientad_s_poseA_crop900_spatial_calibration
+  pose_crop_enabled: true
+  spatial_calibration_enabled: true
+
+evaluation:
+  efficientad_calibration_ablation:
+    enabled: true
+  efficientad_global_topk_ablation:
+    enabled: false
+
+preprocessing:
+  pose_crops:
+    A_overhead: [0, 150, 900, 900]

@@ -38,15 +38,64 @@ aggiunge EfficientAD-S, SuperSimpleNet e TinyGLASS; l'originale resta invariato.
 Nella copia si cambia esecuzione con `MODEL_NAME`; le configurazioni full
 restano raccolte in `MODEL_CONFIGS`. Anche la copia è autosufficiente e non
 importa `src`. EfficientAD scarica il teacher fissato di `nelson1425`, richiede
-un secret Kaggle `HF_TOKEN` abilitato a `ILSVRC/imagenet-1k` e supporta resume
-tramite `RESUME`/`RESUME_RUN_DIR`. TinyGLASS scarica DTD R1.0.1 dalla fonte VGG nella directory di lavoro, lo
-estrae in modo sicuro e usa `dtd/images/` dopo aver verificato le 5.640 immagini.
+un secret Kaggle `HF_TOKEN` abilitato a `ILSVRC/imagenet-1k`. I tre modelli
+trainabili supportano resume tramite `RESUME`/`RESUME_RUN_DIR`: EfficientAD a
+intervalli di step, SuperSimpleNet e TinyGLASS a fine epoca. TinyGLASS scarica
+DTD R1.0.1 dalla fonte VGG soltanto con `las_mode="texture"` o `"mixed"`;
+la modalita `"hole"` non usa texture esterne.
 
 I tre modelli condividono output, runner, metriche e checkpoint. Il train resta
-clean-only. EfficientAD esegue sempre 70.000 step e usa soltanto i campioni clean
-di validation per i quantili finali, senza model selection sulle anomalie.
+clean-only. Il preset EfficientAD corrente usa tutte le clean di training con
+input `384x384` per 70.000 step fissi, `global_max` senza ROI e la clean validation soltanto per i
+quantili globali finali q90/q99.5. La variante pose-conditioned spaziale resta
+disponibile ma non e il default del notebook.
+Il fit EfficientAD usa mixed precision FP16 con `GradScaler` su CUDA, unisce
+originale/augmentata nel forward del teacher e
+originale/augmentata/ImageNet nel forward dello student. Hard mining e loss
+restano FP32. Lo stato dello scaler entra nel checkpoint, salvato ogni 5.000
+step; su CPU AMP viene disabilitato automaticamente.
+Con `EFFICIENTAD_CALIBRATION_ABLATION_ENABLED=True`, nella variante spaziale una cella post-fit valuta
+lo stesso checkpoint nelle modalita `global`, `global_roi` e `spatial_roi`,
+sempre con score `max`. Salva `efficientad_calibration_ablation.json` con le
+metriche complete e AUPRO per validation e test, senza selezionare una modalita
+e ripristinando al termine la configurazione scelta durante il fit.
+Con `EFFICIENTAD_GLOBAL_TOPK_ABLATION_ENABLED=True`, il preset globale
+confronta sullo stesso checkpoint il massimo ridimensionato, il massimo nativo
+e le medie top-k dei migliori `2, 4, 8, 16` pixel della mappa nativa. La scelta
+usa soltanto l'Image AUROC di validation e sul test viene valutato solo il
+vincitore. Il file `efficientad_global_topk_ablation.json` include anche il
+controllo d'invarianza delle metriche di mappa.
 SuperSimpleNet e TinyGLASS usano weights torchvision espliciti
-`IMAGENET1K_V1`. `FIXED_TRAINING_DURATION=True` disabilita la model selection
-intermedia e mantiene il numero completo di epoche; impostandolo a `False` si
-riabilita la selezione del best checkpoint sulla validation. Train batch size ed
-evaluation batch size sono proprietà del modello.
+`IMAGENET1K_V1`. `FIXED_TRAINING_DURATION=True` mantiene SuperSimpleNet a durata
+fissa; TinyGLASS usa separatamente `TINYGLASS_FIXED_TRAINING_DURATION=False`,
+seleziona il best checkpoint sulla validation, riusa a ogni controllo una cache
+CPU delle feature del backbone congelato e applica early stopping configurabile
+in `MODEL_CONFIGS`. La cache non viene salvata nel checkpoint e viene ricostruita
+una sola volta dopo un resume; storico, patience e best state sono invece
+ripristinati. Train batch size ed evaluation batch size sono proprietà del
+modello. Dopo la valutazione standard, la roadmap confronta sullo stesso
+checkpoint le aggregazioni definite in `TINYGLASS_IMAGE_SCORE_CANDIDATES`.
+Seleziona la migliore soltanto sulla validation, valuta sul test solo quella
+selezionata e salva `tinyglass_image_score_aggregation.json`; non modifica il
+training, le anomaly map o le metriche pixel.
+La cella successiva esegue anche l'ablazione diagnostica
+TINYGLASS_GAUSSIAN_SIGMA_CANDIDATES=(0, 1, 2, 4) esclusivamente sulla
+validation. Non sceglie il sigma e non valuta i candidati sul test; salva
+metriche pixel, target-wheel e AUPRO in
+tinyglass_gaussian_sigma_ablation.json, controlla l'invarianza delle metriche
+image-level e ripristina sempre il sigma della configurazione.
+
+TinyGLASS mantiene `freeze_backbone=True` come default. Impostando
+`TINYGLASS_FINE_TUNE_EXPERIMENT=True` la cella Configuration avvia invece un
+nuovo run da 20 epoche con backbone LR `1e-5`, patience 7 e cache validation
+disabilitata. Il backbone passa in train mode, entra in un gruppo optimizer
+separato ed è incluso in training checkpoint e best state. Non usare `RESUME`
+per passare da frozen a fine-tuned: la configurazione checkpoint rifiuta il
+cambio.
+
+La configurazione corrente della copia roadmap seleziona TinyGLASS sulla sola
+posa `A_overhead`, con crop 720x720 e input 384x384. Mantiene layer2, che
+produce una griglia 48x48, sigma 1, LAS hole `70/25/5`, backbone frozen, LR
+`5e-5` e patience 40. Il cambio di input è incluso nel contratto checkpoint:
+avviare un nuovo run con `RESUME=False`, senza riprendere il checkpoint
+256x256.

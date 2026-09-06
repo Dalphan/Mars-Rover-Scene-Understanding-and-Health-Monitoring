@@ -9,6 +9,22 @@ def _optional_string(value) -> str | None:
     return None if value is None else str(value)
 
 
+EFFICIENTAD_HARD_QUANTILE_PRESETS = {
+    "official": 0.999,
+    "balanced": 0.995,
+    "broad": 0.99,
+}
+
+
+def _efficientad_hard_quantile(cfg: DictConfig) -> float:
+    preset = str(cfg.model.hard_quantile_preset)
+    if preset not in EFFICIENTAD_HARD_QUANTILE_PRESETS:
+        raise ValueError(
+            "model.hard_quantile_preset must be official, balanced, or broad"
+        )
+    return EFFICIENTAD_HARD_QUANTILE_PRESETS[preset]
+
+
 def build_model(cfg: DictConfig) -> AnomalyDetector:
     """Build the anomaly-detection model selected by Hydra."""
     name = str(cfg.model.name)
@@ -43,14 +59,43 @@ def build_model(cfg: DictConfig) -> AnomalyDetector:
 
     if name == "efficientad_s":
         return EfficientAD(
+            input_size=tuple(int(value) for value in cfg.model.input_size),
             teacher_weights_path=_optional_string(cfg.model.teacher_weights_path),
             require_teacher_weights=bool(cfg.model.require_teacher_weights),
             channels=int(cfg.model.channels),
             max_steps=int(cfg.model.max_steps),
             learning_rate=float(cfg.model.learning_rate),
             weight_decay=float(cfg.model.weight_decay),
-            hard_quantile=float(cfg.model.hard_quantile),
+            hard_quantile=_efficientad_hard_quantile(cfg),
             checkpoint_interval=int(cfg.model.checkpoint_interval),
+            validation_interval=int(cfg.model.validation_interval),
+            early_stopping_patience=int(cfg.model.early_stopping_patience),
+            early_stopping_min_steps=int(cfg.model.early_stopping_min_steps),
+            early_stopping_min_relative_improvement=float(
+                cfg.model.early_stopping_min_relative_improvement
+            ),
+            lr_scheduler_patience=int(cfg.model.lr_scheduler_patience),
+            fixed_training_duration=bool(cfg.model.fixed_training_duration),
+            mixed_precision=bool(cfg.model.mixed_precision),
+            spatial_calibration_enabled=bool(
+                cfg.model.spatial_calibration_enabled
+            ),
+            spatial_calibration_q_low=float(
+                cfg.model.spatial_calibration_q_low
+            ),
+            spatial_calibration_q_high=float(
+                cfg.model.spatial_calibration_q_high
+            ),
+            spatial_calibration_smoothing_sigma=float(
+                cfg.model.spatial_calibration_smoothing_sigma
+            ),
+            spatial_scale_floor_fraction=float(
+                cfg.model.spatial_scale_floor_fraction
+            ),
+            static_roi_min_coverage=float(cfg.model.static_roi_min_coverage),
+            image_score_topk_candidates=tuple(
+                float(value) for value in cfg.model.image_score_topk_candidates
+            ),
         )
     if name == "supersimplenet":
         return SuperSimpleNet(
@@ -74,13 +119,29 @@ def build_model(cfg: DictConfig) -> AnomalyDetector:
             gradient_clip=bool(cfg.model.gradient_clip),
             margin=float(cfg.model.margin),
             gaussian_sigma=float(cfg.model.gaussian_sigma),
+            image_score_mode=str(cfg.model.image_score_mode),
+            image_score_fraction=float(cfg.model.image_score_fraction),
             fixed_training_duration=bool(cfg.model.fixed_training_duration),
             validation_interval=int(cfg.model.validation_interval),
-            validation_batches=int(cfg.model.validation_batches),
+            validation_batches=(
+                None if cfg.model.validation_batches is None
+                else int(cfg.model.validation_batches)
+            ),
+            early_stopping_patience=(
+                None if cfg.model.early_stopping_patience is None
+                else int(cfg.model.early_stopping_patience)
+            ),
+            early_stopping_min_delta=float(
+                cfg.model.early_stopping_min_delta
+            ),
+            restrict_synthetic_anomalies_to_target_mask=bool(
+                cfg.model.restrict_synthetic_anomalies_to_target_mask
+            ),
             max_samples_per_epoch=(
                 None if cfg.model.max_samples_per_epoch is None
                 else int(cfg.model.max_samples_per_epoch)
             ),
+            checkpoint_interval=int(cfg.model.checkpoint_interval),
         )
     if name == "tinyglass":
         return TinyGLASS(
@@ -97,6 +158,7 @@ def build_model(cfg: DictConfig) -> AnomalyDetector:
             gas_steps=int(cfg.model.gas_steps),
             gas_step_size=float(cfg.model.gas_step_size),
             hypersphere_projection=bool(cfg.model.hypersphere_projection),
+            feature_grid_resolution=str(cfg.model.feature_grid_resolution),
             max_samples_per_epoch=(
                 None if cfg.model.max_samples_per_epoch is None
                 else int(cfg.model.max_samples_per_epoch)
@@ -106,9 +168,32 @@ def build_model(cfg: DictConfig) -> AnomalyDetector:
             blend_mean=float(cfg.model.blend_mean),
             blend_std=float(cfg.model.blend_std),
             gaussian_sigma=float(cfg.model.gaussian_sigma),
+            las_restrict_to_target_mask=bool(
+                cfg.model.las_restrict_to_target_mask
+            ),
+            las_mode=str(cfg.model.las_mode),
+            las_hole_probability=float(cfg.model.las_hole_probability),
+            las_hole_luminance_range=tuple(
+                float(value) for value in cfg.model.las_hole_luminance_range
+            ),
+            las_hole_severity_weights=tuple(
+                float(value) for value in cfg.model.las_hole_severity_weights
+            ),
+            freeze_backbone=bool(cfg.model.freeze_backbone),
+            backbone_learning_rate=float(cfg.model.backbone_learning_rate),
             fixed_training_duration=bool(cfg.model.fixed_training_duration),
             validation_interval=int(cfg.model.validation_interval),
-            validation_batches=int(cfg.model.validation_batches),
+            validation_batches=(
+                None if cfg.model.validation_batches is None
+                else int(cfg.model.validation_batches)
+            ),
+            cache_validation_features=bool(cfg.model.cache_validation_features),
+            early_stopping_patience=(
+                None if cfg.model.early_stopping_patience is None
+                else int(cfg.model.early_stopping_patience)
+            ),
+            early_stopping_min_delta=float(cfg.model.early_stopping_min_delta),
+            checkpoint_interval=int(cfg.model.checkpoint_interval),
         )
     raise ValueError(
         f"Unknown model name {name!r}. Expected patchcore, efficientad_s, "

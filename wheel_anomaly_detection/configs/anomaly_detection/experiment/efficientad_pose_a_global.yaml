@@ -1,0 +1,20 @@
+# @package _global_
+
+dataset:
+  camera_poses: [A_overhead]
+
+model:
+  run_name: efficientad_s_poseA_crop720_input384_global_fixed70k
+  input_size: [384, 384]
+  pose_crop_enabled: true
+  fixed_training_duration: true
+  spatial_calibration_enabled: false
+  image_score_topk_candidates: [0.0]
+
+preprocessing:
+  pose_crops:
+    A_overhead: [90, 240, 720, 720]
+
+evaluation:
+  efficientad_calibration_ablation:
+    enabled: false

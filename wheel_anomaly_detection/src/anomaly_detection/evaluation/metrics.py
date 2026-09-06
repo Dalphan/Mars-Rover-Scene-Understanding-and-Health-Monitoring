@@ -31,8 +31,6 @@ class ExactBinaryMetrics:
             return
         if not scores.is_floating_point() or not torch.isfinite(scores).all():
             raise ValueError("scores must contain finite floating-point values")
-        if scores.min() < 0 or scores.max() > 1:
-            raise ValueError("scores must be normalized to [0, 1]")
         self._scores.append(scores.clone())
         self._targets.append(targets.clone())
 
@@ -138,11 +136,15 @@ class BinaryHistogramMetrics:
 
 
 class AnomalyMetrics:
-    """Accumulate the four project metrics at image and pixel level."""
+    """Accumulate primary, target-wheel, and score-saturation metrics."""
 
     def __init__(self, histogram_bins: int = 2048) -> None:
         self.image = ExactBinaryMetrics()
         self.pixel = BinaryHistogramMetrics(histogram_bins)
+        self.target_wheel_pixel = BinaryHistogramMetrics(histogram_bins)
+        self.num_images = 0
+        self.image_scores_at_zero = 0
+        self.image_scores_at_one = 0
 
     @torch.no_grad()
     def update(
@@ -151,39 +153,76 @@ class AnomalyMetrics:
         labels: torch.Tensor,
         anomaly_masks: torch.Tensor,
         *,
+        image_scores: torch.Tensor | None = None,
         valid_pixel_mask: torch.Tensor | None = None,
+        target_wheel_mask: torch.Tensor | None = None,
     ) -> None:
         labels = labels.reshape(-1)
         if labels.shape != prediction.anomaly_score.shape:
             raise ValueError("labels must match anomaly_score shape")
+        metric_image_scores = (
+            prediction.anomaly_score if image_scores is None else image_scores
+        ).reshape(-1)
+        if metric_image_scores.shape != labels.shape:
+            raise ValueError("image_scores must match labels")
 
         anomaly_masks = anomaly_masks > 0
         if anomaly_masks.ndim == 3:
             anomaly_masks = anomaly_masks.unsqueeze(1)
         if anomaly_masks.shape != prediction.anomaly_map.shape:
             raise ValueError("anomaly_masks must match anomaly_map shape")
-        if valid_pixel_mask is not None:
-            valid_pixel_mask = valid_pixel_mask > 0
-            if valid_pixel_mask.ndim == 3:
-                valid_pixel_mask = valid_pixel_mask.unsqueeze(1)
-            if valid_pixel_mask.shape != prediction.anomaly_map.shape:
-                raise ValueError("valid_pixel_mask must match anomaly_map shape")
 
-        self.image.update(prediction.anomaly_score, labels)
+        def prepare_mask(mask: torch.Tensor | None, name: str) -> torch.Tensor | None:
+            if mask is None:
+                return None
+            mask = mask > 0
+            if mask.ndim == 3:
+                mask = mask.unsqueeze(1)
+            if mask.shape != prediction.anomaly_map.shape:
+                raise ValueError(f"{name} must match anomaly_map shape")
+            return mask
+
+        valid_pixel_mask = prepare_mask(valid_pixel_mask, "valid_pixel_mask")
+        target_wheel_mask = prepare_mask(target_wheel_mask, "target_wheel_mask")
+        if target_wheel_mask is None:
+            target_wheel_mask = torch.ones_like(anomaly_masks, dtype=torch.bool)
+
+        normalized_scores = prediction.anomaly_score.detach()
+        self.num_images += normalized_scores.numel()
+        self.image_scores_at_zero += int((normalized_scores == 0).sum())
+        self.image_scores_at_one += int((normalized_scores == 1).sum())
+
+        self.image.update(metric_image_scores, labels)
         self.pixel.update(
             prediction.anomaly_map,
             anomaly_masks,
             valid_mask=valid_pixel_mask,
         )
+        self.target_wheel_pixel.update(
+            prediction.anomaly_map,
+            anomaly_masks,
+            valid_mask=target_wheel_mask,
+        )
 
-    def compute(self) -> dict[str, float]:
+    def compute(self) -> dict[str, float | int]:
         image = self.image.compute()
         pixel = self.pixel.compute()
+        target_wheel_pixel = self.target_wheel_pixel.compute()
+        saturated = self.image_scores_at_zero + self.image_scores_at_one
         return {
             "image_auroc": image["auroc"],
             "image_average_precision": image["average_precision"],
             "pixel_auroc": pixel["auroc"],
             "pixel_average_precision": pixel["average_precision"],
+            "target_wheel_pixel_auroc": target_wheel_pixel["auroc"],
+            "target_wheel_pixel_average_precision": (
+                target_wheel_pixel["average_precision"]
+            ),
+            "normalized_image_scores_at_zero": self.image_scores_at_zero,
+            "normalized_image_scores_at_one": self.image_scores_at_one,
+            "normalized_image_score_saturation_fraction": (
+                saturated / self.num_images if self.num_images else 0.0
+            ),
         }
 
 
@@ -202,13 +241,16 @@ def update_metrics_from_batch(
     prediction: AnomalyPrediction,
     batch: dict[str, torch.Tensor],
     *,
+    image_scores: torch.Tensor | None = None,
     restrict_pixels_to_target_mask: bool = False,
 ) -> None:
-    """Update metrics using the common dataset batch contract."""
+    """Update full-frame metrics plus the additional target-wheel view."""
     valid_pixel_mask = batch["target_mask"] if restrict_pixels_to_target_mask else None
     metrics.update(
         prediction,
         batch["label"],
         batch["anomaly_mask"],
+        image_scores=image_scores,
         valid_pixel_mask=valid_pixel_mask,
+        target_wheel_mask=batch["target_mask"],
     )

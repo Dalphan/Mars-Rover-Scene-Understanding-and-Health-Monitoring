@@ -16,6 +16,7 @@ def audit_preprocessing(
     *,
     split: str = "train",
     indices: Sequence[int] | None = None,
+    camera_poses: Sequence[str] | None = None,
     variants: int = 2,
     seed: int = 42,
 ) -> plt.Figure:
@@ -23,7 +24,7 @@ def audit_preprocessing(
     if variants < 1:
         raise ValueError("variants must be at least 1")
 
-    dataset = CuriosityWheelDataset(root, split)
+    dataset = CuriosityWheelDataset(root, split, camera_poses=camera_poses)
     selected = list(indices) if indices is not None else list(range(min(4, len(dataset))))
     if not selected:
         raise ValueError("indices must select at least one sample")
@@ -58,6 +59,7 @@ def audit_preprocessing(
                     raw_image.clone(),
                     target_mask.clone(),
                     anomaly_mask.clone(),
+                    camera_pose=sample["metadata"].get("camera_pose"),
                 )
                 axes[row_index, variant + 1].imshow(
                     preprocessor.image_for_display(processed).permute(1, 2, 0)

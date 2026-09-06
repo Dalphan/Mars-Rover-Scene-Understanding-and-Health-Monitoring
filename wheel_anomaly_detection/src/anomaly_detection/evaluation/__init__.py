@@ -14,7 +14,14 @@ from .metrics import (
     build_metrics,
     update_metrics_from_batch,
 )
-from .runner import evaluate_anomaly_detector
+from .runner import (
+    aggregate_patch_scores,
+    evaluate_anomaly_detector,
+    evaluate_efficientad_calibration_ablation,
+    evaluate_efficientad_global_topk_ablation,
+    evaluate_gaussian_sigma_ablation,
+    evaluate_image_score_aggregations,
+)
 from .visualization import (
     collect_anomaly_visualization_samples,
     plot_anomaly_visualizations,
@@ -32,6 +39,11 @@ __all__ = [
     "build_metrics",
     "collect_anomaly_visualization_samples",
     "evaluate_anomaly_detector",
+    "evaluate_efficientad_calibration_ablation",
+    "evaluate_efficientad_global_topk_ablation",
+    "evaluate_gaussian_sigma_ablation",
+    "evaluate_image_score_aggregations",
+    "aggregate_patch_scores",
     "plot_anomaly_visualizations",
     "save_anomaly_diagnostics",
     "save_anomaly_visualizations",

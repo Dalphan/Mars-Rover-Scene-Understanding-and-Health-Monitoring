@@ -9,6 +9,8 @@ resume_run_dir: null
 dataset:
   # Required CLI override, for example: dataset.root=D:/datasets/curiosity_wheel_hole_v1_10000
   root: ???
+  # Focused TinyGLASS experiment; null would select every pose.
+  camera_poses: [A_overhead]
   splits:
     train: train
     validation: validation
@@ -20,9 +22,19 @@ dataloader:
   pin_memory: true
 
 preprocessing:
+  # Crop boxes are (top, left, height, width), selected from clean validation
+  # target-wheel masks. Out-of-frame origins are shifted inward without padding.
+  pose_crops:
+    A_overhead: [90, 240, 720, 720]
+    C_leading_three_quarter: [0, 148, 900, 900]
+    C_trailing_three_quarter: [0, 153, 900, 900]
+    D_upper_detail: null
+
   # Input geometry and normalization are owned by the selected model config.
   train:
     resize: ${model.resize}
+    pose_crop_enabled: ${oc.select:model.pose_crop_enabled,false}
+    pose_crops: ${preprocessing.pose_crops}
     resize_shorter_side: ${model.resize_shorter_side}
     center_crop: ${model.center_crop}
     normalize_mean: ${model.image_mean}
@@ -38,6 +50,8 @@ preprocessing:
 
   evaluation:
     resize: ${model.resize}
+    pose_crop_enabled: ${oc.select:model.pose_crop_enabled,false}
+    pose_crops: ${preprocessing.pose_crops}
     resize_shorter_side: ${model.resize_shorter_side}
     center_crop: ${model.center_crop}
     normalize_mean: ${model.image_mean}
@@ -65,6 +79,44 @@ evaluation:
   histogram_bins: 2048
   # Enabling this assumes a wheel mask is also available at deployment time.
   restrict_pixels_to_target_mask: false
+  # Post-hoc TinyGLASS ablation: select only on validation, then evaluate once on test.
+  image_score_aggregation:
+    enabled: true
+    candidates:
+      - {name: max, mode: max}
+      - {name: topk_mean_3, mode: topk_mean, topk: 3}
+      - {name: topk_mean_5, mode: topk_mean, topk: 5}
+      - {name: topk_mean_10, mode: topk_mean, topk: 10}
+      - {name: quantile_0_95, mode: quantile, quantile: 0.95}
+      - {name: quantile_0_99, mode: quantile, quantile: 0.99}
+  # Confirmatory SuperSimpleNet run: top 1% is fixed before training/test.
+  # The classification head is retained only as a validation diagnostic.
+  supersimplenet_image_score_aggregation:
+    enabled: true
+    fixed_candidate: map_topk_mean_1pct
+    candidates:
+      - {name: classification_head, mode: classification_head}
+      - {name: map_topk_mean_1pct, mode: topk_fraction_mean, fraction: 0.01}
+  # Diagnostic-only validation sweep on one fitted TinyGLASS checkpoint.
+  # It never selects a value or evaluates candidates on test.
+  gaussian_sigma_ablation:
+    enabled: true
+    candidates: [0.0, 1.0, 2.0, 4.0]
+  # SuperSimpleNet: select wheel-localization smoothing on validation and
+  # evaluate only the selected sigma on test.
+  supersimplenet_gaussian_sigma_ablation:
+    enabled: true
+    candidates: [0.0, 1.0, 2.0, 4.0]
+    selection_metric: target_wheel_pixel_average_precision
+  # Diagnostic-only EfficientAD comparison on the same fitted checkpoint.
+  # All modes use max aggregation; neither validation nor test selects a mode.
+  efficientad_calibration_ablation:
+    enabled: false
+  # Global image-score selection on validation; test sees only the winner.
+  # Counts refer to pixels of the native EfficientAD anomaly map.
+  efficientad_global_topk_ablation:
+    enabled: true
+    native_pixel_candidates: [2, 4, 8, 16]
   diagnostics:
     enabled: true
     group_fields: [severity, camera_pose, lighting, wear]

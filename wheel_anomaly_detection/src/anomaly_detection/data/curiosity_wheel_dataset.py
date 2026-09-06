@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import torch
 from PIL import Image
@@ -20,6 +20,7 @@ REQUIRED_COLUMNS = {
     "target_mask_path",
     "anomaly_mask_path",
     "pair_id",
+    "camera_pose",
 }
 VALID_SPLITS = ("train", "validation", "test")
 VALID_CONDITIONS = {"clean", "hole"}
@@ -34,6 +35,7 @@ class CuriosityWheelDataset(Dataset[dict[str, Any]]):
         root: str | Path,
         split: str,
         preprocessing: WheelPreprocessor | None = None,
+        camera_poses: Sequence[str] | None = None,
     ) -> None:
         self.root = Path(root).expanduser().resolve()
         self.split = split
@@ -57,10 +59,37 @@ class CuriosityWheelDataset(Dataset[dict[str, Any]]):
             rows = list(reader)
 
         self._validate_manifest_rows(rows)
-        self.rows = [row for row in rows if row["split"] == split]
+        if isinstance(camera_poses, str):
+            raise TypeError("camera_poses must be a sequence of pose names, not a string")
+        if camera_poses is None:
+            self.camera_poses = None
+        else:
+            self.camera_poses = tuple(dict.fromkeys(str(pose) for pose in camera_poses))
+            if not self.camera_poses or any(not pose for pose in self.camera_poses):
+                raise ValueError("camera_poses must contain at least one non-empty pose")
+            available_poses = {row.get("camera_pose", "") for row in rows}
+            unknown_poses = set(self.camera_poses) - available_poses
+            if unknown_poses:
+                raise ValueError(
+                    f"Unknown camera poses: {sorted(unknown_poses)}; "
+                    f"available poses: {sorted(available_poses)}"
+                )
+
+        self.rows = [
+            row
+            for row in rows
+            if row["split"] == split
+            and (
+                self.camera_poses is None
+                or row.get("camera_pose") in self.camera_poses
+            )
+        ]
 
         if not self.rows:
-            raise ValueError(f"No samples found for split {split!r}")
+            raise ValueError(
+                f"No samples found for split {split!r} and "
+                f"camera_poses={self.camera_poses!r}"
+            )
 
         for row in self.rows:
             for field in ARTIFACT_PATH_FIELDS:
@@ -159,6 +188,7 @@ class CuriosityWheelDataset(Dataset[dict[str, Any]]):
             image,
             target_mask,
             anomaly_mask,
+            camera_pose=row.get("camera_pose"),
         )
 
         return {
