@@ -17,6 +17,13 @@ gdrive_kaggle_secrets*.local.json
 .agents/
 .codex/
 
+# Local presentation and chart build workspaces.
+/.chart-data-*/
+/.codex-finalizer/
+/.codex-presentation-build/
+/.codex-presentation-output/
+/presentation_build/
+
 # Original 3D assets stay local and immutable.
 assets/original/*
 !assets/original/.gitkeep

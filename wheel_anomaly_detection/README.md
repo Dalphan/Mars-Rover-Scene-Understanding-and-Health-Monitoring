@@ -1,116 +1,167 @@
 # Curiosity Wheel Anomaly Detection
 
-A reproducible Blender data-generation and validation pipeline for visual
-anomaly detection on Curiosity rover wheels. It turns an immutable NASA rover
-asset into paired clean and perforated-wheel samples, with semantic masks and
-traceable generation contracts.
+Synthetic data generation and visual anomaly detection for Curiosity rover
+wheels. The project combines a reproducible Blender pipeline with four anomaly
+detection approaches evaluated at image and pixel level.
 
-The data-generation pipeline is complete and documented; the reusable Python
-package layout for the ML stage is in place, while a reproducible trained
-baseline is still being developed.
+![Clean and perforated wheel examples](docs/assets/dataset_overview.png)
 
-## Highlights
+## Overview
 
-- Validated separation of Curiosity's six wheel meshes from the source GLB.
-- Deterministic Gale-crater terrain, camera, lighting, and wheel-pose setup.
-- Domain-randomized clean and paired hole-anomaly renders with RGB and mask
-  outputs.
-- Dataset planning, split validation, resumable batch execution, and
-  integrity checks.
-- Pure Python validation logic that can be tested outside Blender.
+The original NASA rover asset is converted into a controlled Martian scene.
+Camera pose, wheel rotation, terrain, lighting and surface wear are varied to
+produce clean images and paired images containing a synthetic wheel
+perforation. Models are trained only on clean samples and evaluated on both
+anomaly classification and localization.
+
+```text
+NASA Curiosity GLB
+        |
+        v
+Blender scene and domain randomization
+        |
+        v
+Paired RGB images and semantic masks
+        |
+        v
+Clean-only training -> anomaly score and anomaly map
+        |
+        v
+Image-level and pixel-level evaluation
+```
 
 ## Dataset
 
-The canonical local dataset is generated at
-`outputs/anomaly_detection_2/datasets/curiosity_wheel_hole_v1_10000/`. It
-contains 10,000 RGB renders, 10,000 target-wheel masks, and 1,250 anomaly
-masks, arranged into train, validation, and test splits of 7,000, 1,000, and
-2,000 images respectively.
+The final dataset contains:
 
-The dataset, render outputs, and logs are local runtime artifacts and are not
-committed to Git. Its provenance, contracts, and validation gates are indexed
-in [`docs/generation/INDEX.md`](docs/generation/INDEX.md).
+| Content | Count |
+| --- | ---: |
+| RGB images | 10,000 |
+| Target-wheel masks | 10,000 |
+| Hole-anomaly masks | 1,250 |
+| Training images, clean only | 7,000 |
+| Validation images | 1,000 |
+| Test images | 2,000 |
 
-## Requirements
+Clean and anomalous evaluation samples are paired so that the scene remains
+fixed while only the wheel damage changes. The dataset is generated locally
+under `outputs/anomaly_detection_2/` and is intentionally excluded from Git.
+Its composition and validation contract are described in the
+[dataset generation index](docs/generation/INDEX.md).
 
-- Blender 5.2.0 LTS with Eevee for reproducible renders.
-- A host Python environment for orchestration and validation.
-- The original `24584_Curiosity_static.glb` stored locally in
-  `assets/original/`. The source asset must remain unchanged.
+## Models and selected results
 
-Install the host-generation dependencies from the project directory:
+The repository includes PatchCore, EfficientAD-S, TinyGLASS and
+SuperSimpleNet. The table reports representative test results already recorded
+in the experiment history.
+
+| Model | Image AUROC | Image AP | Pixel AUROC | Pixel AP |
+| --- | ---: | ---: | ---: | ---: |
+| PatchCore Reference, bank 50k | 0.77942 | 0.79660 | 0.98500 | **0.30947** |
+| EfficientAD-S, pose A, global max | 0.66502 | 0.64737 | 0.96365 | 0.09004 |
+| TinyGLASS, pose A, 512 px, layer3 | 0.77330 | 0.81126 | 0.97924 | 0.27592 |
+| SuperSimpleNet, pose A, Perlin 0.2 | **0.83133** | **0.86214** | 0.97317 | 0.16779 |
+
+These rows summarize different experimental scopes and are not intended as a
+strict leaderboard. Pose selection, crop, input resolution and model-selection
+protocol are documented in
+[the complete experiment history](docs/anomaly_detection/experiment_history.md).
+
+## Installation
+
+Run commands from `wheel_anomaly_detection/`. Keep the host ML environment
+separate from Blender's bundled Python.
 
 ```bash
-cd wheel_anomaly_detection
+python -m pip install -r requirements/anomaly_detection.txt
+```
+
+Dataset-generation utilities have a smaller dependency set:
+
+```bash
 python -m pip install -r requirements/generation.txt
 ```
 
-Blender uses its bundled Python interpreter and must not import ML
-dependencies. The anomaly-detection dependency set will be pinned when the
-first reproducible ML baseline is defined.
+Reproducible rendering targets Blender 5.2.0 LTS, Eevee and an 800 x 600
+output. The original `24584_Curiosity_static.glb` must be placed locally in
+`assets/original/`; it is never committed or modified.
 
-## Workflow
+## Quick start
 
-1. Start with [`docs/generation/INDEX.md`](docs/generation/INDEX.md) to select
-   the applicable generation milestone and validation procedure.
-2. Run the host orchestration scripts in `scripts/host/` for planning,
-   validation, and Blender invocation.
-3. Run the associated Blender entry points from `scripts/blender/` only inside
-   Blender.
-4. Validate the generated outputs before promoting a dataset run.
-
-## Project structure
-
-```text
-assets/original/             Local, immutable source asset placeholder
-configs/blender/             Generation and rendering contracts
-configs/anomaly_detection/   Hydra configuration for ML experiments
-docs/generation/             Authoritative dataset and pipeline documentation
-docs/anomaly_detection/      ML protocol and benchmark documentation
-scripts/blender/             Blender-side entry points
-scripts/host/                Host-side orchestration and validation
-src/                         Testable generation and ML package code
-tests/                       Unit and validation tests
-```
-
-## Verification
-
-Run the required host-side tests from `wheel_anomaly_detection/`:
-
-```bash
-python -m unittest discover -s tests -p "test_blender_audit*.py" -v
-python -m unittest tests.test_wheel_preparation_core tests.test_wheel_preparation_validation -v
-```
-
-Generation changes also require the real-asset pipeline and the milestone
-validator specified in the relevant document. JSON reports alone do not
-replace visual render quality assurance.
-
-## Anomaly-detection dataloader
-
-The ML dataloader loads the extracted Kaggle dataset and supports optional
-resize, normalization, photometric augmentation, sensor noise, Gaussian noise,
-and Gaussian blur. Hydra keeps terminal settings in one reproducible config:
+Inspect the dataset and dataloaders:
 
 ```bash
 python scripts/anomaly_detection/inspect_dataloaders.py \
   dataset.root=/path/to/curiosity_wheel_hole_v1_10000
 ```
 
-See [`docs/anomaly_detection/dataloader.md`](docs/anomaly_detection/dataloader.md)
-for the Hydra configuration and batch contract.
-
-The first model preset is a lightweight PatchCore baseline with model-specific
-preprocessing, a common anomaly-output interface, four essential image/pixel
-metrics, and optional Kaggle-to-Google-Drive artifact persistence. See
-[`docs/anomaly_detection/README.md`](docs/anomaly_detection/README.md).
-
-Run the complete lightweight `384x512` PatchCore experiment from the project directory:
+Run the default PatchCore experiment:
 
 ```bash
 python scripts/anomaly_detection/run_experiment.py \
   dataset.root=/path/to/curiosity_wheel_hole_v1_10000
 ```
 
-Add `model=patchcore_reference` for the Amazon-compatible IM224 preprocessing
-and embedding preset, or `model=patchcore_256` for the historical comparison.
+Select another model or an experiment preset through Hydra:
+
+```bash
+python scripts/anomaly_detection/run_experiment.py \
+  dataset.root=/path/to/curiosity_wheel_hole_v1_10000 \
+  model=tinyglass +experiment=tinyglass_pose_a
+```
+
+For Kaggle, use the self-contained notebook described in
+[`notebooks/anomaly_detection`](notebooks/anomaly_detection/README.md).
+
+## Repository layout
+
+```text
+assets/original/             Local immutable source asset
+configs/anomaly_detection/   ML and experiment presets
+configs/blender/             Dataset-generation contracts
+docs/anomaly_detection/      Evaluation protocol and experiment results
+docs/generation/             Dataset provenance and generation milestones
+notebooks/anomaly_detection/ Self-contained Kaggle workflow
+scripts/anomaly_detection/   ML entry points
+scripts/blender/             Blender-side entry points
+scripts/host/                Host orchestration and validation
+src/anomaly_detection/       Models, data loading, training and evaluation
+src/                         Testable generation logic
+tests/                       Unit and validation tests
+```
+
+## Documentation
+
+- [Anomaly-detection guide](docs/anomaly_detection/README.md)
+- [Dataset and preprocessing](docs/anomaly_detection/dataloader.md)
+- [Evaluation protocol](docs/anomaly_detection/evaluation.md)
+- [Complete experiment history](docs/anomaly_detection/experiment_history.md)
+- [Generation pipeline index](docs/generation/INDEX.md)
+- [Final dataset assembly](docs/generation/final_dataset_assembly.md)
+
+## Verification
+
+Run the Python test suite with:
+
+```bash
+python -m pytest -q
+```
+
+Changes to the Blender pipeline additionally require the real-asset validator
+and the visual checks specified by the relevant generation milestone. JSON
+reports do not replace visual quality assurance.
+
+## Limitations
+
+- Training and evaluation currently use synthetic imagery.
+- The released dataset focuses on perforation anomalies.
+- Some model experiments use a single camera pose and are not directly
+  comparable with all-pose experiments.
+- Deployment on real rover imagery remains outside the current validation
+  scope.
+
+## Asset policy
+
+Original 3D and geospatial assets, generated datasets, checkpoints and logs
+remain local. The repository stores only the code, configuration and
+documentation required to reproduce and audit the workflow.
