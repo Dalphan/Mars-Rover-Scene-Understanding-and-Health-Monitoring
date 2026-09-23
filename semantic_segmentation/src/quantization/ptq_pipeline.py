@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from src.quantization.ptq_calibration import run_int8_stages
+from src.quantization.ptq_common import PTQPaths, build_paths, validate_config
+from src.quantization.ptq_precision import run_precision_stages
+from src.quantization.ptq_runtime import preload_tensorrt_shared_libraries, run_final_test
+
 import torch
 from omegaconf import DictConfig, OmegaConf
 
@@ -11,11 +16,6 @@ from src.quantization.core import (
     set_seed,
     sha256,
 )
-from src.quantization.ptq_baselines import run_precision_stages
-from src.quantization.ptq_config import PTQPaths, build_paths, validate_config
-from src.quantization.ptq_final import run_final_test
-from src.quantization.ptq_int8_stages import run_int8_stages
-from src.quantization.ptq_tensorrt import preload_tensorrt_shared_libraries
 from src.utils.logging_utils import setup_logger
 
 

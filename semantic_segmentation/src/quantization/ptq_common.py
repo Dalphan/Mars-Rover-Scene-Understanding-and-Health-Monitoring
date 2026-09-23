@@ -88,3 +88,24 @@ def validate_config(cfg: DictConfig) -> None:
             raise ValueError(
                 "calibration_chunk_size must divide max_calibration_samples"
             )
+
+from omegaconf import OmegaConf
+
+from src.quantization.core import save_json
+
+
+def persist_results(results, cfg, paths) -> None:
+    """Persist incremental PTQ results together with the resolved config."""
+
+    results["configuration"] = OmegaConf.to_container(cfg, resolve=True)
+    save_json(results, paths.results)
+
+def tensor_shape(value_info):
+    return tuple(
+        dimension.dim_value if dimension.HasField("dim_value") else None
+        for dimension in value_info.type.tensor_type.shape.dim
+    )
+
+
+def element_type_name(onnx, value_info):
+    return onnx.TensorProto.DataType.Name(value_info.type.tensor_type.elem_type)

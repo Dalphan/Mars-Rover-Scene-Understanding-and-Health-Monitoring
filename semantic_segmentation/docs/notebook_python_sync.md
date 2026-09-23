@@ -24,12 +24,12 @@ up to roughly 500 lines when the contained operations are cohesive.
 | Pipeline | Main modules |
 |---|---|
 | Training | `run_context.py` resolves dataset/run identity; `experiment.py` builds loaders, model and loss; `training_loop.py` and `training_stage.py` train and validate; `checkpoint_stage.py` handles checkpoint I/O; `evaluation_stage.py` performs source and cross-dataset evaluation; `reporting.py` writes metadata and predictions. |
-| PTQ | `core/` contains shared data/model/ONNX/metric utilities; `ptq_baselines.py` handles FP32/FP16; `ptq_calibration.py` owns calibration; `ptq_graph_rewrite.py`, `ptq_int8_audit.py` and `ptq_int8.py` create and verify INT8; `ptq_tensorrt.py` probes TensorRT; `ptq_final.py` owns the final hold-out. |
-| QAT | `qat_setup.py` builds runtime state; `qat_stage.py` coordinates quantizer preparation and training; `qat_export.py`, `qat_onnx_audit.py` and `qat_fp16_export.py` own ONNX artifacts; `qat_engine.py` and `qat_benchmark.py` own TensorRT execution and measurement; `qat_final.py` owns final evaluation and artifact upload. |
+| PTQ | `ptq_common.py` contains paths, reporting and small ONNX helpers; `ptq_precision.py` owns FP32/FP16 baselines; `ptq_calibration.py` owns calibration and INT8 stage coordination; `ptq_int8.py` rewrites, quantizes and audits the graph; `ptq_runtime.py` owns TensorRT probing and the final hold-out. |
+| QAT | `qat_training.py` contains the model wrapper, quantizer preparation and training loop; `qat_export.py` owns parity, weight folding and ONNX export/audit; `qat_runtime.py` owns TensorRT engines and benchmarks; `qat_experiment.py` owns setup, stage state and final evaluation; `qat_storage.py` isolates optional Drive persistence. |
 
 `pipeline.py`, `ptq_pipeline.py`, and `qat_pipeline.py` only coordinate those
-stages. `qat_tensorrt.py` is a small compatibility facade that re-exports the
-engine and benchmark API; it contains no duplicate implementation.
+stages. Shared quantization code is deliberately limited to three cohesive
+modules: `core/common.py`, `core/data.py`, and `core/runtime.py`.
 
 ## Update procedure
 
@@ -69,10 +69,10 @@ engine and benchmark API; it contains no duplicate implementation.
   audits selected ModelOpt quantizers, folds constant INT8 weights, checks
   export/TensorRT parity, and keeps the test split behind an explicit final
   gate.
-- **Module boundaries:** data construction, optimization, checkpoint I/O,
-  graph mutation, runtime execution, and reporting are kept separate. This
-  adds a few explicit stage interfaces, but prevents the notebook mirror from
-  becoming a single hard-to-review script.
+- **Module boundaries:** data construction, optimization, graph mutation,
+  runtime execution, and external storage remain separate. Closely related
+  helpers are grouped in files of at most roughly 500 lines, avoiding both a
+  monolithic notebook dump and one-file-per-function fragmentation.
 
 The price of a notebook-authoritative workflow is deliberate duplication. The
 read-only sync gate catches constant drift; behavior changes still require a
