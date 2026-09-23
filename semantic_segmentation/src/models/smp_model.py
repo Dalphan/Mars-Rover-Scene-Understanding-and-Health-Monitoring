@@ -7,7 +7,7 @@ import segmentation_models_pytorch as smp
 
 class SMPModelForMars(nn.Module):
     """
-    Generic segmentation_models_pytorch wrapper for S5Mars.
+    Generic segmentation_models_pytorch wrapper for S5Mars and MarsSeg.
 
     Supported architectures:
         - unet
@@ -18,12 +18,11 @@ class SMPModelForMars(nn.Module):
         images: FloatTensor [B, 3, 512, 512]
 
     Output:
-        logits: FloatTensor [B, 9, 512, 512]
+        logits: FloatTensor [B, C, 512, 512]
 
-    S5Mars target:
+    Mars-Bench target:
         masks: LongTensor [B, 512, 512]
-        values: 0..8
-        ignore_index: 0
+        values: 0..C-1; no semantic class is ignored by default
     """
 
     def __init__(

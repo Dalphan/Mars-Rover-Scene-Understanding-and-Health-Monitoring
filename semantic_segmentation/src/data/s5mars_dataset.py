@@ -75,8 +75,8 @@ class S5MarsHFDataset(torch.utils.data.Dataset):
             image_array = np.asarray(image, dtype=np.float32) / 255.0
             image_tensor = torch.from_numpy(image_array).permute(2, 0, 1).contiguous().float()
             # Raw mask from dataset: [512, 512], integer class IDs.
-            # S5Mars labels are already encoded as 0..8.
-            # mask value 0 is used as ignore_index during loss and metrics.
+            # S5Mars labels are already encoded as 0..8. The synchronized
+            # ignore index is -100, so class 0 remains a semantic class.
             # Batched mask tensor from DataLoader: [B, 512, 512].
             mask_tensor = torch.from_numpy(np.asarray(mask, dtype=np.int64)).long()
         else:

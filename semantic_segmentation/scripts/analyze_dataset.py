@@ -18,7 +18,10 @@ from src.analysis.visualization import (
     plot_sample,
     save_sample_grid,
 )
-from src.data.dataloaders import build_dataloader, build_dataset
+from src.data.analysis_dataloaders import (
+    build_analysis_dataloader,
+    build_analysis_dataset,
+)
 from src.utils.io_utils import ensure_dir, save_dataframe_csv, save_json
 from src.utils.logging_utils import setup_logger
 from src.utils.seed import set_seed
@@ -96,8 +99,10 @@ def main(cfg: DictConfig) -> None:
 
     set_seed(int(cfg.seed))
 
-    dataset = build_dataset(cfg, cfg.dataset.split, logger)
-    dataloader = build_dataloader(dataset, cfg, cfg.dataset.split, logger)
+    dataset = build_analysis_dataset(cfg, cfg.dataset.split, logger)
+    dataloader = build_analysis_dataloader(
+        dataset, cfg, cfg.dataset.split, logger
+    )
 
     batch = next(iter(dataloader))
     logger.info(

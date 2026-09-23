@@ -14,7 +14,8 @@ dataset:
   height_column: "height"
   class_labels_column: "class_labels"
   image_mode: "RGB"
-  ignore_index: 0
+  # -100 is outside 0..8, therefore Background is evaluated as a class.
+  ignore_index: -100
   num_classes: 9
   class_names:
     0: "Background"

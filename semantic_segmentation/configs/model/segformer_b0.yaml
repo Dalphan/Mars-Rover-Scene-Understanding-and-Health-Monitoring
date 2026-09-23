@@ -9,10 +9,9 @@ run_name: segformer_b0
 # Hugging Face checkpoint used for SegFormer-B0.
 pretrained_name: nvidia/segformer-b0-finetuned-ade-512-512
 
-# Mars-Bench / S5Mars:
-# labels are already encoded as 0..8.
-# class 0 is ignored by cross-entropy and metrics.
-# Generalized Dice, when selected, includes class 0.
+# Backward-compatible S5Mars defaults. The synchronized training entrypoint
+# overrides these two fields from the selected S5Mars/MarsSeg dataset config.
+# -100 lies outside the mask range, so class 0 remains semantic.
 num_classes: 9
 ignore_index: -100
 

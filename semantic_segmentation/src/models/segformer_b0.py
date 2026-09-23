@@ -8,25 +8,25 @@ from transformers import SegformerForSemanticSegmentation
 
 class SegFormerB0ForMars(nn.Module):
     """
-    SegFormer-B0 wrapper for S5Mars / Mars-Bench semantic segmentation.
+    SegFormer-B0 wrapper for S5Mars and MarsSeg semantic segmentation.
 
     Expected input:
         images: FloatTensor [B, 3, 512, 512]
 
     Expected output:
-        logits: FloatTensor [B, 9, 512, 512]
+        logits: FloatTensor [B, C, 512, 512]
 
-    S5Mars label convention:
+    Mars-Bench label convention:
         target mask: LongTensor [B, 512, 512]
-        values: 0..8
-        ignore_index: 0
+        values: 0..C-1
+        ignore_index: -100 (outside the class range)
     """
 
     def __init__(
         self,
         pretrained_name: str,
         num_classes: int = 9,
-        ignore_index: int = 0,
+        ignore_index: int = -100,
         log_shapes: bool = False,
     ) -> None:
         super().__init__()

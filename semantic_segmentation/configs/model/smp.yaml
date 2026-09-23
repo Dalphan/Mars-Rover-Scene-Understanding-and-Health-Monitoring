@@ -22,10 +22,10 @@ encoder_weights: "imagenet"
 
 in_channels: 3
 
-# Mars-Bench / S5Mars masks are already encoded as 0..8.
+# Backward-compatible S5Mars default; training overrides this from the dataset.
 num_classes: 9
 
-# Used by cross-entropy and metrics. Generalized Dice includes class 0.
+# Outside the semantic range, therefore every annotated class is included.
 ignore_index: -100
 
 # Required input resolution for the current training pipeline.

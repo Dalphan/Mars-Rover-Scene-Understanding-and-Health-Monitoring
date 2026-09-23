@@ -40,9 +40,9 @@ def update_confusion_matrix(
     targets:
         [B, H, W], ground-truth class IDs, values 0..8
 
-    S5Mars convention:
-        target == 0 is ignored.
-        Predictions equal to 0 on valid target pixels are kept and counted as errors.
+    ``ignore_index`` is ignored only when it occurs in the target.  The
+    synchronized training configs use ``-100``, outside the valid class
+    range, so every annotated class participates in the metrics.
     """
     preds = preds.reshape(-1)
     targets = targets.reshape(-1)
@@ -70,12 +70,14 @@ def update_confusion_matrix(
 
 def compute_segmentation_metrics(
     confmat: torch.Tensor,
-    ignore_index: int = 0,
+    ignore_index: int = -100,
 ):
     """
     Compute pixel accuracy, per-class IoU, and mIoU.
 
-    mIoU is computed over classes 1..8 because class 0 is ignored in S5Mars.
+    Classes with no target support are excluded.  A semantic class is also
+    excluded when ``ignore_index`` is a valid class ID; out-of-range values
+    such as ``-100`` do not remove any class.
     """
     tp = torch.diag(confmat)
 
@@ -87,7 +89,8 @@ def compute_segmentation_metrics(
     iou = tp / torch.clamp(union, min=1.0)
 
     valid_classes = torch.ones_like(iou, dtype=torch.bool)
-    valid_classes[ignore_index] = False
+    if 0 <= int(ignore_index) < len(iou):
+        valid_classes[int(ignore_index)] = False
     valid_classes = valid_classes & (support > 0)
 
     miou = iou[valid_classes].mean() if valid_classes.any() else torch.tensor(0.0)

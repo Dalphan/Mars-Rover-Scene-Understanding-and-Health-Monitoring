@@ -61,7 +61,7 @@ def compute_mask_pixel_distribution(
     dataset,
     num_classes,
     class_names,
-    ignore_index=0,
+    ignore_index=-100,
     max_samples=None,
     logger: logging.Logger | None = None,
 ) -> pd.DataFrame:
@@ -97,7 +97,7 @@ def compute_mask_pixel_distribution(
 
 def compute_ignore_pixel_ratio(
     dataset,
-    ignore_index=0,
+    ignore_index=-100,
     max_samples=None,
     logger: logging.Logger | None = None,
 ) -> dict[str, Any]:

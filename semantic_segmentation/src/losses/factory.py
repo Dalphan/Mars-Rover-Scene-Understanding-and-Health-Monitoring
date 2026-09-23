@@ -27,11 +27,9 @@ def build_criterion(
         logits: [B, C, H, W] = [B, 9, 512, 512]
         targets: [B, H, W]  = [B, 512, 512]
 
-    S5Mars:
-        C = 9
-        target values = 0..8
-        cross_entropy ignores target value 0
-        generalized_dice uses all classes, including class 0
+    ``num_classes`` is 9 for S5Mars and 7 for MarsSeg. The synchronized
+    ignore index is outside both ranges, so class 0 participates in both
+    cross-entropy and generalized Dice.
     """
     name = name.lower()
 

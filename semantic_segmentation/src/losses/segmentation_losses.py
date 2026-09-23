@@ -13,15 +13,11 @@ class CrossEntropySegmentationLoss(nn.Module):
         logits:  [B, C, H, W]
         targets: [B, H, W]
 
-    For S5Mars:
-        logits:  [B, 9, 512, 512]
-        targets: [B, 512, 512], values 0..8
-        ignore_index = 0
-
-    Pixels where targets == 0 are ignored.
+    The synchronized configs use ``ignore_index=-100``. Since dataset masks
+    contain only semantic class IDs, every annotated class participates.
     """
 
-    def __init__(self, ignore_index: int = 0) -> None:
+    def __init__(self, ignore_index: int = -100) -> None:
         super().__init__()
         self.loss = nn.CrossEntropyLoss(ignore_index=ignore_index)
 
@@ -118,18 +114,14 @@ class CombinedSegmentationLoss(nn.Module):
 
         loss = alpha * cross_entropy + (1 - alpha) * generalized_dice
 
-    For S5Mars:
-        logits:  [B, 9, 512, 512]
-        targets: [B, 512, 512], values 0..8
-
-    Cross-entropy ignores target value 0. Generalized Dice uses all classes,
-    including class 0.
+    With the synchronized ``ignore_index=-100``, both terms use every class,
+    including Background (class 0).
     """
 
     def __init__(
         self,
         num_classes: int,
-        ignore_index: int = 0,
+        ignore_index: int = -100,
         alpha: float = 0.5,
         weight_type: str = "square",
         smooth: float = 1e-5,

@@ -61,7 +61,7 @@ def _add_class_legend(fig, class_names: dict, palette: dict[int, tuple[int, int,
     )
 
 
-def colorize_mask(mask: np.ndarray, palette: dict[int, tuple[int, int, int]], ignore_index=0) -> np.ndarray:
+def colorize_mask(mask: np.ndarray, palette: dict[int, tuple[int, int, int]], ignore_index=-100) -> np.ndarray:
     mask = _to_numpy_mask(mask)
     color_mask = np.zeros((*mask.shape, 3), dtype=np.uint8)
     for class_id, color in palette.items():

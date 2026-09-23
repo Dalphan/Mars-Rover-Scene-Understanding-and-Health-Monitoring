@@ -1,0 +1,119 @@
+# @package _global_
+
+# Python mirror of notebooks/kaggle_s5mars_onnx_ptq.ipynb.
+sync:
+  source_notebook: notebooks/kaggle_s5mars_onnx_ptq.ipynb
+  direction: notebook_to_python
+
+seed: 42
+dataset:
+  repo_id: Mirali33/mb-s5mars
+  calibration_split: train
+  evaluation_split: val
+  test_split: test
+  image_size: [512, 512]
+  image_mean: [0.485, 0.456, 0.406]
+  image_std: [0.229, 0.224, 0.225]
+  num_classes: 9
+  ignore_index: -100
+  class_names:
+    0: Background
+    1: Bedrock
+    2: Hole
+    3: Ridge
+    4: Rock
+    5: Rover
+    6: Sand / Soil
+    7: Sky
+    8: Track
+
+model:
+  name: smp  # segformer_b0 | smp
+  pretrained_name: nvidia/segformer-b0-finetuned-ade-512-512
+  smp_architecture: deeplabv3
+  smp_encoder_name: resnet34
+  smp_encoder_weights: null
+
+checkpoint:
+  experiment: smp_deeplabv3_resnet34
+  filename: best.ckpt
+  # Experiment-scoped to prevent a best.ckpt from another architecture being reused.
+  local_dir: outputs/checkpoints/${checkpoint.experiment}
+  force_download: false
+  folder_id_override: null
+  drive_folders:
+    segformer_b0: 1gor4_Lct_xBMJuWlfxnAXm0fYNjcKBRs
+    segformer_b0_oversampling_uniform: 17v16dc8D3lNtz5176p1VvMQ1LrEDc6n0
+    smp_unet_mobilenet_v2: 1Ub1bDNDwNMTm5NSLnyIC6DVm5IRcLCmE
+    smp_unet_resnet34: 1IJQfHvlQs_g8-uhVWHqWQD0WjkjP6jXg
+    smp_deeplabv3plus_mobilenet_v2: 15gfIfMeV9Y_KjGjNzA7wizgT4W1GV60o
+    smp_deeplabv3_resnet34: 113m70R3G5WLJMTLwuUHAOlHT5eLe7lpX
+
+data:
+  batch_size: 1
+  num_workers: 2
+  max_calibration_samples: 500
+  calibration_dry_run_samples: 3
+  max_evaluation_samples: null
+  max_test_samples: null
+  calibration_selection: random  # random | class_aware
+
+runtime:
+  prefer_gpu: true
+  prefer_tensorrt: false
+  target_precisions: [fp32, fp16, int8]
+
+steps:
+  run_smoke_test: true
+  run_fp32_baseline: true
+  run_int8_calibration_preparation: true
+  run_onnx_export: true
+  run_onnx_fp32_benchmark: true
+  run_onnx_fp16: true
+  run_onnx_int8_quantization: true
+  run_trt_int8_probe: true
+  run_onnx_int8_benchmark: true
+  run_final_test_evaluation: false
+
+benchmark:
+  latency_warmup_runs: 10
+  latency_measured_runs: 50
+  efficiency_warmup_runs: 10
+  efficiency_min_runs: 100
+  efficiency_min_seconds: 30.0
+  nvml_sample_interval_seconds: 0.02
+
+onnx:
+  opset_version: 18
+  output_dir: outputs/onnx
+  fp16_keep_io_types: true
+
+int8:
+  quant_format: QDQ  # QDQ | QOperator
+  calibration_method: Entropy  # MinMax | Entropy | Percentile
+  activation_type: QInt8
+  weight_type: QInt8
+  per_channel: true
+  reduce_range: false
+  symmetric: true
+  op_types: [Conv]
+  dedicated_qdq_pair: true
+  quantize_bias: false
+  decompose_conv_bias: true
+  calibration_chunk_size: 5
+  calibration_percentile: 99.999
+
+tensorrt:
+  device_id: 0
+  int8_enable: true
+  fp16_enable: true
+  engine_cache_dir: outputs/onnx/trt_int8_engine_cache
+  timing_cache_dir: outputs/onnx/trt_timing_cache
+
+artifacts:
+  calibration_manifest_filename: int8_calibration_manifest.json
+  results_filename: benchmark_results.json
+
+hydra:
+  run: {dir: .}
+  output_subdir: null
