@@ -513,7 +513,6 @@ class AnomalyDataloaderTests(unittest.TestCase):
         notebook_path = (
             Path(__file__).parents[1]
             / "notebooks"
-            / "anomaly_detection"
             / "kaggle_wheel_anomaly_detection.ipynb"
         )
         notebook = json.loads(notebook_path.read_text(encoding="utf-8"))

@@ -1,0 +1,78 @@
+% !TeX encoding = UTF-8
+% !TeX program = pdflatex
+% !TeX spellcheck = en_EN
+
+\documentclass[binding=0.6cm]{sapthesis}
+
+\usepackage{microtype}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{subcaption}
+\usepackage{hyperref}
+%\hypersetup{pdftitle={Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers},pdfauthor={Daniele Venturini}}
+
+\hypersetup{
+%			hyperfootnotes=true,			
+%			bookmarks=true,			
+			colorlinks=true,
+			linkcolor=red,
+            linktoc=page,
+			anchorcolor=black,
+			citecolor=red,
+			urlcolor=blue,
+			pdftitle={Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers},
+            pdfauthor={Daniele Venturini},
+			pdfkeywords={thesis, sapienza, roma, university}
+ }
+
+\title{Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers}
+\author{Daniele Venturini}
+\IDnumber{1991255}
+\course{Master's Degree in Computer Science}
+\courseorganizer{Faculty of Information Engineering, Informatics, and Statistics}
+\AcademicYear{2025/2026}
+\advisor{Prof. Marco Raoul Marini}
+%\coadvisor{}
+\authoremail{venturini.1991255@studenti.uniroma1.it}
+\copyyear{2026}
+\thesistype{Master's Degree Thesis}
+\examdate{23 October 2026}
+\examiner[Thesis Advisor]{Prof. Marco Raoul Marini}
+\versiondate{1.048596}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+\dedication{Dedicato a\\ me}
+
+\raggedbottom
+
+\begin{abstract}
+Questa tesi parla di me.
+\end{abstract}
+
+\tableofcontents
+
+\mainmatter
+%\include{Chapters/1 Introduction}
+%\include{Chapters/2 Lightweight Scence Understanding}
+\include{Chapters/3 Synthetic Dataset Generation}
+\include{Chapters/4 Synthetic Data-Driven Damage Inspection}
+\include{Chapters/5 Evaluation of Lightweight Scene Understanding}
+\include{Chapters/6 Evaluation of Synthetic Damage Inspection}
+\include{Chapters/7 Discussion and Limitations}
+\include{Chapters/8 Conclusions and Future Work}
+
+\backmatter
+\cleardoublepage
+\phantomsection % Give this command only if hyperref is loaded
+\addcontentsline{toc}{chapter}{\bibname}
+% Here put the code for the bibliography. You can use BibTeX or
+% the BibLaTeX package or the simple environment thebibliography.
+
+\begin{thebibliography}{17}
+\include{Chapters/Bibliography}
+\end{thebibliography}
+
+\end{document}

@@ -14,6 +14,11 @@ from .metrics import (
     build_metrics,
     update_metrics_from_batch,
 )
+from .real_pilot import (
+    evaluate_real_wheel_pilot,
+    plot_real_wheel_predictions,
+    save_real_wheel_pilot_results,
+)
 from .runner import (
     aggregate_patch_scores,
     evaluate_anomaly_detector,
@@ -43,9 +48,12 @@ __all__ = [
     "evaluate_efficientad_global_topk_ablation",
     "evaluate_gaussian_sigma_ablation",
     "evaluate_image_score_aggregations",
+    "evaluate_real_wheel_pilot",
     "aggregate_patch_scores",
+    "plot_real_wheel_predictions",
     "plot_anomaly_visualizations",
     "save_anomaly_diagnostics",
     "save_anomaly_visualizations",
+    "save_real_wheel_pilot_results",
     "update_metrics_from_batch",
 ]

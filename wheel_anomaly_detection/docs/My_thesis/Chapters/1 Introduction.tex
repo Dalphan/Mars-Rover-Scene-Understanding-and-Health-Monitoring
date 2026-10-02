@@ -1,0 +1,19 @@
+\chapter{Introduction}
+
+\section{Problem Statement}
+
+\section{State of the Art}
+
+Wheel perforations are a documented form of damage experienced by NASA's Curiosity rover. Official images acquired by the Mars Hand Lens Imager (MAHLI) show holes and tears in the aluminum wheel skin, which have been monitored through periodic wheel inspections \cite{nasa2016wheelinspection}. In the ground-based procedure described by Rankin et al., the Wheel Wear team examines downlinked images, compares them with previous observations, and manually measures damage features to track their progression \cite{rankin2022wheelassessment}. This operational context motivates investigating automated visual inspection as a means of supporting damage detection and localization.
+However, no available dataset was suitable for this task. For example, the public MSL Curiosity image-classification dataset includes a generic wheel category, but provides image-level content labels rather than annotations of individual perforations or pixel-level damage masks \cite{lu2020mslimages}. Among the public resources examined for this work, no ready-to-use benchmark was identified that combined hole specific annotations with the experimental task required by the proposed damage inspection approach, meaning a dedicated dataset was needed. Within the time available for this work, synthetic generation was selected instead of manually curating and densely annotating a real-image corpus. This choice also enabled controlled variation of the damage and imaging conditions, with annotations derived directly from the generated scenes.
+
+\subsection{Datasets}
+AI4Mars was considered as an alternative because it is one of the most established large-scale resources for Martian terrain segmentation. Its authors report approximately 35,000 rover images and 326,000 full-image annotations, with multiple crowdsourced annotations collected for each image and a smaller set of approximately 1,500 expert-produced validation labels \cite{swan2021ai4mars}. Its semantic scope, however, is limited to four terrain categories: \emph{Soil}, \emph{Bedrock}, \emph{Sand}, and \emph{Big Rock}. Pixels overlapping the rover are removed from the terrain annotations through auxiliary masks rather than being represented by a trainable \emph{Rover} category. AI4Mars therefore provides neither the range of environmental categories available in the selected S\textsuperscript{5}Mars release nor the rover-level semantic information relevant to the broader aims of this thesis.
+
+Annotation quality provided a further reason not to adopt AI4Mars as the primary benchmark. Following an expert inspection, the Mars-Bench authors reported annotation errors in AI4Mars and excluded it from their benchmark, arguing that crowdsourced annotations posed difficulties in a specialized planetary-science setting \cite{purohit2025marsbench}. This finding is treated here as a dataset-selection concern rather than evidence that AI4Mars is unusable in general. The original AI4Mars pipeline included agreement-based filtering, manual quality control, multiple annotations per image, and an expert-labelled validation subset \cite{swan2021ai4mars}. The decision made in this work therefore rests on the combination of its narrower taxonomy, the absence of a semantic \emph{Rover} category, and the specific annotation concerns raised by the Mars-Bench expert review.
+
+\section{Proposed Research Framework}
+
+\section{Main Contributions}
+
+\section{Thesis Organization}

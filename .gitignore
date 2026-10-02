@@ -28,6 +28,16 @@ gdrive_kaggle_secrets*.local.json
 assets/original/*
 !assets/original/.gitkeep
 
+semantic_segmentation/docs/figures/*
+
 # Local notes and user-specific instruction drafts.
 /SKILLS.md
 /AGENTS.md
+
+*.aux
+*.toc
+*.synctex*
+*.layout
+*.bst
+*.cls
+*.out

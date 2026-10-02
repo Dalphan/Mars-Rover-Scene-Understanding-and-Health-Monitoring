@@ -111,7 +111,7 @@ python scripts/anomaly_detection/run_experiment.py \
 ```
 
 For Kaggle, use the self-contained notebook described in
-[`notebooks/anomaly_detection`](notebooks/anomaly_detection/README.md).
+[`notebooks`](notebooks/README.md).
 
 ## Repository layout
 
@@ -121,7 +121,7 @@ configs/anomaly_detection/   ML and experiment presets
 configs/blender/             Dataset-generation contracts
 docs/anomaly_detection/      Evaluation protocol and experiment results
 docs/generation/             Dataset provenance and generation milestones
-notebooks/anomaly_detection/ Self-contained Kaggle workflow
+notebooks/                   Self-contained Kaggle workflow
 scripts/anomaly_detection/   ML entry points
 scripts/blender/             Blender-side entry points
 scripts/host/                Host orchestration and validation

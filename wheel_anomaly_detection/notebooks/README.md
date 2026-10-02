@@ -7,6 +7,23 @@ esplicita del codice per Dataset, preprocessing, audit e DataLoader e non import
 `src/anomaly_detection/`. Su Kaggle è quindi sufficiente collegare il dataset
 già estratto.
 
+`kaggle_real_wheel_zero_shot.ipynb` prepara invece il pilot MAHLI held-out:
+usa direttamente `/kaggle/input/datasets/dalphan01/real-mars-rover-wheel-ad/real_wheel_pilot_v2`, unisce manifest,
+crop e maschere approssimative,
+applica crop per immagine e resize allineato e mostra i due gate visivi.
+`MODEL_NAME` seleziona PatchCore, EfficientAD-S, SuperSimpleNet o TinyGLASS e
+deriva input e normalizzazione dal preset corrispondente. Le implementazioni
+sono copiate dalla roadmap; il restore scarica da Google Drive il run sintetico
+raccomandato, verifica file ID, dimensione e configurazione, accetta solo il
+`model.ckpt` finale e non esegue fit o calibrazione sui frame reali. PatchCore
+resta locale perché nel Drive accessibile non è presente un checkpoint finale.
+La sezione finale esegue inferenza frozen con batch 1 su tutti i 20 frame,
+calcola Image AUROC/AP, Pixel AUROC/AP e AUPRO, salva score e curva PRO e
+mostra per ogni immagine crop, anomaly map e overlay. Le metriche pixel sono
+sul crop intero perché il pilot non dispone di una maschera completa della ruota.
+Il relativo loader autorevole è
+`src/anomaly_detection/data/real_wheel_dataset.py`.
+
 La duplicazione è intenzionale, ma introduce il rischio che notebook e moduli
 divergano. Ogni modifica al caricamento dei dati deve essere riportata in
 entrambi. `PATCHCORE_PRESET="light"` seleziona ResNet-18, frame `384x512` ed

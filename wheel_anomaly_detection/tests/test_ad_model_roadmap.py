@@ -892,7 +892,7 @@ class ModelRoadmapTests(unittest.TestCase):
 
     def test_new_notebook_is_self_contained(self):
         notebook_path = (
-            Path(__file__).parents[1] / "notebooks" / "anomaly_detection"
+            Path(__file__).parents[1] / "notebooks"
             / "kaggle_wheel_anomaly_detection_model_roadmap.ipynb"
         )
         notebook = json.loads(notebook_path.read_text(encoding="utf-8"))

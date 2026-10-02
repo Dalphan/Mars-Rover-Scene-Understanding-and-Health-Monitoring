@@ -1,0 +1,16 @@
+\chapter{Synthetic Data-Driven Damage Inspection}
+
+\section{Task Definition}
+\label{sec:damage-task-definition}
+
+The second branch of the proposed framework addresses visual wheel inspection through the detection and localization of damage in RGB images. The experiments use the synthetic Curiosity wheel dataset introduced in the previous chapter, with localized holes as the target anomaly class. The objective is both to distinguish normal from damaged observations and to identify the image regions associated with the damage. Accordingly, the methods produce an image-level anomaly score and a spatial anomaly map, allowing detection and localization to be examined separately.
+
+The problem was approached through visual anomaly detection using a normal-only training protocol, consistent with the setting adopted by benchmarks such as MVTec AD \cite{bergmann2019mvtec}. Only normal images from the generated dataset were used for training, while the rendered damaged images and their annotations were reserved for validation and testing. This choice was motivated by the aim of reducing dependence on annotated damage examples during training, rather than fitting a supervised segmentation model directly to the available hole masks. Normality was defined by the absence of the modeled perforations, not by a clear wheel surface, so that other appearance variations remained part of the normal distribution.
+
+Several deep learning-based anomaly detection approaches were investigated to compare their ability to identify localized defects without confusing them with the appearance changes introduced during dataset generation. Compact configurations were also considered in view of the longer-term possibility of onboard inspection. The resulting study provides a controlled assessment of damage detection and localization within the synthetic domain, while validation on real rover imagery remains outside the scope of the present experiments.
+
+\section{Pre-processing}
+
+\section{Anomaly Detection Models}
+
+\section{Evaluation Metrics}

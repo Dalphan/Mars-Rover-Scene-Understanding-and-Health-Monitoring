@@ -38,4 +38,4 @@ python scripts/anomaly_detection/run_experiment.py \
 Model and experiment presets are located in
 `configs/anomaly_detection/model/` and `configs/anomaly_detection/experiment/`.
 The self-contained Kaggle workflow is described in the
-[notebook guide](../../notebooks/anomaly_detection/README.md).
+[notebook guide](../../notebooks/README.md).
