@@ -341,30 +341,36 @@ def check_sync(root: Path) -> list[str]:
                     )
 
             model_name = literals.get("MODEL_NAME")
+            model_preset = (
+                literals.get("LCNET_VARIANT") if model_name == "lcnet" else model_name
+            )
             defaults = normalized(config.defaults)
-            if {"/model": model_name} not in defaults:
+            if {"/model": model_preset} not in defaults:
                 errors.append(
-                    f"{config_name}: default model differs from MODEL_NAME={model_name!r}"
+                    f"{config_name}: default model differs from notebook preset "
+                    f"{model_preset!r} (MODEL_NAME={model_name!r})"
                 )
             model_checks = (
                 (
                     root / "configs/model/segformer_b0.yaml",
                     {
-                        "name": literals.get("MODEL_NAME"),
+                        "name": "segformer_b0",
                         "pretrained_name": literals.get("PRETRAINED_NAME"),
                     },
                 ),
                 (
                     root / "configs/model/smp.yaml",
                     {
+                        "name": "smp",
                         "architecture": literals.get("SMP_ARCHITECTURE"),
                         "encoder_name": literals.get("SMP_ENCODER_NAME"),
                         "encoder_weights": literals.get("SMP_ENCODER_WEIGHTS"),
                     },
                 ),
                 (
-                    root / "configs/model/lcnet3_7.yaml",
+                    root / f"configs/model/{literals.get('LCNET_VARIANT')}.yaml",
                     {
+                        "name": "lcnet",
                         "variant": literals.get("LCNET_VARIANT"),
                         "base_channels": literals.get("LCNET_BASE_CHANNELS"),
                         "partial_rate": literals.get("LCNET_PARTIAL_RATE"),

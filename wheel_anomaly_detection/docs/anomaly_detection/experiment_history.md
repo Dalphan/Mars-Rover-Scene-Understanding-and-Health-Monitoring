@@ -3,6 +3,11 @@
 Metriche: `I-AUROC` = Image AUROC, `I-AP` = Image AP, `P-AUROC` = Pixel AUROC,
 `P-AP` = Pixel AP, `W-P-AUROC`/`W-P-AP` = metriche pixel limitate alla ruota.
 
+I nuovi risultati forniti dall'utente vengono sempre registrati qui e nei
+rispettivi artefatti locali, senza richiedere una conferma ogni volta.
+Conservare i report originali e la provenienza; dati mancanti o riepiloghi
+separati non vanno trasformati in misure complete o valori ricostruiti.
+
 ## PatchCore
 
 | Esperimento | Risultati validation | Risultati test |
@@ -20,6 +25,39 @@ Metriche: `I-AUROC` = Image AUROC, `I-AP` = Image AP, `P-AUROC` = Pixel AUROC,
 | Reference, bank 20.000, sigma 4 | Non riportati | I-AUROC 0,76609; I-AP 0,77705; P-AUROC 0,98240; P-AP 0,27449 |
 | Reference, max train 1.000.000, bank 50.000, sigma 4 | I-AUROC 0,89730; I-AP 0,76151; P-AUROC 0,98950; P-AP 0,31388 | I-AUROC 0,77942; I-AP 0,79660; P-AUROC 0,98500; P-AP 0,30947 |
 | Reference, max train 1.000.000, bank 100.000, sigma 4 | I-AUROC 0,89939; I-AP 0,74660; P-AUROC 0,98971; P-AP 0,29475 | I-AUROC 0,77577; I-AP 0,79222; P-AUROC 0,98529; P-AP 0,30429 |
+| Reference, sola posa `A_overhead`, crop 720x720, input 224x224, max train 1.000.000, bank 50.000, sigma 4; run 2026-10-06 | I-AUROC 0,96432; I-AP 0,91836; P-AUROC 0,99674; P-AP 0,40763; W-P-AUROC 0,99654; W-P-AP 0,41202; AUPRO 0,96682 | I-AUROC 0,86428; I-AP 0,88631; P-AUROC 0,99429; P-AP 0,42891; W-P-AUROC 0,99402; W-P-AP 0,43602; AUPRO 0,95442 |
+| Light, sola posa `A_overhead`, crop 720x720, input 384x512, max train 1.000.000, bank 50.000, sigma 4; run `20261006_185850` | I-AUROC 0,91609; I-AP 0,78478; P-AUROC 0,99845; P-AP 0,45681; W-P-AUROC 0,99831; W-P-AP 0,48612; AUPRO 0,99206 | I-AUROC 0,79283; I-AP 0,77494; P-AUROC 0,99783; P-AP 0,41054; W-P-AUROC 0,99772; W-P-AP 0,45210; AUPRO 0,99103 |
+
+Run posa A: `patchcore_reference_wide_resnet50_2_224x224_A_crop720_bank50k__seed42__20261006_122506`.
+Training su 2.800 immagini; validation 296 clean + 96 hole; test 404 clean +
+404 hole. Il fit ha richiesto 646,05 s. Manifest SHA-256:
+`afc4d44cf8330b94c52f21a314b797abdc553d517348b11489ac15e32a3c06fb`.
+Metriche a precisione completa, diagnostiche per severity/lighting/wear e
+benchmark sono conservati nel
+[record locale PatchCore](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_reference_pose_a/metrics.json).
+Questo run va distinto dai Reference storici: posa, crop e contratto pixel
+non sono un'ablazione controllata della sola memory bank.
+
+Nuovo Light posa A:
+`patchcore_light_resnet18_384x512_A_crop720_bank50k__seed42__20261006_185850`.
+ResNet-18, layer2/layer3, embedding 384, griglia 48x64,
+`num_neighbors=9`, reservoir 1M, bank effettiva 50k (73,2422 MiB).
+Fit: 398,6082 s su 2.800 immagini; validation 296 clean + 96 hole,
+test 404 clean + 404 hole. Manifest identico al Reference posa A.
+[Metriche complete Light](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_light_pose_a/run_20261006_185850/metrics.json),
+[diagnostiche estese](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_light_pose_a/run_20261006_185850/extended_diagnostics.json).
+Le due metriche incollate sono associate rispettivamente a validation/test:
+I-AUROC, I-AP e P-AP coincidono esattamente con i gruppi posa A delle
+diagnostiche. La saturazione degli score normalizzati è nulla su entrambi
+gli split. AUPRO test ai cutoff 0,05/0,10/0,30:
+0,94927 / 0,97353 / 0,99103, con 406 regioni.
+
+Questo Light non sostituisce i run storici multiposa. Anche il confronto
+pixel con Reference posa A ha contratti diversi: Light ridimensiona il
+crop 720 a 384x512, Reference usa resize lato corto 256 e center crop 224.
+Sul test la frazione di pixel anomali Light è 0,0011199095, contro
+0,00141369 del Reference, e le regioni sono 406 contro 411.
+Quindi i cambiamenti di AP/AUPRO non sono un'ablazione della sola backbone.
 
 ## EfficientAD-S
 
@@ -286,4 +324,417 @@ Il confronto fattoriale tra posa A/tutte le pose e crop attivo/disattivato e
 ora completo; per il run tutte-pose con crop manca nel report il riepilogo del
 training necessario a verificare il protocollo early stopping.
 
+## Benchmark di efficienza importati — 2026-10-06 e 2026-10-07
 
+Fonte: report forniti dall'utente in chat; registrazione locale, senza nuova
+esecuzione o ricalcolo delle metriche. I JSON completi mantengono i valori
+originali, ambiente software, configurazioni e provenienza. Gli output sono
+locali sotto `outputs/anomaly_detection/` e ignorati da Git.
+
+Protocollo comune: Tesla T4, FP32, batch 1, split validation della sola posa
+`A_overhead`, crop `(top=90, left=240, height=720, width=720)`, 10 warm-up e
+50 misure per scope. Il manifest coincide:
+`afc4d44cf8330b94c52f21a314b797abdc553d517348b11489ac15e32a3c06fb`.
+Loader sequenziale, zero worker, senza prefetch.
+
+`predict_only` misura `detector.predict` su una singola immagine gia
+preprocessata e residente in GPU; `host_to_device_and_predict` include anche
+il trasferimento. `end_to_end` include il loader, che legge e trasforma anche
+maschere/annotazioni: non rappresenta una pipeline di deployment senza
+maschere. Le finestre temporali sono separate; per PatchCore la media
+host-to-device + predict (58,3842 ms) e inferiore alla media predict-only
+(62,8859 ms) nel nuovo run con energia. Si conservano entrambe senza sommarle o ricostruire
+un tempo di trasferimento per differenza.
+
+| Modello / input | Predict-only medio (ms) | Predict-only p95 (ms) | H2D + predict medio (ms) | End-to-end medio (ms) | FPS predict-only | FPS H2D + predict | FPS end-to-end |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| PatchCore Reference, 224x224; nuovo fit con energia | 62,8859 | 66,3945 | 58,3842 | 120,1384 | 15,9018 | 17,1279 | 8,3237 |
+| PatchCore Light, 384x512, posa A, bank 50k | 101,2088 | 103,6088 | 100,2939 | 140,7615 | 9,8806 | 9,9707 | 7,1042 |
+| TinyGLASS TG-384, 384x384, layer2, sigma 1; misura 2026-10-07 | 5,1284 | 5,9211 | 5,6582 | 62,4856 | 194,9935 | 176,7337 | 16,0037 |
+| TinyGLASS, 512x512, layer3, sigma 4; nuova misura con energia | 6,2933 | 8,9416 | 8,3195 | 62,9831 | 158,9000 | 120,1996 | 15,8773 |
+| EfficientAD-S, 256x256, global_max | 57,7160 | 58,5829 | 55,3607 | 99,7747 | 17,3262 | 18,0633 | 10,0226 |
+| SuperSimpleNet, 256x256, Perlin 0,2 unrestricted, top-1%, sigma 4 | 27,5438 | 31,8189 | 26,3263 | 78,9500 | 36,3058 | 37,9848 | 12,6662 |
+
+| Risorsa / scope | PatchCore Reference | PatchCore Light | TinyGLASS TG-384 | TinyGLASS TG-512 | EfficientAD-S | SuperSimpleNet |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Parametri totali | 24.862.528 | 2.782.784 | 2.850.368 | 2.850.368 | 8.057.856 | 33.719.363 |
+| Parametri con requires_grad | 0 | 0 | 67.584 | 67.584 | 5.363.712 | 8.856.835 |
+| Parametri (MiB) | 94,8430 | 10,6155 | 10,8733 | 10,8733 | 30,7383 | 128,6292 |
+| Buffer (MiB; includono la bank) | 195,4637 | 73,2594 | 0,0216 | 0,0216 | 0,0694 | 0,1600 |
+| Memory bank (MiB; gia inclusa nei buffer) | 195,3125 | 73,2422 | Assente | Assente | Assente | Assente |
+| Checkpoint (MiB) | 290,3828 | 83,9034 | 11,0202 | 10,9876 | 30,8275 | 128,8735 |
+| CUDA baseline allocata, predict-only (MiB) | 301,0288 | 191,2793 | 20,7207 | 23,0332 | 31,5645 | 139,6885 |
+| CUDA picco allocato, predict-only (MiB) | 385,2476 | 277,5293 | 38,7207 | 55,0332 | 878,4482 | 219,6885 |
+| CUDA incremento picco allocato, predict-only (MiB) | 84,2188 | 86,2500 | 18,0000 | 32,0000 | 846,8838 | 80,0000 |
+| CUDA incremento picco allocato, pipeline (MiB) | 84,7930 | 88,5000 | 19,6875 | 35,0000 | 847,6338 | 80,7500 |
+| CUDA picco riservato, predict-only/pipeline (MiB) | 602,0000 | 712,0000 | 46,0000 | 78,0000 | 970,0000 | 254,0000 |
+| Energia GPU predict-only (J/image) | 4,1157 (3 finestre complete) | 6,8485 (3 finestre complete) | 0,2394 (3 finestre complete) | 0,3686 (3 finestre complete) | 4,0317 (log) | 1,9389 (3 finestre complete) |
+
+La memoria CUDA e quella dell'allocator e comprende modello, memory bank e
+altri tensori vivi sul device; non include le allocazioni del driver. La bank
+Reference è `50000x1024` FP32 (195,31 MiB); quella Light è
+`50000x384` FP32 (73,24 MiB). Entrambe sono già incluse nei buffer
+e nel picco CUDA, non vanno sommate una seconda volta.
+Il picco allocato comprende tutti i tensori vivi nella sessione, non solo
+il modello; quello riservato è riportato separatamente e non viene
+reinterpretato come memoria allocata.
+Nei primi report dei tre modelli
+l'energia era `null`; questi originali restano conservati. Per PatchCore e
+TinyGLASS la tabella usa ora i nuovi benchmark con tre finestre energetiche
+complete. PatchCore è stato rifittato: l'efficienza della tabella appartiene
+al nuovo run `20261006_184126`, non al run di accuratezza `20261006_122506`.
+Per EfficientAD-S è disponibile un riepilogo energetico separato fornito in
+chat, documentato qui sotto.
+La latenza non viene convertita in una stima energetica.
+
+### Provenienza PatchCore
+
+Run `patchcore_reference_wide_resnet50_2_224x224_A_crop720_bank50k__seed42__20261006_122506`,
+Wide-ResNet50-2, layer2/layer3, embedding 1.024, sigma 4. Il reservoir contiene
+1.000.000 candidati e la bank effettiva 50.000 embedding.
+[Benchmark completo](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_reference_pose_a/inference_benchmark_batch1.json),
+[metriche validation/test](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_reference_pose_a/metrics.json),
+[diagnostiche estese](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_reference_pose_a/extended_diagnostics.json).
+Le metriche di accuratezza sono quelle del nuovo run posa A riportato nella
+sezione PatchCore, non quelle dei vecchi run multiposa.
+
+#### Nuovo fit PatchCore Reference con energia — 2026-10-06
+
+Run `patchcore_reference_wide_resnet50_2_224x224_A_crop720_bank50k__seed42__20261006_184126`.
+Il nuovo fit ha richiesto **627,3508 s** su 2.800 immagini.
+Configurazione, manifest, posa, crop, input, forma della bank e riepilogo
+del fit coincidono con il precedente run `20261006_122506`: Wide-ResNet50-2,
+layer2/layer3, input 224x224, crop 720, embedding 1.024, reservoir 1M,
+bank 50k e sigma 4. Questa corrispondenza non verifica l'identità dei
+tensori della bank: non è stato fornito un checksum del checkpoint.
+L'allegato contiene solo benchmark e misura energetica, non nuove metriche
+di accuratezza; quelle del fit precedente restano associate al proprio run.
+
+[Benchmark completo del nuovo run](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_reference_pose_a/run_20261006_184126/inference_benchmark_batch1.json),
+[energia con finestre e contatori NVML](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_reference_pose_a/run_20261006_184126/inference_energy_batch1.json),
+[console originale](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_reference_pose_a/run_20261006_184126/user_console_output.txt),
+[provenienza dell'import](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_reference_pose_a/run_20261006_184126/import_provenance.json).
+
+Tesla T4, FP32, batch 1, 10 warm-up e 50 misure per scope:
+predict-only **62,8859 ms**, p95 **66,3945 ms**, **15,9018 immagini/s**;
+H2D + predict **58,3842 ms**; end-to-end **120,1384 ms**.
+Picco CUDA allocato **385,2476 MiB**, incremento predict-only
+**84,2188 MiB**, bank **195,3125 MiB**, checkpoint **290,3828 MiB**.
+La fase di decode/preprocessing misura 61,7542 ms nel nuovo run,
+contro 40,8436 ms nel precedente: l'end-to-end include anche questo lavoro,
+senza rappresentare un cambiamento della sola architettura.
+
+Energia misurata tramite `nvml_total_energy_counter`, warm-up effettivo
+5,0614 s, tre finestre complete da circa 30 s e nessun warning:
+
+| Ripetizione | Inferenze | Durata (s) | Energia GPU (J) | J/image | Potenza media (W) |
+|---|---:|---:|---:|---:|---:|
+| 1 | 481 | 30,0533 | 1.983,563 | 4,123832 | 66,001501 |
+| 2 | 483 | 30,0253 | 1.989,161 | 4,118346 | 66,249422 |
+| 3 | 483 | 30,0206 | 1.982,762 | 4,105097 | 66,046715 |
+
+Aggregato originale: **4,1157470629 J/image**, potenza media
+**66,0991852137 W**, deviazione standard fra le medie delle finestre
+**0,0096314551 J/image**. Totale: 1.447 inferenze, 90,099235 s,
+5.955,486 J. Contatori in mJ, somme, aggregati ponderati e dispersione
+sono coerenti con il report. La deviazione standard non descrive
+l'energia delle singole inferenze, che non viene misurata individualmente.
+
+Lo scope è predict-only, input residente in GPU; CPU, loader e
+trasferimento dell'input sono esclusi. Il valore riguarda l'intera GPU,
+senza attribuzione al processo e senza sottrazione dell'idle.
+CUDA/NVML sono associati per UUID; un solo processo compute rilevato,
+power limit 70 W. La fase energetica non esegue fit o calibrazione,
+ma il run complessivo ha effettuato il nuovo fit riportato sopra.
+
+### Provenienza PatchCore Light posa A
+
+Run `patchcore_light_resnet18_384x512_A_crop720_bank50k__seed42__20261006_185850`;
+fase energetica completata il `2026-10-06T19:09:18.567611+00:00`.
+Tesla T4, FP32, batch 1, sigma 4, input 384x512, posa A,
+crop 720, ResNet-18, embedding 384 e bank 50k.
+La griglia di query è 48x64 (3.072 patch), contro 28x28 (784)
+del Reference; cambia anche `num_neighbors`, da 1 a 9.
+
+[Benchmark completo Light](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_light_pose_a/run_20261006_185850/inference_benchmark_batch1.json),
+[energia con contatori NVML](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_light_pose_a/run_20261006_185850/inference_energy_batch1.json),
+[metriche validation/test](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_light_pose_a/run_20261006_185850/metrics.json),
+[diagnostiche complete](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_light_pose_a/run_20261006_185850/extended_diagnostics.json),
+[console](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_light_pose_a/run_20261006_185850/user_console_output.txt),
+[provenienza](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/patchcore_light_pose_a/run_20261006_185850/import_provenance.json).
+Le metriche sono trascritte dai due dizionari forniti in chat; le diagnostiche
+provengono dal secondo allegato, senza ricalcolo.
+
+Energia: **6,8485224215 J/image**, potenza media **67,8032546417 W**,
+deviazione standard tra le medie delle finestre **0,0041311614 J/image**.
+Tre finestre complete da circa 30 s via `nvml_total_energy_counter`,
+warm-up effettivo 5,0700 s, nessun warning:
+
+| Ripetizione | Inferenze | Durata (s) | Energia GPU (J) | J/image | Potenza media (W) |
+|---|---:|---:|---:|---:|---:|
+| 1 | 297 | 30,0065 | 2.032,932 | 6,844889 | 67,749817 |
+| 2 | 297 | 30,0329 | 2.033,752 | 6,847650 | 67,717447 |
+| 3 | 298 | 30,0578 | 2.042,198 | 6,853013 | 67,942338 |
+
+Totale: 892 inferenze, 90,097179 s e 6.108,882 J.
+Delta dei contatori, aggregati ponderati e dispersione verificati contro il
+report. Stesso scope energetico degli altri modelli: intera GPU,
+input residente, esclusi CPU/loader/transfer, nessuna sottrazione dell'idle.
+Un solo processo compute rilevato; UUID CUDA/NVML coincidente con la
+sessione del nuovo Reference e power limit 70 W.
+
+Light riduce il picco allocato del 28,0% e la bank del 62,5% rispetto
+al Reference, ma in queste configurazioni aumenta la latenza predict-only
+del 60,9% e l'energia per immagine del 66,4%.
+La backbone più piccola non garantisce un'inferenza complessiva più economica:
+risoluzione, numero di query, dimensione degli embedding e vicini cambiano
+insieme. Il maggior numero di query è una possibile spiegazione del costo
+osservato, non una causa isolata verificata tramite profiling o ablation.
+
+Nota da riprendere nella discussione dei risultati: compromesso tra
+risoluzione dell'input, dettaglio dei difetti e costo energetico.
+Per localizzare piccoli fori occorre conservarne una rappresentazione
+spaziale sufficiente nell'input; un ridimensionamento eccessivo può perdere
+dettagli utili. Aumentare la risoluzione è una possibile scelta per ottenere
+una localizzazione migliore, ma nei modelli patch-based aumenta anche il
+numero di query alla memory bank e può richiedere più tempo ed energia
+per immagine. Una backbone Light non elimina questo costo: il confronto
+misurato mostra meno memoria, ma maggiore latenza ed energia.
+Nei risultati va quindi valutato il compromesso qualità-efficienza
+dell'intera configurazione, non soltanto la dimensione della backbone.
+Non presentare questi run come prova che immagini più grandi siano sempre
+necessarie o sufficienti per buoni risultati: cambiano anche backbone,
+embedding, scoring e geometria delle maschere; per isolare il beneficio
+della risoluzione serve un'ablazione a parità degli altri fattori.
+
+### Provenienza TinyGLASS
+
+Benchmark creato il `2026-10-06T14:16:21.750245+00:00` sul checkpoint
+`tinyglass_A_overhead_crop720_input384_layer2_sigma1_hole_small70_lowlr_pat40_frozen__seed42__20260901_102247`,
+Drive file ID `1gq7zyfAJZ5Vza2GjLBsIA91lVKU-b3LW`.
+Il nome del run contiene `input384_layer2_sigma1`, ma il checkpoint e il
+benchmark verificano input **512x512** e griglia **layer3** (32x32).
+Lo smoothing salvato era sigma 1; sigma **4** e stato applicato dopo restore
+stretto, come selezionato nell'ablazione locale preesistente.
+
+[Benchmark storico TinyGLASS, senza energia](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/tinyglass_512_layer3_sigma4/inference_benchmark_batch1.json).
+Questo notebook non ha eseguito training, selezione sigma o una nuova
+valutazione di accuratezza. Per l'accuratezza resta valido il risultato gia
+registrato per 512 layer3 sigma 4: sul test I-AUROC 0,77330, I-AP 0,81126,
+P-AUROC 0,97924, P-AP 0,27592, W-P-AUROC 0,97646, W-P-AP 0,28299 e
+AUPRO@0,30 0,92012.
+
+#### Aggiornamento TinyGLASS: benchmark con energia — 2026-10-06
+
+Il nuovo benchmark è stato creato il `2026-10-06T16:56:58.864672+00:00`;
+la fase energetica è stata completata il
+`2026-10-06T16:58:33.956302+00:00`. Stesso checkpoint finale e medesima
+configurazione effettiva: input 512x512, layer3, posa A, crop 720,
+sigma 4 applicato dopo restore stretto. Manifest coincidente; nessun nuovo
+training, selezione sigma o test di accuratezza.
+
+[Nuovo benchmark completo](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/tinyglass_512_layer3_sigma4/efficiency_20261006_165658/inference_benchmark_batch1.json),
+[report energetico completo](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/tinyglass_512_layer3_sigma4/efficiency_20261006_165658/inference_energy_batch1.json),
+[output console fornito dall'utente](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/tinyglass_512_layer3_sigma4/efficiency_20261006_165658/user_console_output.txt),
+[provenienza dell'import](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/tinyglass_512_layer3_sigma4/efficiency_20261006_165658/import_provenance.json).
+Il report storico non è stato sovrascritto: la sua precedente latenza
+predict-only era 6,8684 ms, contro 6,2933 ms nella nuova misura. Sono due
+misurazioni, non un cambiamento del modello.
+
+Energia misurata con `nvml_total_energy_counter`, Tesla T4, FP32,
+batch 1, input già residente in GPU: warm-up effettivo 5,0033 s e
+3 finestre complete da circa 30 s, senza warning.
+
+| Ripetizione | Inferenze | Durata (s) | Energia GPU (J) | J/image | Potenza media (W) |
+|---|---:|---:|---:|---:|---:|
+| 1 | 5.634 | 30,0029 | 2.034,665 | 0,361140 | 67,815694 |
+| 2 | 5.467 | 30,0046 | 2.014,290 | 0,368445 | 67,132629 |
+| 3 | 5.261 | 30,0051 | 1.982,132 | 0,376760 | 66,059896 |
+
+Aggregato originale: **0,3686032881 J/image**, potenza media
+**67,0027189497 W**, deviazione standard fra le medie delle finestre
+**0,0078150124 J/image**. Totale: 16.362 inferenze, 90,012571 s,
+6.031,087 J. I delta dei contatori in mJ e gli aggregati ponderati sono stati
+controllati contro il JSON, senza sostituirne i valori con stime.
+La dispersione riportata non è la deviazione standard dell'energia delle
+singole immagini, che non viene misurata individualmente.
+
+Lo scope è l'intera GPU, non il singolo processo o il sistema completo;
+CPU, loader e trasferimento dell'input sono esclusi, il consumo a riposo
+non viene sottratto. CUDA e NVML sono associati per UUID; il report rileva
+un solo processo compute e un power limit di 70 W. Le finestre energetiche
+sono separate da quelle della latenza: non si ricava energia moltiplicando
+la latenza breve per una potenza nominale.
+Il JSON console precede il salvataggio finale e non contiene
+`benchmark_run_id`: nessun identificativo mancante è stato inventato.
+
+#### TG-512: sottogruppi del test a sigma 4 — registrati il 2026-10-07
+
+Il riepilogo fornito dall'utente riguarda il test TG-512 del notebook:
+512x512, layer3, sigma 4, 404 coppie clean/hole posa A. Per ciascuno dei
+quattro campi i conteggi ricostituiscono 404 clean e 404 hole. Le percentuali
+sono quelle stampate a due decimali; il riepilogo non sostituisce i JSON
+diagnostici completi e non contiene prevalenza pixel o hash del nuovo test.
+
+| Campo | Gruppo | Clean | Hole | I-AUROC (%) | I-AP (%) | P-AP (%) |
+|---|---|---:|---:|---:|---:|---:|
+| severity | large | 39 | 39 | 87,18 | 88,99 | 35,13 |
+| severity | medium | 157 | 157 | 79,11 | 82,84 | 32,98 |
+| severity | small | 208 | 208 | 74,09 | 78,18 | 21,13 |
+| camera_pose | A_overhead | 404 | 404 | 77,33 | 81,12 | 27,59 |
+| lighting | mars_clear_refined | 97 | 97 | 81,29 | 85,43 | 33,19 |
+| lighting | mars_dusty_refined | 307 | 307 | 77,24 | 80,46 | 26,66 |
+| wear | surface_current | 85 | 85 | 79,33 | 82,12 | 28,78 |
+| wear | wear_evident | 140 | 140 | 76,69 | 81,28 | 29,24 |
+| wear | wear_light | 179 | 179 | 77,42 | 81,01 | 26,46 |
+
+AUPRO originale, scala frazionaria: @0,05 **0,7654463871116568**;
+@0,10 **0,8356311439858932**; @0,30 **0,9201249772458705**.
+
+[Riepilogo JSON](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_512_layer3_sigma4/test_sigma4_user_summary/test_user_summary.json),
+[sottogruppi CSV in percentuale](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_512_layer3_sigma4/test_sigma4_user_summary/test_subgroup_metrics_percent.csv),
+[testo della chat](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_512_layer3_sigma4/test_sigma4_user_summary/user_subgroup_output.txt),
+[provenienza](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_512_layer3_sigma4/test_sigma4_user_summary/import_provenance.json).
+
+#### TG-384: benchmark con energia — 2026-10-07
+
+Report fornito dall'utente: benchmark creato il `2026-10-07T09:37:11.089105+00:00`,
+fase energetica completata il `2026-10-07T09:38:46.175796+00:00`.
+Checkpoint finale `20260831_112751`, Drive ID
+`1L45AfJ4ZeFceXfy2houemOVc_3Kv4Qpr`: input **384x384**, **layer2** (48x48),
+**sigma 1** conservato dopo restore, ResNet-18 congelata e LAS hole 70/25/5.
+SHA-256 checkpoint `df576d6773d7f2ecb05372facf9cd916788ac31a66e39e8778b849653d9fc270`,
+coincidente con il run manifest verificato durante la preparazione del
+notebook. Manifest canonico coincidente, validation posa A con 296 clean
+e 96 hole. Nessun training, selezione sigma o test di accuratezza.
+
+Protocollo e ambiente coincidono con il precedente TG-512: Tesla T4, FP32,
+batch 1, 10 warm-up e 50 misure per scope, stesso crop e loader, Python
+3.13.15, PyTorch 2.11.0+cu128, CUDA 12.8 e cuDNN 91900.
+
+| Risorsa / scope | TG-384: 384/layer2/sigma1 | TG-512: 512/layer3/sigma4 |
+|---|---:|---:|
+| Predict-only medio (ms) | 5,128375 | 6,293266 |
+| Predict-only p95 (ms) | 5,921135 | 8,941595 |
+| H2D + predict medio (ms) | 5,658231 | 8,319499 |
+| End-to-end medio (ms) | 62,485621 | 62,983103 |
+| CUDA picco allocato, predict-only (MiB) | 38,720703 | 55,033203 |
+| CUDA incremento picco allocato, predict-only (MiB) | 18,000000 | 32,000000 |
+| Energia GPU predict-only (J/image) | 0,239375737 | 0,368603288 |
+
+Energia misurata tramite `nvml_total_energy_counter`, warm-up effettivo
+5,002830 s, tre finestre complete da circa 30 s, nessun warning, un solo
+processo compute e associazione CUDA/NVML per UUID.
+
+| Ripetizione | Inferenze | Durata (s) | Energia GPU (J) | J/image | Potenza media (W) |
+|---|---:|---:|---:|---:|---:|
+| 1 | 8.653 | 30,007110 | 2.051,815 | 0,237121807 | 68,377628 |
+| 2 | 8.525 | 30,005721 | 2.047,060 | 0,240124340 | 68,222323 |
+| 3 | 8.449 | 30,008467 | 2.035,607 | 0,240928749 | 67,834423 |
+
+Aggregato originale: **0,23937573652788074 J/image**, potenza media
+**68,14478564553075 W**, deviazione standard fra le medie delle finestre
+**0,0020064512516075076 J/image**. Totali: 25.627 inferenze,
+90,02129718199984 s e 6.134,482 J. Delta dei contatori, rapporti per finestra,
+aggregati ponderati, FPS e incrementi di memoria controllati contro il JSON.
+Le finestre energetiche sono separate da quelle della latenza; la deviazione
+standard descrive le medie delle finestre. Si mantiene lo scope GPU completo
+già documentato per TG-512, con idle incluso e CPU/loader/trasferimenti esclusi.
+
+[Benchmark completo](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_384_layer2_sigma1/efficiency_20261007_093711/inference_benchmark_batch1.json),
+[CSV derivato dal report](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_384_layer2_sigma1/efficiency_20261007_093711/inference_benchmark_batch1.csv),
+[energia con contatori NVML](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_384_layer2_sigma1/efficiency_20261007_093711/inference_energy_batch1.json),
+[console originale, copia identica](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_384_layer2_sigma1/efficiency_20261007_093711/user_console_output.txt),
+[provenienza](../../outputs/anomaly_detection/local_registry_imports/2026-10-07/tinyglass_384_layer2_sigma1/efficiency_20261007_093711/import_provenance.json).
+
+La registrazione conserva i precedenti artefatti TG-512. Il JSON console
+precede il salvataggio finale e non contiene `benchmark_run_id`; il nome
+della cartella locale deriva dal timestamp fornito. I confronti riguardano
+le configurazioni complete, che differiscono in input, griglia e smoothing.
+
+### Provenienza EfficientAD-S
+
+Benchmark creato il `2026-10-06T15:07:10.382107+00:00` sul checkpoint
+`efficientad_s_A_overhead_crop720_global_fixed70k_balanced__seed42__20260901_120051`,
+Drive file ID `1LTxIQmEovzJTnosP6Plwrobvh7qBpmr5`.
+Configurazione effettiva: input 256x256, 384 canali, posa A, crop 720,
+calibrazione globale e score `global_max`. Inferenza FP32 senza autocast;
+il default legacy `mixed_precision=True` e relativo al costruttore per il
+training e non descrive la precisione di inferenza. Nessun training,
+ricalibrazione o nuovo test di accuratezza e stato eseguito dal benchmark.
+
+[Report originale completo](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/efficientad_s_pose_a/inference_benchmark_batch1.json):
+tutte le distribuzioni di latenza, throughput, parametri/buffer/checkpoint,
+memoria CUDA totale/incrementale, configurazioni salvata/ripristinata,
+statistiche di calibrazione, preprocessing e metadati hardware/software.
+
+[Riepilogo energetico fornito in chat](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/efficientad_s_pose_a/inference_energy_summary.json):
+stato `measured`, backend `nvml_total_energy_counter`,
+**4,031691 J/image**, potenza media
+**66,645356 W**, deviazione standard tra le ripetizioni
+**0,023861 J/image**, nessun warning riportato.
+
+L'allegato originale contiene ancora `energy_joules_per_image: null`;
+si conserva invariato e si collega il riepilogo successivo anziche riscriverlo.
+Manca ancora il JSON completo delle finestre energetiche, con numero di
+inferenze, tempi e contatori NVML per ripetizione. Il valore aggregato e
+registrato come comunicato dall'utente, senza inventare queste diagnostiche.
+La misura riguarda l'intera GPU nella fase predict-only, non CPU o pipeline
+completa, e non sottrae il consumo a riposo.
+
+### Provenienza SuperSimpleNet
+
+Benchmark creato il `2026-10-06T20:05:36.588973+00:00`; fase energetica
+completata il `2026-10-06T20:07:11.753252+00:00`. Checkpoint selezionato:
+`supersimplenet_A_overhead_posecrop_input256_wheelmask_perlin02_score1pct_earlystop__seed42__20260905_093537`,
+Drive file ID `1uAdzWRKpmQZnjECnAuEXD08CtDY8xfhv`, cartella
+`1XPHgLw2jVMiRJRtwouqtIWFrQeEHDBeA`.
+La configurazione salvata coincide con quella di inferenza: Wide-ResNet50-2,
+layer2/layer3, input 256x256, posa A, crop 720, Perlin threshold 0,2,
+score media del top 1% e sigma 4. Nonostante `wheelmask` nel nome storico,
+`restrict_synthetic_anomalies_to_target_mask=False`: si tratta della variante
+unrestricted selezionata, non di quella con anomalie ristrette alla ruota.
+Manifest coincidente con la sorgente; validation con 296 clean e 96 hole.
+
+[Benchmark completo](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/supersimplenet_pose_a/efficiency_20261006_200536/inference_benchmark_batch1.json),
+[energia con finestre e contatori NVML](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/supersimplenet_pose_a/efficiency_20261006_200536/inference_energy_batch1.json),
+[console originale](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/supersimplenet_pose_a/efficiency_20261006_200536/user_console_output.txt),
+[provenienza dell'import](../../outputs/anomaly_detection/local_registry_imports/2026-10-06/supersimplenet_pose_a/efficiency_20261006_200536/import_provenance.json).
+Nessun training, ricalibrazione, selezione dello scoring/sigma o nuovo test di
+accuratezza: le metriche gia registrate restano associate al checkpoint.
+Inferenza FP32 senza autocast; il forward canonico completo, inclusa la
+decision branch, resta eseguito anche con scoring top-1%.
+I precedenti benchmark di latenza restano conservati come misure separate.
+
+Predict-only **27,5438 ms**, p95 **31,8189 ms**, **36,3058 immagini/s**;
+H2D + predict **26,3263 ms**, end-to-end **78,9500 ms**. Anche qui le
+finestre sono separate: non si ricava il tempo di trasferimento sottraendo
+le due medie. Picco CUDA allocato **219,6885 MiB**, gia comprensivo del
+modello e degli altri tensori vivi; nessuna memory bank. L'incremento
+predict-only di 80 MiB non sostituisce il picco totale nel confronto.
+Il conteggio dei parametri con `requires_grad` non implica training nel
+benchmark, eseguito senza gradienti.
+
+Energia misurata tramite `nvml_total_energy_counter`, warm-up effettivo
+5,0241 s e tre finestre complete da circa 30 s, senza warning:
+
+| Ripetizione | Inferenze | Durata (s) | Energia GPU (J) | J/image | Potenza media (W) |
+|---|---:|---:|---:|---:|---:|
+| 1 | 1.060 | 30,0294 | 1.982,616 | 1,870392 | 66,022591 |
+| 2 | 1.008 | 30,0298 | 1.956,836 | 1,941306 | 65,163123 |
+| 3 | 953 | 30,0112 | 1.917,864 | 2,012449 | 63,904976 |
+
+Aggregato originale: **1,9388666005 J/image**, potenza media
+**65,0304579232 W**, deviazione standard tra le medie delle finestre
+**0,0710283588 J/image**. Totale: 3.021 inferenze, 90,070348 s e
+5.857,316 J. Delta dei contatori in mJ, somme, aggregati ponderati e
+dispersione verificati contro il report. La deviazione standard non e
+quella dell'energia delle singole inferenze. Le finestre successive
+mostrano meno inferenze e piu J/image; senza telemetria di clock o
+temperatura non si attribuisce questa variazione a una causa specifica.
+
+Scope: input residente, predict-only, intera GPU; CPU, loader e trasferimento
+esclusi, nessuna sottrazione dell'idle o attribuzione al singolo processo.
+CUDA/NVML associati per UUID; un solo processo compute rilevato e power
+limit 70 W. Il JSON console non contiene `benchmark_run_id`: non e stato
+inventato un identificativo assente.

@@ -18,7 +18,7 @@ The rover asset was based on the publicly available Curiosity model distributed 
 After importing the model into Blender, the six wheels were separated into independently addressable objects, while the remaining vehicle structure was retained as an assembly. This organization enabled wheel-specific damage generation, rotation control, and mask extraction without rebuilding the rover geometry. The model was used for visual image generation rather than as an engineering representation of the rover's mechanical behaviour.
 
 \paragraph{Martian environment.}
-The terrain was derived from HiRISE observations of Gale Crater, using a digital terrain model and associated orthorectified imagery \cite{hirisegaleterrain}. These products provided a real observation-based foundation for the environment, including variations in elevation and surface appearance. A common region was extracted from both products, with the elevation data converted into a terrain mesh at metric scale and the corresponding imagery mapped onto its surface.
+The terrain was derived from observations of Gale Crater acquired by the High Resolution Imaging Science Experiment (HiRISE), using a digital terrain model and associated orthorectified imagery \cite{hirisegaleterrain}. These products provided a real observation-based foundation for the environment, including variations in elevation and surface appearance. A common region was extracted from both products, with the elevation data converted into a terrain mesh at metric scale and the corresponding imagery mapped onto its surface.
 
 The orbital data were not detailed enough for close-up wheel views, so a local procedural terrain patch was added with grains, rocks, and small surface irregularities. Material effects provided finer visual detail without adding geometry, while rock models were reused to keep the scene manageable. These additions complemented the real terrain data but did not reproduce the exact ground surface at the site. Figure~\ref{fig:rover-terrain-scene} shows the rover asset and the surrounding terrain assembled in Blender for synthetic image generation.
 
@@ -26,7 +26,7 @@ The orbital data were not detailed enough for close-up wheel views, so a local p
     \centering
     \includegraphics[width=0.70\textwidth]{Images/rover_terrain_overview_v2.png}
     \caption{Overview of the Blender scene, showing the Curiosity rover
-    asset and the surrounding terrain used for synthetic image generation.}
+        asset and the surrounding terrain used for synthetic image generation.}
     \label{fig:rover-terrain-scene}
 \end{figure}
 
@@ -57,7 +57,7 @@ Damage generation focused on a single anomaly class: through-holes in the wheel 
         {\small (c) Large}
     \end{minipage}
     \caption{Examples of synthetic wheel damage at the three severity
-    levels. The categories refer to the dimensions of the generated hole.}
+        levels. The categories refer to the dimensions of the generated hole.}
     \label{fig:damage-severity}
 \end{figure}
 
@@ -107,9 +107,9 @@ can occur without damage.
         {\small (b) Dusty preset}
     \end{minipage}
     \caption{Clear and dusty rendering presets applied to the same
-    normal wheel, with identical camera pose and wheel orientation.
-    The dusty preset also changes deposited dust and camera response,
-    so the comparison does not isolate illumination alone.}
+        normal wheel, with identical camera pose and wheel orientation.
+        The dusty preset also changes deposited dust and camera response,
+        so the comparison does not isolate illumination alone.}
     \label{fig:dr-lighting}
 \end{figure}
 
@@ -146,8 +146,8 @@ high-contrast marks or local texture changes, simulating real operational wear.
         {\small (c) Evident wear}
     \end{minipage}
     \caption{Normal surface conditions under identical lighting,
-    camera pose, and wheel orientation. All three examples contain
-    no injected hole and belong to the normal class.}
+        camera pose, and wheel orientation. All three examples contain
+        no injected hole and belong to the normal class.}
     \label{fig:dr-surface}
 \end{figure}
 
@@ -155,7 +155,7 @@ high-contrast marks or local texture changes, simulating real operational wear.
 The target wheel was varied across all six rover wheels, introducing
 different surrounding suspension and chassis structures. For standalone
 normal samples, a shared rotation was applied to all six wheels using
-eight phases separated by $45^\circ$. Rotation changes the visible
+eight phases separated by \(45^\circ\). Rotation changes the visible
 arrangement of tread features and surface marks, reducing dependence
 on a fixed angular configuration. For damaged samples, wheel orientation
 was constrained by the visibility requirements described in
@@ -181,7 +181,7 @@ Changing viewpoint modifies perspective, the visible wheel surface,
 and the apparent size of a hole. Whole-wheel views retain more context
 but represent small defects with fewer pixels, while the detail view magnifies local features. The different camera configurations were also included to compare detection and localization performance across viewpoints and identify the pose best suited to wheel-damage inspection.
 
-\begin{figure}[htbp]
+\begin{figure}[ht!]
     \centering
     \begin{minipage}[b]{0.48\textwidth}
         \centering
@@ -213,8 +213,8 @@ but represent small defects with fewer pixels, while the detail view magnifies l
         {\small (d) D -- Upper detail}
     \end{minipage}
     \caption{The four camera configurations shown for the same
-    normal wheel under the dusty preset, without additional wear.
-    Wheel orientation is unchanged across views.}
+        normal wheel under the dusty preset, without additional wear.
+        Wheel orientation is unchanged across views.}
     \label{fig:dr-camera}
 \end{figure}
 
@@ -236,49 +236,46 @@ Damage masks were required to be spatially consistent with the target-wheel regi
 
 The final dataset contains 10,000 RGB images, comprising 7,500 normal samples and 1,250 matched normal-anomalous pairs. This results in 8,750 normal images and 1,250 anomalous images, each containing one injected hole. Every image is associated with a target-wheel mask, while anomalous images additionally include a binary damage mask.
 
-\paragraph{Dataset splits.}
 The training set contains only normal images, allowing the anomaly-detection models to learn wheel appearance without exposure to injected defects. Validation and test sets include both conditions, as summarized in Table~\ref{tab:synthetic-dataset-splits}. Validation contains 500 standalone normal images and 250 pairs, whereas the test set consists of 1,000 pairs. Split assignments were established before rendering, and each pair was treated as an indivisible unit, meaning that an anomalous image and its normal counterpart could not be assigned to different subsets.
 
 \begin{table}[ht!]
-\centering
-\begin{tabular}{@{}l c c c@{}}
-\toprule
-\textbf{Split} & \textbf{Normal} & \textbf{Anomalous} & \textbf{Total} \\
-\midrule
-\midrule
-Training   & 7,000 & 0     & 7,000  \\
-Validation & 750   & 250   & 1,000  \\
-Test       & 1,000 & 1,000 & 2,000  \\
-\midrule
-Total      & 8,750 & 1,250 & 10,000 \\
-\bottomrule
-\end{tabular}
-\vspace{5mm}
-\caption{Composition of the synthetic dataset across training, validation, and test splits.}
-\label{tab:synthetic-dataset-splits}
+    \centering
+    \begin{tabular}{@{}l c c c@{}}
+        \toprule
+        \textbf{Split} & \textbf{Normal} & \textbf{Anomalous} & \textbf{Total} \\
+        \midrule
+        \midrule
+        Training       & 7,000           & 0                  & 7,000          \\
+        Validation     & 750             & 250                & 1,000          \\
+        Test           & 1,000           & 1,000              & 2,000          \\
+        \midrule
+        Total          & 8,750           & 1,250              & 10,000         \\
+        \bottomrule
+    \end{tabular}
+    \vspace{5mm}
+    \caption{Composition of the synthetic dataset across training, validation, and test splits.}
+    \label{tab:synthetic-dataset-splits}
 \end{table}
 
-\paragraph{Category distributions.}
-The main category distributions are reported in Table~\ref{tab:synthetic-category-distributions}. The six rover wheels are represented approximately uniformly, with 1,666--1,667 images per wheel. Defect severity and placement distributions refer only to anomalous images; large defects are restricted to the tread.
+The main category distributions are reported in Table~\ref{tab:synthetic-category-distributions}. The six rover wheels are represented approximately uniformly, with 1,666--1,667 images per wheel. Defect severity and placement distributions refer only to anomalous images, with large defects restricted to the tread.
 
 \begin{table}[ht!]
-\centering
-\begin{tabular}{@{}l l c@{}}
-\toprule
-\textbf{Factor} & \textbf{Categories} & \textbf{Share (\%)} \\
-\midrule
-\midrule
-Camera pose     & A / C1 / C2 / D           & 40 / 27.5 / 27.5 / 5 \\
-Lighting        & Dusty / clear             & 75 / 25              \\
-Surface wear    & Current / light / evident & 20 / 45 / 35         \\
-Defect severity & Small / medium / large    & 50 / 40 / 10         \\
-Defect location & Tread / outer shoulder    & 80 / 20              \\
-\bottomrule
-\end{tabular}
-\vspace{5mm}
-\caption{Main category distributions in the final dataset. Camera pose, lighting, and surface wear percentages refer to all 10,000 images; defect severity and location percentages refer to the 1,250 anomalous images.}
-\label{tab:synthetic-category-distributions}
+    \centering
+    \begin{tabular}{@{}l l c@{}}
+        \toprule
+        \textbf{Factor} & \textbf{Categories}       & \textbf{Share (\%)}  \\
+        \midrule
+        \midrule
+        Camera pose     & A / C1 / C2 / D           & 40 / 27.5 / 27.5 / 5 \\
+        Lighting        & Dusty / clear             & 75 / 25              \\
+        Surface wear    & Current / light / evident & 20 / 45 / 35         \\
+        Defect severity & Small / medium / large    & 50 / 40 / 10         \\
+        Defect location & Tread / outer shoulder    & 80 / 20              \\
+        \bottomrule
+    \end{tabular}
+    \vspace{5mm}
+    \caption{Main category distributions in the final dataset. Camera pose, lighting, and surface wear percentages refer to all 10,000 images; defect severity and location percentages refer to the 1,250 anomalous images.}
+    \label{tab:synthetic-category-distributions}
 \end{table}
 
-\paragraph{Rendering procedure.}
-Images were generated through an automated batch pipeline in Blender 5.2 using Eevee, at a resolution of $1200 \times 900$ pixels with 64 rendering samples, and saved as 8-bit RGB PNG files. For each sample, the prepared scene was restored to its reference state before applying the parameters specified by the generation plan. Standalone normal samples required one render, whereas paired samples required a normal and an anomalous render with matching camera, illumination, surface appearance, and wheel configuration. Annotation information was obtained alongside the RGB renders, without separate mask-only renders; the normal target-wheel mask was retained for both members of each pair.
+Images were generated through an automated batch pipeline in Blender 5.2 using Eevee, at a resolution of \(1200 \times 900\) pixels with 64 rendering samples, and saved as 8-bit RGB PNG files. For each sample, the prepared scene was restored to its reference state before applying the parameters specified by the generation plan. Standalone normal samples required one render, whereas paired samples required a normal and an anomalous render with matching camera, illumination, surface appearance, and wheel configuration. Annotation information was obtained alongside the RGB renders, and the normal wheel mask was kept for both members of each pair, for possible future use.

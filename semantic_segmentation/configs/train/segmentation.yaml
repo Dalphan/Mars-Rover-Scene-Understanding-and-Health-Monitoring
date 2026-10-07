@@ -3,7 +3,7 @@
 # Python mirror of notebooks/kaggle_segmentation_training.ipynb.
 # Synchronization is intentionally one-way: notebook -> modules/config.
 defaults:
-  - /model: segformer_b0
+  - /model: lcnet3_7
   - _self_
 
 sync:

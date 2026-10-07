@@ -49,12 +49,24 @@ For a small smoke run:
 python scripts/analyze_dataset.py analysis.max_samples=5 visualization.num_samples=2
 ```
 
-Start the default SegFormer-B0 S5Mars experiment (same defaults as the
+Start the default LCNet3_7 S5Mars experiment (same defaults as the
 authoritative training notebook):
 
 ```bash
 python -m src.train.train_segmentation
 ```
+
+The prepared reference run trains LCNet from scratch for 30 epochs with batch
+size 32, seed 42, and 512 x 512 inputs, without augmentation or oversampling.
+It is a new controlled experiment, not a reproduction of the historical
+60-epoch LCNet slide results. In Kaggle, start a fresh session and execute cells
+in order through the local results summary; run the final optional Drive upload
+cell separately only when desired. `LOAD_CKPT = True` and `LOAD_BEST = True`
+reload the newly trained validation-selected checkpoint after training, not an
+initialization checkpoint. For LCNet3_11, change only `LCNET_VARIANT` in the
+notebook (or use `model=lcnet3_11` in Python). Variant-specific output directories
+remain distinct, but repeated runs with the same variant/configuration overwrite
+the same local directory, so preserve completed outputs before repeating one.
 
 Useful Hydra overrides include:
 
@@ -71,7 +83,7 @@ written under `outputs/`. Both locations are intentionally ignored by Git.
 
 ## Kaggle notebooks
 
-The repository keeps exactly three self-contained notebooks:
+The repository keeps four self-contained notebooks:
 
 - `notebooks/kaggle_segmentation_training.ipynb` trains on S5Mars, MarsSeg MSL,
   or MarsSeg MER. Set `DATASET_NAME`, `RUN_CROSS_DATASET_EVALUATION`, and
@@ -81,6 +93,46 @@ The repository keeps exactly three self-contained notebooks:
   post-training quantization pipeline.
 - `notebooks/kaggle_s5mars_onnx_qat.ipynb` runs selective NVIDIA ModelOpt QAT
   and the direct TensorRT comparison.
+- `notebooks/kaggle_s5mars_qualitative_comparison.ipynb` prepares the qualitative
+  comparison for thesis Figure 5.1: it samples 20 distinct S5Mars test images
+  with seed 42, then downloads and evaluates each of the seven FP32 validation-
+  selected `best.ckpt` checkpoints from Drive, one model at a time. It reuses
+  the training architectures, 512 x 512 preprocessing, and class palette;
+  no training or quantization runs are required.
+
+For the qualitative notebook, enable Kaggle Internet, a GPU, and the same
+`GDRIVE_CLIENT_ID`, `GDRIVE_CLIENT_SECRET`, and `GDRIVE_REFRESH_TOKEN` Secrets
+as the training notebook (`GOOGLE_*` aliases are also accepted). `HF_TOKEN`
+is optional when the dataset is accessible without authentication. All seven
+Drive experiment folders are already configured, including the thesis LCNet
+runs; folder IDs and `best.ckpt` availability were checked on 2026-10-06.
+Its installation cell aligns `torch==2.9.1`, `torchvision==0.24.1`, and
+`torchaudio==2.9.1` from the CUDA 12.8 index, matching training. Transformers
+can import TorchAudio while loading SegFormer, so leaving Kaggle's preinstalled
+TorchAudio alongside a downgraded PyTorch can fail with
+`undefined symbol: torch_library_impl`. Run the corrected installation cell,
+restart the kernel/session, then execute from configuration onward. Runtime
+checks all three versions before importing the models. This notebook also pins
+`transformers==4.49.0` to retain the SegFormer checkpoint layer names
+(`encoder.patch_embeddings`, `encoder.block`, and `encoder.layer_norm`), which
+can differ in newer 5.x releases. Both installed and in-memory Transformers
+versions are checked before importing SegFormer; restart after downgrading.
+Execute the cells in order. The default gallery displays 20 separate 3 x 3
+comparisons; the accompanying navigator provides previous/next controls and
+a **Scegli per la tesi** button. `DISPLAY_MODE = "interactive"` shows only the
+navigator. `choose_comparison(7)` is the equivalent manual selection command.
+
+Outputs are under `/kaggle/working/s5mars_qualitative/seed_42_n20/`:
+`selection.json` preserves test indices and dataset identity, `samples/`
+contains RGB and ground truth, `predictions/` contains class-ID/color masks
+and checkpoint provenance, and `comparisons/` contains all 20 PNG/PDF grids.
+Choosing a sample fills `selected/` with `figure_5_1.png`, `figure_5_1.pdf`,
+individual panels, and `choice.json`. A downloadable ZIP excludes checkpoint
+weights. Download the outputs before ending the Kaggle session. Completed
+model predictions are reused only after identity and file-integrity checks;
+changing `SEED` creates a distinct output directory. For another checkpoint
+campaign, use a new `RUN_TAG`. The sampled gallery is for illustration and
+does not replace full-test metrics or validation-based model selection.
 
 For an ordinary S5Mars run, use `DATASET_NAME = "s5mars"` and keep
 `RUN_CROSS_DATASET_EVALUATION = False`. For a MarsSeg zero-shot run, choose
@@ -157,6 +209,30 @@ retain their artifact dependencies: for example, INT8 quantization requires
 calibration preparation in the same run, while a disabled export requires the
 matching ONNX artifact to exist already. The default test flag is `false`, so
 the test set is not used while choosing calibration or operator coverage.
+
+The prepared PTQ preset recovers the missing DeepLabV3-ResNet34 FP32/FP16
+baseline latency, energy, and GPU-memory measurements from the existing
+`best.ckpt`. Training, QAT, the duplicate PyTorch baseline, calibration, INT8,
+and hold-out testing are disabled. In Kaggle, use a fresh T4 GPU session with
+Internet enabled and the `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CLIENT_ID`, and
+`GOOGLE_CLIENT_SECRET` secrets, then run all cells through the final summary.
+The resource benchmark runs independently of INT8 and keeps one ONNX session
+resident at a time, with the PyTorch model on CPU. It preserves batch size 1,
+512 x 512 inputs, 10 warm-ups/50 latency forwards, and a separate efficiency
+loop of at least 100 forwards and 30 seconds sampled by NVML every 20 ms.
+
+Recovery outputs use a distinct directory so they do not replace the earlier
+full PTQ campaign: `/kaggle/working/onnx/deeplabv3_baselines_recovery/` in the
+notebook, or `outputs/onnx/deeplabv3_baselines_recovery/` in Python. In
+`benchmark_results.json`, read `benchmarks.onnx_fp32_cuda` and
+`benchmarks.onnx_fp16_cuda`: `latency.mean_ms`,
+`efficiency.energy_per_image_mj`, and `efficiency.peak_gpu_memory_mib`.
+The efficiency metadata records the energy source and whether memory is
+process-scoped or a device-total fallback. As with other presets, rerunning
+the same preset overwrites its own directory; preserve completed results
+before repeating it. To restore full PTQ, re-enable calibration preparation,
+INT8 quantization, the TensorRT probe and INT8 benchmark, and include `int8`
+in the target precisions.
 
 QAT exposes `steps.restore_saved_qat`, `steps.run_trt_fp16_baseline`, and
 `steps.run_final_test`, plus the two Drive-upload flags. Its training,

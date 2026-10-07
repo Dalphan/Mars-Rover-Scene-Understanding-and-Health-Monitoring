@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from src.quantization.ptq_calibration import run_int8_stages
 from src.quantization.ptq_common import PTQPaths, build_paths, validate_config
+from src.quantization.ptq_efficiency import run_baseline_efficiency
 from src.quantization.ptq_precision import run_precision_stages
 from src.quantization.ptq_runtime import preload_tensorrt_shared_libraries, run_final_test
+
+import gc
 
 import torch
 from omegaconf import DictConfig, OmegaConf
@@ -145,5 +148,14 @@ def run_ptq(cfg: DictConfig) -> None:
         int8_session,
         results,
     )
+    if cfg.steps.run_onnx_fp32_benchmark or cfg.steps.run_onnx_fp16:
+        # NVML process memory must not include the PyTorch model or other
+        # precision sessions while measuring a baseline.
+        model.to("cpu")
+        del fp32_session, int8_session
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        run_baseline_efficiency(cfg, paths, results, latency_sample)
     logger.debug("TensorRT library handles retained: %d", len(tensorrt_handles))
     logger.info("PTQ completed; results=%s", paths.results)

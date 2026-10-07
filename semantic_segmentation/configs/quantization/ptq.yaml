@@ -61,18 +61,18 @@ data:
 runtime:
   prefer_gpu: true
   prefer_tensorrt: false
-  target_precisions: [fp32, fp16, int8]
+  target_precisions: [fp32, fp16]
 
 steps:
   run_smoke_test: true
-  run_fp32_baseline: true
-  run_int8_calibration_preparation: true
+  run_fp32_baseline: false
+  run_int8_calibration_preparation: false
   run_onnx_export: true
   run_onnx_fp32_benchmark: true
   run_onnx_fp16: true
-  run_onnx_int8_quantization: true
-  run_trt_int8_probe: true
-  run_onnx_int8_benchmark: true
+  run_onnx_int8_quantization: false
+  run_trt_int8_probe: false
+  run_onnx_int8_benchmark: false
   run_final_test_evaluation: false
 
 benchmark:
@@ -85,7 +85,7 @@ benchmark:
 
 onnx:
   opset_version: 18
-  output_dir: outputs/onnx
+  output_dir: outputs/onnx/deeplabv3_baselines_recovery
   fp16_keep_io_types: true
 
 int8:
