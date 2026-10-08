@@ -3,3 +3,57 @@
 \section{Main Findings}
 
 \section{Sim-to-Real Gap}
+7 — Discussion and Limitations
+Proporrei tre sezioni, senza riprendere tutte le tabelle o le singole ablation.
+7.1 Interpretation of the Main Findings
+Due sottosezioni, dedicate ai due rami.
+7.1.1 Lightweight Scene Understanding
+- Interpretare il compromesso accuratezza–efficienza: SegFormer-B0 QAT privilegia l’accuratezza, mentre DeepLabV3+ MobileNetV2 QAT offre il minor consumo misurato.
+- Spiegare perché parametri, memoria, latenza ed energia non sono indicatori intercambiabili.
+- Discutere la quantizzazione come parte della configurazione di esecuzione: i risultati dipendono anche da backend, precisione mista e, per QAT, fine-tuning e distillazione.
+- Ricavare dalle ablation una considerazione generale: augmentation e bilanciamento devono essere adatti ai dati, non aggiunti presumendo un miglioramento.
+7.1.2 Synthetic Damage Inspection
+- Discutere il diverso compromesso di PatchCore Large, SuperSimpleNet e TinyGLASS tra qualità e risorse.
+- Evidenziare che detection e localization richiedono valutazioni distinte: riconoscere un’immagine danneggiata non significa delimitare accuratamente il foro.
+- Interpretare il ruolo di crop, risoluzione, feature grid e aggregazione degli score.
+- Mettere in evidenza la difficoltà dei piccoli difetti e la necessità di adattare i metodi al problema, anziché trasferire automaticamente configurazioni da altri benchmark.
+Qui interessa spiegare che cosa abbiamo imparato dalle scelte, non raccontare nuovamente ogni esperimento.
+7.2 Generalization and the Role of Data
+Questa sezione collegherebbe i risultati alla diversa natura dei dati nei due rami.
+- MarsSeg: l’accuratezza nella missione di training non garantisce trasferimento all’altra missione. SegFormer mostra il miglior trasferimento tra le configurazioni valutate, senza dimostrare una superiorità universale dei Transformer.
+- Dataset sintetico: generazione controllata, maschere automatiche e coppie clean/damaged hanno reso possibile studiare il problema senza annotare un corpus reale.
+- Domain randomization: introduce variabilità nel benchmark, ma i risultati disponibili non ne dimostrano da soli l’efficacia nel trasferimento al reale.
+- Conoscenza del difetto: il training utilizza render normali, ma le perturbazioni hole-like di TinyGLASS incorporano un’ipotesi sull’aspetto del danno. Non abbiamo quindi dimostrato detection di qualunque anomalia sconosciuta.
+- Distinguere chiaramente il trasferimento tra immagini reali delle missioni, effettivamente misurato, dal sim-to-real dell’inspection, ancora non verificato.
+7.3 Methodological and Operational Limitations
+Raccoglierei qui i limiti che circoscrivono le conclusioni:
+- Confrontiamo configurazioni complete, con differenze di pretraining, risoluzione e preprocessing: non sempre possiamo isolare l’effetto dell’architettura.
+- Le valutazioni presentate non quantificano la variabilità tra seed; alcuni sottogruppi hanno pochi campioni.
+- L’inspection riguarda un asset di Curiosity, perforazioni visibili e, nel confronto principale, una posa controllata.
+- Le metriche aggregate non stabiliscono una soglia operativa né un numero accettabile di falsi allarmi.
+- I benchmark su T4 non dimostrano prestazioni su hardware di volo o consumi dell’intero sistema.
+- I due rami non sono stati integrati; non abbiamo valutato navigazione autonoma, diagnosi meccanica o progressione del danno.
+Per ogni limite, direi brevemente che cosa impedisce di concludere, senza anticipare la soluzione futura.
+8 — Conclusions and Future Work
+Qui manterrei due sezioni.
+8.1 Conclusions
+Un bilancio breve, organizzato attorno ai tre contributi fondamentali:
+1. Scene understanding: confronto di modelli e strategie di quantizzazione, individuando configurazioni con diversi compromessi accuratezza–risorse.
+2. Synthetic dataset generation: realizzazione della pipeline e del dataset annotato da 10.000 immagini per lo studio delle perforazioni.
+3. Damage inspection: valutazione e adattamento di quattro famiglie di anomaly detector, distinguendo detection, localization ed efficienza.
+Chiuderei spiegando che la tesi identifica soluzioni promettenti nelle condizioni studiate, senza presentarle come un sistema già validato su rover. Bastano pochi risultati rappresentativi: niente nuove spiegazioni delle ablation.
+8.2 Future Work
+Quattro direzioni, ordinate per priorità:
+8.2.1 Real-Image Validation and Domain Adaptation
+- Costruire un insieme annotato di immagini reali delle ruote e verificare il trasferimento dei detector.
+- Studiare adattamento al dominio reale e nuove condizioni di acquisizione, anche per la segmentazione.
+8.2.2 Broader Damage Coverage and Small-Defect Localization
+- Estendere il dataset a più perforazioni, occlusioni, altri danni e asset.
+- Investigare elaborazione locale o multiscala per conservare piccoli difetti senza aumentare indiscriminatamente il costo.
+8.2.3 Integration of the Framework Branches
+- Collegare la segmentazione a una localizzazione delle singole ruote e alla selezione automatica delle regioni da ispezionare.
+- Valutare gli errori a cascata e il costo della pipeline completa.
+8.2.4 Deployment and Operational Validation
+- Verificare i modelli su hardware edge rappresentativo, includendo preprocessing e consumo complessivo.
+- Esplorare quantizzazione dei detector, ripetizioni sperimentali e soglie compatibili con requisiti di falsi allarmi.
+In sintesi: nel capitolo 7 spieghiamo perché un limite conta; nel capitolo 8 proponiamo come affrontarlo. Questa separazione evita che Discussion, Conclusions e Future Work diventino tre versioni dello stesso riepilogo.
