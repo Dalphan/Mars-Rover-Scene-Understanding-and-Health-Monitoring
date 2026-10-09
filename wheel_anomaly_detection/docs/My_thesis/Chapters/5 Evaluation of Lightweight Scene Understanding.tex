@@ -8,7 +8,7 @@ Deployment benchmarks were run on a single NVIDIA T4 GPU in the Kaggle environme
 \section{Segmentation Accuracy}
 \label{sec:segmentation-accuracy}
 
-The various architectures were evaluated on the S5Mars test split, using the checkpoint with the highest validation mIoU for each training run. The U-Net, DeepLab, and SegFormer followed the training procedure described in Chapter~2, using 30 epochs for training, whereas the two LCNet variants were trained for 60 epochs, without data augmentation or oversampling. Table~\ref{tab:s5mars-reference-accuracy} reports the results obtained, the validation mIoU used for checkpoint selection alongside the test mIoU and pixel accuracy, keeping model selection separate from the final evaluation.
+The various architectures were evaluated on the S5Mars test split, using the checkpoint with the highest validation mIoU for each training run. The U-Net, DeepLab, and SegFormer-B0 followed the training procedure described in Chapter~2, using 30 epochs for training, whereas the two LCNet variants were trained for 60 epochs, without data augmentation or oversampling. Table~\ref{tab:s5mars-reference-accuracy} reports the results obtained, the validation mIoU used for checkpoint selection alongside the test mIoU and pixel accuracy, keeping model selection separate from the final evaluation.
 
 \begin{table}[ht!]
     \centering
@@ -32,14 +32,14 @@ The various architectures were evaluated on the S5Mars test split, using the che
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{S5Mars accuracy of the evaluated FP32 configurations. R34 and MV2 denote ResNet34 and MobileNetV2, respectively. Validation mIoU identifies the selected checkpoint, while test metrics describe its held-out performance.}
+    \caption{S5Mars accuracy of the evaluated FP32 configurations. Validation mIoU identifies the selected checkpoint, while test metrics describe its held-out performance.}
     \label{tab:s5mars-reference-accuracy}
 \end{table}
 SegFormer-B0 achieved the highest test mIoU, 75.55\%, followed by DeepLabV3 with ResNet34 at 73.79\%. Its accuracy is particularly relevant to the lightweight objective: with 3.72 million parameters, compared with 26.01 million for DeepLabV3, SegFormer-B0 obtained a higher mIoU with approximately 86\% fewer parameters (Table~\ref{tab:segmentation-architecture-static-comparison}). U-Net with ResNet34 achieved the highest pixel accuracy, 91.73\%, whereas SegFormer-B0 led on average IoU.
 
 U-Net with MobileNetV2 retained essentially the same test mIoU as its ResNet34 counterpart, 64.57\% versus 64.55\%, while reducing the parameter count by approximately 73\%. The LCNet variants explored a much smaller number of parameters: LCNet\(_{3,7}\) and LCNet\(_{3,11}\) reached 57.89\% and 59.11\% mIoU with only 0.51 and 0.73 million parameters, respectively. Together, these results show the available trade-off between class-averaged accuracy and parameter storage, from the higher accuracy SegFormer-B0 configuration to the sub-million-parameter LCNet models.
 
-The ranking also differs from the aggregate Mars-Bench results, where U-Net was the strongest segmentation baseline under frozen backbone feature extraction~\cite{purohit2025marsbench}. Here, SegFormer-B0 leads the S5Mars comparison after end-to-end fine-tuning, while the MobileNetV2 and LCNet configurations extend the study towards lower parameter budgets. Therefore Mars-Bench provides context for the architectural comparison, even though differences in training procedure prevent a direct ranking across the two studies.
+The ranking also differs from the aggregate Mars-Bench results, where U-Net was the strongest segmentation baseline under frozen backbone feature extraction~\cite{purohit2025marsbench}. Here, SegFormer-B0 leads the S5Mars comparison after end-to-end fine-tuning, while the MobileNetV2 and LCNet configurations extend the study toward lower parameter budgets. Therefore Mars-Bench provides context for the architectural comparison, even though differences in training procedure prevent a direct ranking across the two studies.
 
 Table~\ref{tab:s5mars-per-class-iou} reports test IoU for the target class categories. The aggregate mIoU corresponds to the mean over these categories, while the additional \emph{Background} identifier is not included in the table, given its absence in the ground truth labels. The definitions and aggregation procedure are given in Section~\ref{sec:segmentation-evaluation-metrics}.
 
@@ -71,12 +71,12 @@ Table~\ref{tab:s5mars-per-class-iou} reports test IoU for the target class categ
 All seven configurations achieved IoUs above 92\% for \emph{Sky}, 90\% for \emph{Ridge}, and 86\% for \emph{Sand/Soil}, including the compact LCNet models. SegFormer-B0 stood out on \emph{Hole} and \emph{Track}, reaching 78.11\% and 75.96\%, whereas DeepLabV3+ with MobileNetV2 produced the highest \emph{Rover} IoU, 84.99\%. The main remaining weakness was \emph{Rock}, for which IoU stayed below 28\% across all configurations.
 
 %\paragraph{Qualitative comparison.}
-Figure~\ref{fig:s5mars-model-prediction-comparison} compares the seven models on an S5Mars test image, showing the original scene, its ground truth, and the predicted segmentation masks. The scene contains exposed bedrock, sandy soil, and scattered rocks, with similar colours and textures making the distinction between Rock and Bedrock particularly challenging. Most models reproduce the large division between bedrock and soil, while differences become thinner around individual rocks and local boundaries. The contrast is visible in the lower right area, where SegFormer-B0 and DeepLabV3 ResNet34 are the only models to recognise the isolated rock as Rock, with the latter recovering only part of it. The remaining models classify the object as Bedrock, while the LCNet variants also miss smaller rocks and divide the lower bedrock region into patches separated by soil.
+Figure~\ref{fig:s5mars-model-prediction-comparison} compares the seven models on an S5Mars test image, showing the original scene, its ground truth, and the predicted segmentation masks. The scene contains exposed bedrock, sandy soil, and scattered rocks, with similar colors and textures making the distinction between Rock and Bedrock particularly challenging. Most models reproduce the large division between bedrock and soil, while differences become thinner around individual rocks and local boundaries. The contrast is visible in the lower right area, where SegFormer-B0 and DeepLabV3 ResNet34 are the only models to recognize the isolated rock as Rock, with the latter recovering only part of it. The remaining models classify the object as Bedrock, while the LCNet variants also miss smaller rocks and divide the lower bedrock region into patches separated by soil.
 
 \begin{figure}[ht!]
     \centering
     \includegraphics[width=\textwidth]{Images/s5mars_model_prediction_comparison.png}
-    \caption{Qualitative comparison on an S5Mars test image, showing the RGB input, ground truth, and predictions of the seven evaluated configurations with a shared class colour mapping.}
+    \caption{Qualitative comparison on an S5Mars test image, showing the RGB input, ground truth, and predictions of the seven evaluated configurations with a shared class color mapping.}
     \label{fig:s5mars-model-prediction-comparison}
 \end{figure}
 
@@ -100,28 +100,28 @@ Table~\ref{tab:s5mars-quantization-accuracy-efficiency} compares the previous re
         \midrule
         \midrule
 
-        \multicolumn{6}{@{}l}{\textit{U-Net (ResNet34)}}                                             \\
+        \multicolumn{6}{@{}l}{\textit{U-Net (R34)}}                                             \\
         FP32                                                & 64.55 & --    & 16.30 & 1213.08 & 1128 \\
         FP16                                                & 64.55 & 0.00  & 9.19  & 659.76  & 872  \\
         PTQ INT8                                            & 64.51 & -0.04 & 5.82  & 304.10  & 888  \\
         QAT INT8                                            & 65.24 & +0.69 & 4.81  & 231.42  & 1106 \\
         \midrule
 
-        \multicolumn{6}{@{}l}{\textit{U-Net (MobileNetV2)}}                                          \\
+        \multicolumn{6}{@{}l}{\textit{U-Net (MV2)}}                                          \\
         FP32                                                & 64.57 & --    & 11.87 & 878.80  & 1364 \\
         FP16                                                & 64.61 & +0.04 & 8.16  & 523.07  & 1236 \\
         PTQ INT8                                            & 61.55 & -3.02 & 4.17  & 199.96  & 1168 \\
         QAT INT8                                            & 65.00 & +0.42 & 3.57  & 162.66  & 912  \\
         \midrule
 
-        \multicolumn{6}{@{}l}{\textit{DeepLabV3 (ResNet34)}}                                         \\
+        \multicolumn{6}{@{}l}{\textit{DeepLabV3 (R34)}}                                         \\
         FP32                                                & 73.79 & --    & 56.27 & 3977.25 & 414  \\
         FP16                                                & 73.79 & 0.00  & 14.03 & 1016.14 & 284  \\
         PTQ INT8                                            & 73.55 & -0.23 & 7.19  & 455.34  & 856  \\
         QAT INT8                                            & 73.62 & -0.17 & 8.65  & 523.71  & 1130 \\
         \midrule
 
-        \multicolumn{6}{@{}l}{\textit{DeepLabV3+ (MobileNetV2)}}                                     \\
+        \multicolumn{6}{@{}l}{\textit{DeepLabV3+ (MV2)}}                                     \\
         FP32                                                & 64.07 & --    & 8.84  & 653.72  & 706  \\
         FP16                                                & 64.07 & 0.00  & 6.03  & 377.88  & 706  \\
         PTQ INT8                                            & 59.14 & -4.93 & 4.02  & 159.19  & 628  \\
@@ -150,16 +150,16 @@ Table~\ref{tab:s5mars-quantization-accuracy-efficiency} compares the previous re
     \label{tab:s5mars-quantization-accuracy-efficiency}
 \end{table}
 
-FP16 conversion left test accuracy essentially unchanged across all five models, with the largest absolute mIoU difference remaining below 0.04\%. Across the five FP32-FP16 comparisons, the reported energy reduction ranged from 40.5\% to 74.5\%. PTQ introduced larger, model-dependent accuracy changes. U-Net with ResNet34 lost 0.04\%, SegFormer-B0 gained 0.05\%, and DeepLabV3 with ResNet34 lost 0.23\%. The two MobileNetV2 configurations were more sensitive in these experiments: U-Net lost 3.02\% and DeepLabV3+ lost 4.93\%, despite their lower latency and energy consumption.
+FP16 conversion left test accuracy essentially unchanged across all five models, with the largest absolute mIoU difference remaining below 0.04\%. Across the five FP16 comparisons, the reported energy reduction ranged from 40.5\% to 74.5\%. PTQ introduced larger, model-dependent accuracy changes. U-Net with ResNet34 lost 0.04\%, SegFormer-B0 gained 0.05\%, and DeepLabV3 with ResNet34 lost 0.23\%. The two MobileNetV2 configurations were more sensitive in these experiments: U-Net lost 3.02\% and DeepLabV3+ lost 4.93\%, despite their lower latency and energy consumption.
 
-The selected QAT configurations exceeded the corresponding FP32 test mIoU for four of the five models. SegFormer-B0 reached 76.93\%, an increase of 1.38\%, while DeepLabV3+ with MobileNetV2 reached 65.63\%, an increase of 1.57\%. DeepLabV3 with ResNet34 remained slightly below its FP32 counterpart, with a decrease of 0.17 points. These results describe the complete QAT optimization procedure, which included supervised fine-tuning and teacher distillation.
+The selected QAT configurations exceeded the corresponding FP32 test mIoU for four of the five models. SegFormer-B0 reached 76.93\%, an increase of 1.38\%, while DeepLabV3+ with MobileNetV2 reached 65.63\%, an increase of 1.57\%. DeepLabV3 with ResNet34 remained slightly below its FP32 counterpart, with a decrease of 0.17\%. These results describe the complete QAT optimization procedure, which included supervised fine-tuning and teacher distillation.
 
 Figure~\ref{fig:s5mars-quantization-miou-energy} shows test mIoU versus measured GPU energy per image for the 20 examined configurations. Among these recorded points, QAT DeepLabV3+ and QAT SegFormer-B0 define the observed accuracy-energy frontier: neither has an alternative with both no greater energy consumption and no lower mIoU. DeepLabV3+ required the least measured energy, 115.34~mJ per image, whereas SegFormer-B0 provided the highest test mIoU at 291.76~mJ per image. Their comparison illustrates the remaining choice between a lower inference energy budget and more accurate segmentation, rather than identifying one configuration as preferable for every deployment requirement.
 
 \begin{figure}[ht!]
     \centering
     \includegraphics[width=\textwidth]{Images/quantization_miou_energy.png}
-    \caption{Test mIoU versus GPU energy per image for the various configurations, with energy shown on a logarithmic scale. Colours identify the model and marker shapes identify the precision or quantization strategy. Lower energy and higher mIoU are preferable. The two QAT annotations identify the best configurations among the reported measurements, while the DeepLabV3 FP32 annotation highlights its higher energy consumption.}
+    \caption{Test mIoU versus GPU energy per image for the various configurations, with energy shown on a logarithmic scale. Colors identify the model and marker shapes identify the precision or quantization strategy. Lower energy and higher mIoU are preferable. The two QAT annotations identify the best configurations among the reported measurements, while the DeepLabV3 FP32 annotation highlights its higher energy consumption.}
     \label{fig:s5mars-quantization-miou-energy}
 \end{figure}
 
@@ -168,13 +168,13 @@ Resource improvements were not uniform across all measurements. For U-Net with R
 \section{Ablation Studies}
 \label{sec:segmentation-ablation-studies}
 
-The ablation studies investigate how the training strategy and quantization scope affect segmentation accuracy, providing an experimental basis for the configurations adopted in this study. The comparisons examine alternative loss formulations and class-weighting schemes, encoder initialization, data augmentation, and oversampling to assess whether these choices improve mIoU relative to their default settings. Quantization experiments were also conducted to test whether extending INT8 conversion to additional model components preserves segmentation accuracy. Because of time constraints, some experiments were conducted on a subset of the segmentation models evaluated in this study.
+The ablation studies investigate how the training strategy affects segmentation accuracy, providing an experimental basis for the configurations adopted in this study. The comparisons examine alternative loss formulations and class-weighting schemes, encoder initialization, data augmentation, and oversampling to assess whether these choices improve mIoU relative to their default settings. Because of time constraints, some experiments were conducted on a subset of the segmentation models evaluated in this study.
 
 \subsection{Loss Function and Class Weighting}
 
 % Evidence: original experiment Timeline, entries of 4 and 9 July.
 % https://docs.google.com/document/d/11GTkTgIXR0t03VsOXm4SB1oaA0jJPNN3a9KFPZnC5KQ/edit
-The initial loss comparison examined the combination of Cross-Entropy and Generalized Dice Loss (GDL) over Cross-Entropy alone for both SegFormer-B0 and U-Net with ResNet34, using the checkpoint with the highest validation mIoU for each run. As shown in Table~\ref{tab:s5mars-exploratory-loss-ablation}, test mIoU increased from 69.2\% to 73.7\% for SegFormer-B0 and from 64.5\% to 70.1\% for U-Net with ResNet34. These trials motivated the use of the combined objective with \(\alpha = 0.5\), which gives equal coefficients to pixel-wise classification and region-overlap supervision. Standalone GDL was also tried during preliminary experimentation but was not stable, so no numerical result is reported for that configuration.
+The initial loss comparison examined the combination of Cross-Entropy and Generalized Dice Loss (GDL) over Cross-Entropy alone for both SegFormer-B0 and U-Net with ResNet34, using the checkpoint with the highest validation mIoU for each run. As shown in Table~\ref{tab:s5mars-exploratory-loss-ablation}, test mIoU increased from 69.2\% to 75.5\% for SegFormer-B0 and from 59.5\% to 64.5\% for U-Net with ResNet34. These trials motivated the use of the combined objective with \(\alpha = 0.5\), which gives equal coefficients to pixel-wise classification and region-overlap supervision. Standalone GDL was also tried during preliminary experimentation but was not stable, so no numerical result is reported for that configuration.
 
 \begin{table}[ht!]
     \centering
@@ -185,8 +185,8 @@ The initial loss comparison examined the combination of Cross-Entropy and Genera
         \textbf{Model}   & \textbf{CE} & \textbf{CE + GDL} \\
         \midrule
         \midrule
-        SegFormer-B0     & 69.2        & 73.7              \\
-        U-Net / ResNet34 & 64.5        & 70.1              \\
+        SegFormer-B0     & 69.2        & 75.5              \\
+        U-Net (R34) & 59.5        & 64.5              \\
         \bottomrule
     \end{tabular}
     \vspace{5mm}
@@ -194,7 +194,7 @@ The initial loss comparison examined the combination of Cross-Entropy and Genera
     \label{tab:s5mars-exploratory-loss-ablation}
 \end{table}
 
-Class weighting was tested to assess whether increasing the Dice contribution of classes occupying fewer pixels improved segmentation accuracy. Table~\ref{tab:s5mars-exploratory-dice-weighting} compares the three GDL weighting schemes for U-Net with ResNet34. Inverse-square weighting (\texttt{square}) achieved a test mIoU of 70.1\%, compared with 64.2\% for uniform weighting and 57.2\% for inverse-class-volume weighting (\texttt{simple}). These exploratory results motivated the use of inverse-square weighting in subsequent experiments. The interaction between this weighting scheme and oversampling is examined separately below.
+Class weighting was tested to assess whether increasing the Dice contribution of classes occupying fewer pixels improved segmentation accuracy. Table~\ref{tab:s5mars-exploratory-dice-weighting} compares the three GDL weighting schemes for U-Net with ResNet34. Inverse-square weighting (\texttt{square}) achieved a test mIoU of 64.5\%, compared with 62.2\% for uniform weighting and 57.2\% for inverse-class-volume weighting (\texttt{simple}). These exploratory results motivated the use of inverse-square weighting in subsequent experiments. The interaction between this weighting scheme and oversampling is examined separately below.
 
 \begin{table}[ht!]
     \centering
@@ -205,7 +205,7 @@ Class weighting was tested to assess whether increasing the Dice contribution of
         \textbf{Model}   & \textbf{Inverse square} & \textbf{Inverse volume} & \textbf{Uniform} \\
         \midrule
         \midrule
-        U-Net / ResNet34 & 70.1                    & 57.2                    & 64.2             \\
+        U-Net (R34) & 64.5                    & 57.2                    & 62.2             \\
         \bottomrule
     \end{tabular}
     \vspace{5mm}
@@ -289,7 +289,7 @@ The oversampling experiment tested whether showing images containing rare classe
 % Evidence: source test_metrics.json and cross_dataset_test JSONs from the
 % six MarsSeg experiment folders, audited on 2026-10-05.
 % https://drive.google.com/drive/folders/1t8bbQhbUIwbX6fOQZ45--8gfwyuhH7DS
-The cross-mission experiment was designed to test whether a model trained on one rover mission could recognize the same terrain categories on another mission without additional training. This matters when labelled images from a new mission are scarce, and it also tests whether good results on the training mission translate into reliable generalization. MarsSeg MSL and MER were chosen because their Mars-Bench releases share the same terrain labels \cite{purohit2025marsbench}. S5Mars contains only Curiosity imagery and uses a different taxonomy, which would require remapping labels for a comparable cross-mission test.
+The cross-mission experiment was designed to test whether a model trained on one rover mission could recognize the same terrain categories on another mission without additional training. This matters when labeled images from a new mission are scarce, and it also tests whether good results on the training mission translate into reliable generalization. MarsSeg MSL and MER were chosen because their Mars-Bench releases share the same terrain labels \cite{purohit2025marsbench}. S5Mars contains only Curiosity imagery and uses a different taxonomy, which would require remapping labels for a comparable cross-mission test.
 
 SegFormer-B0, U-Net with ResNet34, and DeepLabV3+ with MobileNetV2 were each trained separately on MSL and MER. For each run, the checkpoint selected on the source validation split was tested on both the source mission and the other mission, with the same preprocessing and output labels. The cross-mission test used no target domain fine-tuning, giving a zero-shot measure of transfer. Models trained on the target mission provided a reference on the same test images, as reported in Table~\ref{tab:marsseg-cross-mission-accuracy}.
 
@@ -308,8 +308,8 @@ SegFormer-B0, U-Net with ResNet34, and DeepLabV3+ with MobileNetV2 were each tra
         \midrule
         \midrule
         SegFormer-B0                              & 70.63             & \textbf{52.06}    & 66.75             & \textbf{48.11}    \\
-        U-Net / ResNet34                          & \textbf{71.80}    & 27.43             & \textbf{67.76}    & 13.82             \\
-        DeepLabV3+ / MobileNetV2                  & 68.98             & 38.27             & 65.10             & 12.86             \\
+        U-Net (R34)                          & \textbf{71.80}    & 27.43             & \textbf{67.76}    & 13.82             \\
+        DeepLabV3+ (MV2)                  & 68.98             & 38.27             & 65.10             & 12.86             \\
         \bottomrule
     \end{tabular}
     \vspace{5mm}
@@ -317,8 +317,8 @@ SegFormer-B0, U-Net with ResNet34, and DeepLabV3+ with MobileNetV2 were each tra
     \label{tab:marsseg-cross-mission-accuracy}
 \end{table}
 
-In-domain results were similar across the three configurations, with U-Net ranking first on both missions. Once the mission changed, SegFormer-B0 performed substantially better than both convolutional models in both directions. The CNNs struggled especially when trained on MER and tested on MSL, while SegFormer showed a more balanced transfer across the two missions. This answers the main question of the experiment, showing that high in-domain accuracy alone did not ensure good generalization, as even SegFormer lost accuracy compared with its target-trained references.
+In-domain results were similar across the three configurations, with U-Net ranking first on both missions. Once the mission changed, SegFormer-B0 performed substantially better than both convolutional models in both directions. The CNNs struggled especially when trained on MER and tested on MSL, while SegFormer-B0 showed a more balanced transfer across the two missions. This answers the main question of the experiment, showing that high in-domain accuracy alone did not ensure good generalization, as even SegFormer-B0 lost accuracy compared with its target trained references.
 
-The smaller MER training set may partly explain why transfer from MER to MSL was harder for the convolutional models. With fewer examples, models may learn features that are too specific to the source images. Acquisition also differs: MSL provides RGB Mastcam images, whereas MER provides grayscale Navcam/Pancam images, and the images differ in their original dimensions \cite{purohit2025marsbench}. Such differences may make learned colour or texture patterns less useful on the other mission.
+The smaller MER training split may partly explain why transfer from MER to MSL was harder for the convolutional models. With fewer examples, models may learn features that are too specific to the source images. Acquisition also differs: MSL provides RGB Mastcam images, whereas MER provides grayscale Navcam/Pancam images, and the images differ in their original dimensions \cite{purohit2025marsbench}. Such differences may make learned color or texture patterns less useful on the other mission.
 
-SegFormer's stronger transfer is consistent with its ability to combine local detail with larger scene context \cite{xie2021segformer}, together with its ADE20K segmentation pretraining. This initialization already provides features learned for pixel-level scene understanding, whereas the CNN encoders started from ImageNet classification weights, as described in Section~\ref{sec:segmentation-architectures}. Both factors may help when mission-specific training data are limited or image appearance changes. The results therefore support the evaluated Transformer configuration for cross-mission generalization.
+SegFormer-B0's stronger transfer is consistent with its ability to combine local detail with larger scene context \cite{xie2021segformer}, together with its ADE20K segmentation pretraining. This initialization already provides features learned for pixel-level scene understanding, whereas the CNN encoders started from ImageNet classification weights, as described in Section~\ref{sec:segmentation-architectures}. Both factors may help when mission-specific training data are limited or image appearance changes. The results therefore support the evaluated Transformer configuration for cross-mission generalization.

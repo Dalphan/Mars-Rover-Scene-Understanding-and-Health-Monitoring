@@ -2,20 +2,20 @@
 %Curiosity's wheel perforations are monitored through manual image inspections \cite{nasa2016wheelinspection,rankin2022wheelassessment}, motivating automated methods for damage detection and localization.
 
 
-\section{Design Requirement}
+\section{Design Requirements}
 The dataset was designed to contain RGB views covering all six wheel positions of a Curiosity Rover model, with one designated target wheel in each image. The anomaly class was restricted to localized through-holes in the wheel skin, with variations in shape, size, and position. Broken grousers and other failure modes remained outside the scope of this work. Normal samples were defined by the absence of an injected perforation so that dust and non-anomalous surface wear could remain part of the normal visual distribution.
 
 The annotation requirements reflected the distinction between detecting damage and localizing it. Each sample required an image-level condition label and a target-wheel mask, while anomalous samples additionally required a binary mask identifying the damage region. The training split was required to contain only normal samples, whereas validation and test included both normal and damaged conditions. For evaluation, paired clean and damaged images were generated with the same camera, wheel pose, lighting, and surface-wear parameters, allowing direct comparisons in which the only difference was the introduced perforation. Each pair had to remain inside a single split to prevent paired scene leakage. Coverage of camera viewpoints, wheel rotations, illumination, and benign wear was required to avoid evaluating inspection under a single fixed appearance.
 
 These requirements define a controlled synthetic benchmark for visible wheel perforations, used to evaluate how efficiently the proposed approaches tackle the task.
 
-\section{Assets preparation}
+\section{Asset Preparation}
 Asset preparation focused on visually representing Curiosity and recreating its Martian surroundings as faithfully as possible, while keeping the scene suitable for controlled, wheel-specific modifications. The three-dimensional scene was assembled in Blender, which was used to prepare the rover and terrain assets and render the synthetic images.
 
 \paragraph{Rover model.}
 The rover asset was based on the publicly available Curiosity model distributed by NASA's Visualization Technology Applications and Development team \cite{nasa2019curiositymodel}. Using an existing model avoided reconstructing the vehicle from photographs and provided both the wheel geometry and the surrounding rover structure. Retaining this context was important because the chassis and suspension contribute to the appearance of inspection images through occlusions and shadows.
 
-After importing the model into Blender, the six wheels were separated into independently addressable objects, while the remaining vehicle structure was retained as an assembly. This organization enabled wheel-specific damage generation, rotation control, and mask extraction without rebuilding the rover geometry. The model was used for visual image generation rather than as an engineering representation of the rover's mechanical behaviour.
+After importing the model into Blender, the six wheels were separated into independently addressable objects, while the remaining vehicle structure was retained as an assembly. This organization enabled wheel-specific damage generation, rotation control, and mask extraction without rebuilding the rover geometry. The model was used for visual image generation rather than as an engineering representation of the rover's mechanical behavior.
 
 \paragraph{Martian environment.}
 The terrain was derived from observations of Gale Crater acquired by the High Resolution Imaging Science Experiment (HiRISE), using a digital terrain model and associated orthorectified imagery \cite{hirisegaleterrain}. These products provided a real observation-based foundation for the environment, including variations in elevation and surface appearance. A common region was extracted from both products, with the elevation data converted into a terrain mesh at metric scale and the corresponding imagery mapped onto its surface.
@@ -32,7 +32,7 @@ The orbital data were not detailed enough for close-up wheel views, so a local p
 
 \section{Synthetic Damage Generation}
 \label{sec:synthetic-damage-generation}
-Damage generation focused on a single anomaly class: through-holes in the wheel surface, with each anomalous image containing one injected hole on the designated target wheel. Hole contours were generated procedurally using three profile families: jagged slits, branched tears, and peeled-window profiles. Variations in contour irregularity, orientation, and dimensions provided different realizations within each family. Three size-based severity levels, denoted small, medium, and large, with their length sampled within 2.7-4.1\,cm, 4.4-6.8\,cm, and 7.3-11.6\,cm, respectively. These categories describe the generated geometry rather than a mechanical assessment of wheel health. Figure~\ref{fig:damage-severity} shows an example of each level.
+Damage generation focused on a single anomaly class: through-holes in the wheel surface, with each anomalous image containing one injected hole on the designated target wheel. Hole contours were generated procedurally using three profile families: jagged slits, branched tears, and peeled-window profiles. Variations in contour irregularity, orientation, and dimensions provided different realizations within each family. Three size-based severity levels were defined, denoted small, medium, and large, with their length sampled within 2.7-4.1\,cm, 4.4-6.8\,cm, and 7.3-11.6\,cm, respectively. These categories describe the generated geometry rather than a mechanical assessment of wheel health. Figure~\ref{fig:damage-severity} shows an example of each level.
 
 \begin{figure}[ht!]
     \centering
@@ -82,8 +82,8 @@ of reducing reliance on specific visual cues and helping the models
 distinguish actual damage from changes in appearance.
 
 \paragraph{Lighting and dust appearance.}
-Two rendering presets represented clear and dusty conditions
-(Figure~\ref{fig:dr-lighting}). Alongside changes in illumination, the
+Two rendering presets represented clear and dusty conditions, as shown in
+Figure~\ref{fig:dr-lighting}. Alongside changes in illumination, the
 dusty preset introduced deposited surface dust and a mild adjustment
 to the camera response. Solar direction, direct and ambient illumination,
 and exposure were also perturbed within bounded ranges. These variations
@@ -115,7 +115,7 @@ can occur without damage.
 
 \paragraph{Normal surface variation.}
 Three surface conditions were considered: no wear, light
-wear, and evident wear (Figure~\ref{fig:dr-surface}). Additional scratches
+wear, and evident wear, as shown in Figure~\ref{fig:dr-surface}. Additional scratches
 changed the surface appearance without creating holes or altering the
 wheel silhouette. Surface wear did not determine the anomaly label:
 a sample was anomalous only when a hole was introduced, and scratches
@@ -236,7 +236,7 @@ Damage masks were required to be spatially consistent with the target-wheel regi
 
 The final dataset contains 10,000 RGB images, comprising 7,500 normal samples and 1,250 matched normal-anomalous pairs. This results in 8,750 normal images and 1,250 anomalous images, each containing one injected hole. Every image is associated with a target-wheel mask, while anomalous images additionally include a binary damage mask.
 
-The training set contains only normal images, allowing the anomaly-detection models to learn wheel appearance without exposure to injected defects. Validation and test sets include both conditions, as summarized in Table~\ref{tab:synthetic-dataset-splits}. Validation contains 500 standalone normal images and 250 pairs, whereas the test set consists of 1,000 pairs. Split assignments were established before rendering, and each pair was treated as an indivisible unit, meaning that an anomalous image and its normal counterpart could not be assigned to different subsets.
+The training split contains only normal images, allowing the anomaly-detection models to learn wheel appearance without exposure to injected defects. Validation and test splits include both conditions, as summarized in Table~\ref{tab:synthetic-dataset-splits}. Validation contains 500 standalone normal images and 250 pairs, whereas the test split consists of 1,000 pairs. Split assignments were established before rendering, and each pair was treated as an indivisible unit, meaning that an anomalous image and its normal counterpart could not be assigned to different subsets.
 
 \begin{table}[ht!]
     \centering

@@ -5,17 +5,17 @@
 %In this section a deep-learning approach was implemented to tackle this task, given the vast progress made in semantic segmentation techniques in the field. The main objective was to test several Deep Learning architectures on a novel benchmark dataset [Mars Bench with S5Mars] that provided accurate labels for both terrain segmentation but that could also be useful for the second part in identifying rover parts in the image. Importance was also given to the efficiency of techniques used, looking for a possible on-board deployment that requires a lot of constraint to be effectively operatable, such as ...
 %so accuracy-efficiency tradeoff was an important factor used when choosing and optmizing the architectures.
 
-The one-way light time between Earth and Mars varies from approximately 4 to 22 minutes, making continuous remote operations impracticable \cite{nasaJPL2022Driving}. Decisions that must be taken while a rover traverses terrain not yet examined by ground operators therefore benefit from onboard perception and autonomous reasoning. The first branch of the proposed framework addresses this perception problem through semantic segmentation of rover-acquired colour images with red, green, and blue channels. More specifically, the experiments presented in this thesis use images captured by the Mast Camera (Mastcam) aboard the Curiosity rover, as provided by the Mars-Bench release of S5Mars \cite{zhang2024s5mars,purohit2025marsbench}. The objective is to convert each observation into a pixel-level representation of the surrounding scene that may support downstream functions such as terrain interpretation, traversability assessment, and route planning.
+The one-way light time between Earth and Mars varies from approximately 4 to 22 minutes, making continuous remote operations impracticable \cite{nasaJPL2022Driving}. Decisions that must be taken while a rover traverses terrain not yet examined by ground operators therefore benefit from onboard perception and autonomous reasoning. The first branch of the proposed framework addresses this perception problem through semantic segmentation of rover-acquired color images with red, green, and blue channels. More specifically, the experiments presented in this thesis use images captured by the Mast Camera (Mastcam) aboard the Curiosity rover, as provided by the Mars-Bench release of S5Mars \cite{zhang2024s5mars,purohit2025marsbench}. The objective is to convert each observation into a pixel-level representation of the surrounding scene that may support downstream functions such as terrain interpretation, traversability assessment, and route planning.
 The dataset was selected because its label space covers terrain elements relevant to environmental understanding while also including a \emph{Rover} category, establishing a possible future interface with the damage-inspection branch.
 
 A deep learning approach is adopted to compare architectures with different representational capacities and computational requirements. The objective is not to maximize segmentation accuracy in isolation, because potential onboard use makes computational efficiency a central design criterion, as also emphasized by previous research on lightweight semantic segmentation for Martian environments \cite{xiong2024light4mars}. The experimental study therefore considers the accuracy-efficiency trade-off and subsequently investigates quantization as a means of reducing inference cost without introducing an unacceptable degradation in segmentation quality.
 
 \section{Dataset}
-The primary dataset adopted for the scene-understanding experiments is the Mars-Bench adaptation of S\textsuperscript{5}Mars. The original S\textsuperscript{5}Mars dataset was introduced by Zhang et al. for semi-supervised semantic segmentation of Martian scenes \cite{zhang2024s5mars}. It comprises 6,000 RGB images acquired by Mastcam aboard the Curiosity rover, each with a spatial resolution of 1200 \(\times\) 1200 pixels. Its annotations follow a sparse, confidence-based protocol, where instead of assigning a category to every pixel, labels are retained only in regions for which the annotators considered the semantic interpretation sufficiently reliable. This design limits uncertain assignments at visually ambiguous boundaries, but also leaves part of each mask without a terrain label.
+The primary dataset adopted for the scene-understanding experiments is the Mars-Bench adaptation of S\textsuperscript{5}Mars. The original S\textsuperscript{5}Mars dataset was introduced by Zhang et al. for semi-supervised semantic segmentation of Martian scenes \cite{zhang2024s5mars}. It comprises 6,000 RGB images acquired by Mastcam aboard the Curiosity rover, each with a spatial resolution of 1200 \(\times\) 1200 pixels. Its annotations follow a sparse, confidence-based annotation procedure, where instead of assigning a category to every pixel, labels are retained only in regions for which the annotators considered the semantic interpretation sufficiently reliable. This design limits uncertain assignments at visually ambiguous boundaries, but also leaves part of each mask without a terrain label.
 
-The Mars-Bench release was selected in preference to the original distribution to obtain a more reproducible and internally consistent evaluation protocol. Mars-Bench converts previously published Martian vision datasets into standardized formats and supplies predefined training, validation, and test partitions \cite{purohit2025marsbench}. More importantly, its authors subjected the terrain-segmentation datasets to an additional expert review. They reported ambiguities among visually similar granular-material categories and consolidated the corresponding S\textsuperscript{5}Mars labels into a single \emph{Sand/Soil} category. This refinement was intended to reduce label noise and make comparisons between models less dependent on uncertain distinctions. This Mars-Bench release used in this work contains 4,997 training images, 200 validation images, and 800 test images. Mars-Bench describes eight target categories, while the released masks expose an additional \emph{Background} identifier. Consequently, the implementation uses nine mask identifiers: \emph{Background}, \emph{Bedrock}, \emph{Hole}, \emph{Ridge}, \emph{Rock}, \emph{Rover}, \emph{Sand/Soil}, \emph{Sky}, and \emph{Track}
+The Mars-Bench release was selected in preference to the original distribution to obtain a more reproducible and internally consistent evaluation setup. Mars-Bench converts previously published Martian vision datasets into standardized formats and supplies predefined training, validation, and test partitions \cite{purohit2025marsbench}. More importantly, its authors subjected the terrain-segmentation datasets to an additional expert review. They reported ambiguities among visually similar granular-material categories and consolidated the corresponding S\textsuperscript{5}Mars labels into a single \emph{Sand/Soil} category. This refinement was intended to reduce label noise and make comparisons between models less dependent on uncertain distinctions. This Mars-Bench release used in this work contains 4,997 training images, 200 validation images, and 800 test images. Mars-Bench describes eight target categories, while the released masks expose an additional \emph{Background} identifier, even though no ground truth mask includes this class. Nonetheless, the implementation uses nine mask identifiers: \emph{Background}, \emph{Bedrock}, \emph{Hole}, \emph{Ridge}, \emph{Rock}, \emph{Rover}, \emph{Sand/Soil}, \emph{Sky}, and \emph{Track}
 
-Two additional datasets included in Mars-Bench were used for a separate cross-dataset evaluation: MarsSeg MSL and MarsSeg MER \cite{purohit2025marsbench}. Both originate from the Mars-Seg dataset family introduced by Li et al. \cite{li2022covda} and were subsequently adapted to the standardized taxonomy and evaluation protocol defined by Mars-Bench. MarsSeg MSL comprises RGB Mastcam images acquired by the Curiosity rover during the Mars Science Laboratory (MSL) mission, whereas MarsSeg MER contains grayscale images captured by the Navigation Cameras (Navcams) and Panoramic Cameras (Pancams) aboard the Spirit and Opportunity rovers during the Mars Exploration Rover (MER) missions \cite{li2022covda}. Their identical label mapping permits direct cross-mission evaluation without modifying the output layer or introducing an uncertain correspondence between categories. A model can be trained and selected using one mission and subsequently evaluated, without target-domain fine-tuning, on the test split of the other.
+Two additional datasets included in Mars-Bench were used for a separate cross-dataset evaluation: MarsSeg MSL and MarsSeg MER \cite{purohit2025marsbench}. Both originate from the MarsSeg dataset family introduced by Li et al. \cite{li2022covda} and were subsequently adapted to the standardized taxonomy and evaluation setup defined by Mars-Bench. MarsSeg MSL comprises RGB Mastcam images acquired by the Curiosity rover during the Mars Science Laboratory (MSL) mission, whereas MarsSeg MER contains grayscale images captured by the Navigation Cameras (Navcams) and Panoramic Cameras (Pancams) aboard the Spirit and Opportunity rovers during the Mars Exploration Rover (MER) missions \cite{li2022covda}. Their identical label mapping permits direct cross-mission evaluation without modifying the output layer or introducing an uncertain correspondence between categories. A model can be trained and selected using one mission and subsequently evaluated, without target-domain fine-tuning, on the test split of the other.
 
 \begin{table}[ht]
     \centering
@@ -43,16 +43,16 @@ Two additional datasets included in Mars-Bench were used for a separate cross-da
         \end{tabular}%
     }
     \vspace{5mm}
-    \caption{Mars-Bench semantic segmentation datasets used in this work. The number of mask identifiers includes the \emph{Background} label.}
+    \caption{Mars-Bench semantic segmentation datasets used in this work.}
     \label{tab:mars-bench-datasets}
 \end{table}
 
-\section{Pre-processing}
+\section{Preprocessing}
 
-A consistent input representation was enforced across all dataset splits. Each image was converted to RGB, ensuring a three-channel input irrespective of its original encoding, while the corresponding segmentation mask was retained as a single-channel categorical map. Image-mask pairs were subsequently resized to \(512 \times 512\) pixels, a resolution selected to retain sufficient spatial detail for semantic segmentation. Bilinear interpolation was used for the RGB images, as it provides smooth resampling of continuous intensity values, while nearest-neighbour interpolation was applied to the segmentation masks to prevent the introduction of intermediate values that would not correspond to valid semantic categories.
+A consistent input representation was enforced across all dataset splits. Each image was converted to RGB, ensuring a three-channel input irrespective of its original encoding, while the corresponding segmentation mask was retained as a single-channel categorical map. Image-mask pairs were subsequently resized to \(512 \times 512\) pixels, a resolution selected to retain sufficient spatial detail for semantic segmentation. Bilinear interpolation was used for the RGB images, as it provides smooth resampling of continuous intensity values, while nearest-neighbor interpolation was applied to the segmentation masks to prevent the introduction of intermediate values that would not correspond to valid semantic categories.
 
 Data augmentation was implemented as an optional training-only stage after resizing. The available transformations comprised horizontal flipping, vertical flipping and random \(90^{\circ}\) rotations with probability \(0.5\). When the rotation operation was triggered, the number of \(90^{\circ}\) rotations was sampled uniformly from \(k \in \{0,1,2,3\}\). The default configuration disabled augmentation, whereas the augmented configurations activated these transformations explicitly for comparative experiments. Following the optional augmentation stage, images were scaled to the \([0,1]\) range and then channel-wise normalization was performed using the ImageNet mean values and standard deviations. This convention maintains compatibility with the ImageNet-pretrained encoders employed by several of the evaluated architectures. Segmentation masks were instead converted to integer tensors without normalization, thereby preserving their original class identifiers.
-No stochastic transformation was applied to the validation or test sets, as their samples underwent only the deterministic operations of RGB conversion, resizing, tensor conversion, and normalization, ensuring that the reported evaluation results were not affected by random data transformations.
+No stochastic transformation was applied to the validation or test splits, as their samples underwent only the deterministic operations of RGB conversion, resizing, tensor conversion, and normalization, ensuring that the reported evaluation results were not affected by random data transformations.
 
 \section{Segmentation Architectures}
 \label{sec:segmentation-architectures}
@@ -75,28 +75,28 @@ U-Net is a convolutional neural network (CNN) with an encoder-decoder architectu
     \centering
     \includegraphics[width=0.95\textwidth]{Images/original-unet.png}
     \vspace{3mm}
-    \caption{The original U-Net architecture proposed by Ronneberger et al., comprising a contracting path, an expanding path, and skip connections between corresponding resolution levels \cite{ronneberger2015unet}. The implementations evaluated in this work replace the original contracting path with ResNet-34 or MobileNetV2.}
+    \caption{The original U-Net architecture proposed by Ronneberger et al., comprising a contracting path, an expanding path, and skip connections between corresponding resolution levels \cite{ronneberger2015unet}. The implementations evaluated in this work replace the original contracting path with ResNet34 or MobileNetV2.}
     \label{fig:unet}
 \end{figure}
 
 % Both U-Net configurations employed a five-stage decoder, where at each stage the decoder representation was upsampled using nearest-neighbor interpolation, concatenated with the corresponding encoder feature map, and processed by two convolutional blocks with batch normalization and ReLU activation.
 Both U-Net variants had a five-stage decoder where, at each stage, the decoder representation was upscaled using nearest-neighbor interpolation and concatenated with the corresponding encoder representation followed by two \(3 \times 3\) convolutional blocks with batch normalization and ReLU activation. A final \(3 \times 3\) segmentation head mapped the resulting 16-channel representation to the nine output classes.
 
-\paragraph{U-Net with ResNet-34.}
+\paragraph{U-Net with ResNet34.}
 
-The first variant makes use of ResNet-34 as the encoder. ResNets are a type of architecture that stacks the convolutional layers in blocks where the learned transformation of the block is added to the original block input via a shortcut connection \cite{he2016resnet}. Therefore, every block learns to correct the original representation rather than learning a completely new transformation. ResNet was proposed by He et al. as a way of solving the optimization degradation problem that is experienced when increasing the depth of the conventional convolutional networks. When the input and output dimensions agree, the identity shortcut introduces neither additional parameters nor a separate learned transformation.
+The first variant makes use of ResNet34 as the encoder. ResNets are a type of architecture that stacks the convolutional layers in blocks where the learned transformation of the block is added to the original block input via a shortcut connection \cite{he2016resnet}. Therefore, every block learns to correct the original representation rather than learning a completely new transformation. ResNet was proposed by He et al. as a way of solving the optimization degradation problem that is experienced when increasing the depth of the conventional convolutional networks. When the input and output dimensions agree, the identity shortcut introduces neither additional parameters nor a separate learned transformation.
 
-In the case of U-Net, ResNet-34 provides a conventional hierarchical encoder whose intermediate representations can be transferred to the decoder at different spatial scales. The choice of this architecture was motivated by the fact that it was a higher-capacity convolutional variation in the U-Net family. It combines the established residual feature extractor with an explicit reconstruction path for dense prediction, while preserving architectural continuity with the U-Net baseline considered in Mars-Bench.
+In the case of U-Net, ResNet34 provides a conventional hierarchical encoder whose intermediate representations can be transferred to the decoder at different spatial scales. The choice of this architecture was motivated by the fact that it was a higher-capacity convolutional variation in the U-Net family. It combines the established residual feature extractor with an explicit reconstruction path for dense prediction, while preserving architectural continuity with the U-Net baseline considered in Mars-Bench.
 
-The same ResNet-34 encoder is also employed in the DeepLabV3 configuration described later in this section. Although the resulting networks are not identical outside the encoder, this shared component makes the comparison between skip-based reconstruction and atrous spatial pyramid pooling (ASPP) easier to interpret.
+The same ResNet34 encoder is also employed in the DeepLabV3 configuration described later in this section. Although the resulting networks are not identical outside the encoder, this shared component makes the comparison between skip-based reconstruction and atrous spatial pyramid pooling (ASPP) easier to interpret.
 
 \paragraph{U-Net with MobileNetV2.}
 
-The second variant replaces ResNet-34 with MobileNetV2, an architecture developed specifically for mobile and resource-constrained computer vision \cite{sandler2018mobilenetv2}. MobileNetV2 is an improved version of MobileNetV1, with the aim of optimizing accuracy while ensuring efficiency \cite{lightweight-survey}. Its central component is the inverted residual block.  Whereas the traditional residual block transforms the input representation in the middle of relatively wider representations, MobileNetV2 does this task in between narrower representations, known as bottlenecks. Each block first expands the input representation, performs spatial filtering through an inexpensive depthwise convolution, and then projects the result back to a lower-dimensional space. The final projection is linear, since Sandler et al. observed that applying a non-linearity within a narrow bottleneck can lose useful representational information.
+The second variant replaces ResNet34 with MobileNetV2, an architecture developed specifically for mobile and resource-constrained computer vision \cite{sandler2018mobilenetv2}. MobileNetV2 is an improved version of MobileNetV1, with the aim of optimizing accuracy while ensuring efficiency \cite{lightweight-survey}. Its central component is the inverted residual block.  Whereas the traditional residual block transforms the input representation in the middle of relatively wider representations, MobileNetV2 does this task in between narrower representations, known as bottlenecks. Each block first expands the input representation, performs spatial filtering through an inexpensive depthwise convolution, and then projects the result back to a lower-dimensional space. The final projection is linear, since Sandler et al. observed that applying a non-linearity within a narrow bottleneck can lose useful representational information.
 
 Inside each inverted residual block, depthwise convolution applies a spatial filter independently to every expanded feature channel, whereas the preceding and subsequent pointwise convolutions expand, combine, and project the channel representations. By using spatial filtering and channel mixing in this manner, MobileNetV2 reduces the computational cost associated with typical dense convolutions, while residual connections preserve information between bottleneck representations whenever their spatial resolution and channel dimensionality remain unchanged \cite{sandler2018mobilenetv2}.
 
-The variant was therefore included to determine whether the U-Net topology could provide an effective segmentation model with a substantially lighter encoder. Its comparison with the ResNet-34 variant examines two deployment alternatives using the same architectural family: one centered on a conventional residual hierarchy and the other on mobile-oriented inverted residual blocks.
+The variant was therefore included to determine whether the U-Net topology could provide an effective segmentation model with a substantially lighter encoder. Its comparison with the ResNet34 variant examines two deployment alternatives using the same architectural family: one centered on a conventional residual hierarchy and the other on mobile-oriented inverted residual blocks.
 
 \begin{figure}[ht!]
     \centering
@@ -147,10 +147,10 @@ work.
     \caption{Original diagrams illustrating the principal operations of DeepLabV3. Atrous convolution enlarges the effective field of view by changing the sampling rate, while ASPP combines parallel context branches and image-level pooling. Both diagrams are taken from Chen et al. \cite{chen2017deeplabv3}.}
 \end{figure}
 
-\paragraph{DeepLabV3 with ResNet-34.}
+\paragraph{DeepLabV3 with ResNet34.}
 
-The first variant uses ResNet-34 as its encoder. Unlike U-Net, DeepLabV3 does not use a multi-stage decoder with skip connections. Instead, the ASPP features are converted into class logits and resized to the input resolution using bilinear interpolation \cite{chen2017deeplabv3}.
-This variant was selected to compare two segmentation approaches built around the same backbone. U-Net--ResNet-34 progressively combines encoder and decoder features to recover spatial detail, whereas DeepLabV3 gathers multi-scale context at the final encoder stage. Other architectural differences mean that this comparison does not isolate the decoder alone, but it helps examine the strengths of each approach. DeepLabV3 also provides a reference for discussing DeepLabV3+, whose additional decoder uses low-level features to refine the segmentation boundaries.
+The first variant uses ResNet34 as its encoder. Unlike U-Net, DeepLabV3 does not use a multi-stage decoder with skip connections. Instead, the ASPP features are converted into class logits and resized to the input resolution using bilinear interpolation \cite{chen2017deeplabv3}.
+This variant was selected to compare two segmentation approaches built around the same backbone. U-Net--ResNet34 progressively combines encoder and decoder features to recover spatial detail, whereas DeepLabV3 gathers multi-scale context at the final encoder stage. Other architectural differences mean that this comparison does not isolate the decoder alone, but it helps examine the strengths of each approach. DeepLabV3 also provides a reference for discussing DeepLabV3+, whose additional decoder uses low-level features to refine the segmentation boundaries.
 
 \paragraph{DeepLabV3+ with MobileNetV2.}
 
@@ -187,7 +187,7 @@ SegFormer was included because it is one of the model families evaluated in Mars
 
 \subsection{LCNet Variants}
 
-The Lightweight Context-Aware Network (LCNet) was introduced by Shi et al. to address the computational costs of semantic segmentation through partial-channel processing and a compact encoder-decoder design \cite{shi2024lcnet}. LCNet was included in this study to extend the architectural comparison towards models explicitly designed to limit computational cost, in addition to the architecture families considered in Mars-Bench. Its inclusion allows the study to investigate whether a smaller network could provide sufficient accuracy for Martian scene understanding.
+The Lightweight Context-Aware Network (LCNet) was introduced by Shi et al. to address the computational costs of semantic segmentation through partial-channel processing and a compact encoder-decoder design \cite{shi2024lcnet}. LCNet was included in this study to extend the architectural comparison toward models explicitly designed to limit computational cost, in addition to the architecture families considered in Mars-Bench. Its inclusion allows the study to investigate whether a smaller network could provide sufficient accuracy for Martian scene understanding.
 
 \begin{figure}[htbp]
     \centering
@@ -222,7 +222,7 @@ Two configurations were implemented: LCNet\(_{3,7}\) and LCNet\(_{3,11}\). Both 
 
 \subsection{Architectural Comparison}
 
-Table~\ref{tab:segmentation-architecture-static-comparison} compares the seven configurations independently of their predictive performance. Parameter counts refer to the nine-class implementations used for S5Mars and include all trainable layers. The reported 32-bit floating-point (FP32) storage is the theoretical memory required by the parameters alone and excludes intermediate activations, framework metadata, buffers, and optimizer state.
+Table~\ref{tab:segmentation-architecture-static-comparison} compares the seven configurations independently of their predictive performance. Parameter counts refer to the nine-class implementations used for S5Mars and include all trainable layers, while R34 and MV2 denote ResNet34 and MobileNetV2, respectively.
 
 \begin{table}[ht!]
     \centering
@@ -233,44 +233,44 @@ Table~\ref{tab:segmentation-architecture-static-comparison} compares the seven c
             \textbf{Model}          &
             \textbf{Encoder}        &
             \textbf{Initialization} &
-            \textbf{Params. (M)}                  \\
+            \textbf{Params. (M)}                 \\
             \midrule
             \midrule
             U-Net
-                                    & ResNet-34
+                                    & R34
                                     & ImageNet
-                                    & 24.438      \\
+                                    & 24.438     \\
 
             U-Net
-                                    & MobileNetV2
+                                    & MV2
                                     & ImageNet
-                                    & 6.630       \\
+                                    & 6.630      \\
 
             DeepLabV3
-                                    & ResNet-34
+                                    & R34
             \linebreak
                                     & ImageNet
-                                    & 26.009      \\
+                                    & 26.009     \\
 
             DeepLabV3+
-                                    & MobileNetV2
+                                    & MV2
                                     & ImageNet
-                                    & 4.381       \\
+                                    & 4.381      \\
 
             SegFormer-B0
                                     & MiT-B0
                                     & ADE20K
-                                    & 3.716       \\
+                                    & 3.716      \\
 
             LCNet\(_{3,7}\)
                                     & LCNet stem
                                     & Random
-                                    & 0.509       \\
+                                    & 0.509      \\
 
             LCNet\(_{3,11}\)
                                     & LCNet stem
                                     & Random
-                                    & 0.729       \\
+                                    & 0.729      \\
             \bottomrule
         \end{tabular}
     }
@@ -281,7 +281,7 @@ Table~\ref{tab:segmentation-architecture-static-comparison} compares the seven c
 
 \section{Training}
 
-The segmentation models share a configurable training pipeline that controls the optimization procedure, loss function, data sampling, and checkpoint selection. A common reference configuration provides shared optimization settings across the architecture families, while allowing individual components to be modified for the ablation studies. The U-Net, DeepLab, and SegFormer configurations were trained for 30 epochs, whereas the two LCNet configurations were trained for 60 epochs. Training used a batch size of 32, with images processed at the (\(512 \times 512\)) resolution defined in the preprocessing section. The pretrained models are fine-tuned end to end, therefore all network parameters remain trainable throughout optimization, including the encoders initialized from pretrained weights, whereas the LCNet configurations are optimized from random initialization. The training images are shuffled at every epoch, while validation and test samples are processed without shuffling or stochastic augmentation.
+The segmentation models share a configurable training pipeline that controls the optimization procedure, loss function, data sampling, and checkpoint selection. A common reference configuration provides shared optimization settings across the architecture families, while allowing individual components to be modified for the ablation studies. The U-Net, DeepLab, and SegFormer configurations were trained for 30 epochs, whereas the two LCNet configurations were trained for 60 epochs. Training used a batch size of 32, with images processed at the \(512 \times 512\) resolution defined in the preprocessing section. The pretrained models are fine-tuned end to end, therefore all network parameters remain trainable throughout optimization, including the encoders initialized from pretrained weights, whereas the LCNet configurations are optimized from random initialization. The training images are shuffled at every epoch, while validation and test samples are processed without shuffling or stochastic augmentation.
 
 The loss function combines pixel-wise cross-entropy (CE) with Generalized Dice Loss (GDL):
 \begin{equation}
@@ -295,9 +295,9 @@ The loss function combines pixel-wise cross-entropy (CE) with Generalized Dice L
 \end{equation}
 Cross-entropy supervises the probability assigned to the target class at each pixel, whereas the Dice component measures agreement between the predicted probability maps and the target regions. Generalized Dice introduces class-dependent weighting to account for differences in region size, following the formulation investigated by Sudre et al. for imbalanced segmentation tasks \cite{sudre2017generalizeddice}. Combining the two terms therefore provides pixel-wise classification supervision alongside a region-overlap objective. This follows the rationale to combine the gradient stability of cross-entropy with the ability of Dice-based losses to handle class imbalance \cite{yeung2022unified}.
 
-In the implemented Generalized Dice loss, class volumes are computed from the target masks across the current mini-batch. Classes present in the batch receive weights inversely proportional to the square of their pixel counts, while absent classes receive zero weight in the Dice calculation. These weights are recomputed for each batch rather than derived from precomputed class frequency scores. A smoothing constant of \((10^{-5})\) is added to the numerator and denominator of the overlap ratio. The pipeline also supports a single loss function alone and alternative Dice weighting schemes. The available configurations include inverse-volume weighting or uniform weights over the classes present in the batch. These alternatives allow the contribution of the loss formulation to be examined separately from changes in architecture.
+In the implemented Generalized Dice loss, class volumes are computed from the target masks across the current mini-batch. Classes present in the batch receive weights inversely proportional to the square of their pixel counts, while absent classes receive zero weight in the Dice calculation. These weights are recomputed for each batch rather than derived from precomputed class frequency scores. A smoothing constant of \(10^{-5}\) is added to the numerator and denominator of the overlap ratio. The pipeline also supports a single loss function alone and alternative Dice weighting schemes. The available configurations include inverse-volume weighting or uniform weights over the classes present in the batch. These alternatives allow the contribution of the loss formulation to be examined separately from changes in architecture.
 
-The Optimizer is AdamW \cite{loshchilov2019adamw}, with a base learning rate of \(10^{-4}\) and a weight-decay coefficient of \(10^{-2}\). A linear warm-up during the first epoch is followed by cosine decay towards zero over the remaining epochs, without warm restarts \cite{loshchilov2017sgdr}. Training runs for the fixed epoch budget without early stopping, while the checkpoint with the best validation performance is retained for evaluation. Training was performed on Kaggle using two NVIDIA T4 GPUs, each with 16 GB of VRAM.
+The Optimizer is AdamW \cite{loshchilov2019adamw}, with a base learning rate of \(10^{-4}\) and a weight-decay coefficient of \(10^{-2}\). A linear warm-up during the first epoch is followed by cosine decay toward zero over the remaining epochs, without warm restarts \cite{loshchilov2017sgdr}. Training runs for the fixed epoch budget without early stopping, while the checkpoint with the best validation performance is retained for evaluation. Training was performed on Kaggle using two NVIDIA T4 GPUs, each with 16 GB of VRAM.
 
 \paragraph{Training-data sampling and optional augmentation.}
 
@@ -326,7 +326,6 @@ Geometric augmentation is controlled independently from sampling and remains dis
         Image-level oversampling             & Disabled                           \\
         Training augmentation                & Disabled                           \\
         Checkpoint selection                 & Highest validation mIoU            \\
-        Random seed                          & 42                                 \\
         \bottomrule
     \end{tabular}
     \vspace{5mm}
@@ -339,9 +338,9 @@ Geometric augmentation is controlled independently from sampling and remains dis
 \section{Evaluation Metrics}
 \label{sec:segmentation-evaluation-metrics}
 
-Segmentation performance is evaluated using pixel accuracy (PA), per-class Intersection over Union (IoU), and mean Intersection over Union (mIoU), following established semantic-segmentation evaluation practice \cite{long2015fcn}. Predictions are obtained by selecting the highest-scoring class at each pixel, and the metrics are computed from a confusion matrix accumulated over the entire evaluated partition rather than averaged across images or mini-batches.
+Segmentation performance is evaluated using Pixel Accuracy (PA), per-class Intersection over Union (IoU), and mean Intersection over Union (mIoU), following established semantic-segmentation evaluation practice \cite{long2015fcn}. Predictions are obtained by selecting the highest-scoring class at each pixel, and the metrics are computed from a confusion matrix accumulated over the entire evaluated partition rather than averaged across images or mini-batches.
 
-Let \(TP_c\), \(FP_c\), and \(FN_c\) denote the true-positive, false-positive, and false-negative pixel counts for class \(c\). The metrics are defined as
+Let \(TP_c\), \(FP_c\), and \(FN_c\) denote the true-positive, false positive, and false-negative pixel counts for class \(c\). The metrics are defined as
 \begin{equation}
     \begin{aligned}
         \mathrm{Pixel\ Accuracy}
@@ -356,7 +355,7 @@ Let \(TP_c\), \(FP_c\), and \(FN_c\) denote the true-positive, false-positive, a
 \end{equation}
 where \(N\) is the total number of evaluated pixels and \(\mathcal{C}_{+}\) contains the classes present in the ground truth of the evaluated partition.
 
-Pixel accuracy measures the overall proportion of correctly classified pixels, but consequently gives greater influence to classes occupying larger image regions. In contrast, mIoU assigns equal weight to each included class and serves as the primary checkpoint-selection metric. Per-class IoU complements this aggregate measure by exposing differences between semantic categories that a single score may conceal.
+PA measures the overall proportion of correctly classified pixels, but consequently gives greater influence to classes occupying larger image regions. In contrast, mIoU assigns equal weight to each included class and serves as the primary checkpoint-selection metric. Per-class IoU complements this aggregate measure by exposing differences between semantic categories that a single score may conceal.
 
 % Computational efficiency is assessed separately through parameter count, estimated FLOPs, inference latency, and frames per second (FPS), with the hardware and measurement conditions specified in the evaluation chapter.
 
@@ -365,7 +364,7 @@ Pixel accuracy measures the overall proportion of correctly classified pixels, b
 
 Quantization was investigated to test the efficiency of the segmentation models for resource-constrained deployment, with the objective of reducing model storage and inference costs while preserving segmentation accuracy. Selected FP32 checkpoints were exported to the Open Neural Network Exchange (ONNX) format as full  models, alongside FP16 variants obtained by converting eligible parameters and operations to half precision while maintaining FP32 inputs and outputs.
 
-Static Post-Training Quantization (PTQ) to INT8 was applied without retraining the models. The PTQ configuration used entropy-based calibration with 500 images randomly sampled from the training set, without using their segmentation annotations. Selected weights and activations used symmetric quantization, with per-channel quantization for weights and per-tensor quantization for activations. The quantized models used the ONNX Quantize/Dequantize (QDQ) format, which introduces explicit nodes to represent conversions between floating point values and their quantized representations \cite{onnxruntimeQuantization}.
+Static Post-Training Quantization (PTQ) to INT8 was applied without retraining the models. The PTQ configuration used entropy-based calibration with 500 images randomly sampled from the training split, without using their segmentation annotations. Selected weights and activations used symmetric quantization, with per-channel quantization for weights and per-tensor quantization for activations. The quantized models used the ONNX Quantize/Dequantize (QDQ) format, which introduces explicit nodes to represent conversions between floating point values and their quantized representations \cite{onnxruntimeQuantization}.
 
 An alternative INT8 strategy used Quantization-Aware Training (QAT) with NVIDIA ModelOpt. Fake-quantization operations simulated rounding and clipping during fine-tuning, allowing the models to adapt to quantization effects \cite{jacob2018quantization}. The training objective combined the supervised segmentation loss with knowledge distillation from a frozen FP32 teacher, with coefficients of 0.7 and 0.3, respectively. Distillation used Kullback-Leibler divergence between softened class-probability maps, with the divergence scaled by the squared temperature. The resulting models were exported to ONNX with explicit quantization and dequantization operations, without an additional PTQ step.
 
@@ -373,4 +372,4 @@ The ModelOpt fine-tuning configuration used a maximum of 10 epochs, a mini-batch
 
 Both INT8 strategies used selective quantization, keeping floating-point computations where required for compatibility or accuracy. For example, in the evaluated Conv-only configuration of SegFormer-B0, INT8 was restricted to convolutional layers, whereas linear projections, attention matrix multiplications, normalization, and softmax remained in floating point, with FP16 fallback in TensorRT. The resulting models therefore used mixed precision rather than an entirely integer computation graph.
 %ONNX FP32 and FP16 inference used ONNX Runtime with its CUDA execution provider. PTQ INT8 inference used its TensorRT execution provider, with CUDA and CPU fallback, whereas ModelOpt QAT models were executed directly with TensorRT.
-Quantization configurations were selected using the validation set, reserving the test set for final evaluation.
+Quantization configurations were selected using the validation split, reserving the test split for final evaluation.

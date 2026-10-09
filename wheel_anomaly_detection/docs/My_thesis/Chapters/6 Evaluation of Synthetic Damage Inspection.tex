@@ -3,67 +3,79 @@
 \section{Experimental Setup}
 \label{sec:damage-experimental-setup}
 
-The experiments used the synthetic dataset described in Section~\ref{sec:final-synthetic-dataset}, preserving its original training, validation, and test assignments when filtering by camera pose. The main comparison of PatchCore Small and Large, EfficientAD-S, SuperSimpleNet, and TinyGLASS focused on pose A, which represents a controlled acquisition setting while retaining variations in wheel identity, lighting, and surface wear. This subset contains 2,800 normal training images, 296 normal and 96 anomalous validation images, and 404 clean-anomalous pairs in the test split, for a total of 808 test images. % A separate TinyGLASS experiment considered pose D, with 351 normal training images, 43 normal and 18 anomalous validation images, and 44 test pairs. These pose-specific subsets retain different sample populations and should not be interpreted as an isolated effect of camera viewpoint.
+The experiments used the synthetic dataset described in Section~\ref{sec:final-synthetic-dataset}, preserving its original training, validation, and test assignments when filtering by camera pose. The main comparison of PC-S, PC-L, EAD-S, SSN, TG-384, and TG-512 focused on pose A, which represents a controlled acquisition setting while retaining variations in wheel identity, lighting, and surface wear. This subset contains 2,800 normal training images, 296 normal and 96 anomalous validation images, and 404 clean-anomalous pairs in the test split, for a total of 808 test images. % A separate TinyGLASS experiment considered pose D, with 351 normal training images, 43 normal and 18 anomalous validation images, and 44 test pairs. These pose specific subsets retain different sample populations and should not be interpreted as an isolated effect of camera viewpoint.
 
-Table~\ref{tab:damage-reference-configurations} defines the reference configurations and their abbreviations, which are reused throughout the chapter. The pose-A inputs use the fixed \(720\times720\) crop described in Section~\ref{sec:damage-preprocessing}, followed by model-specific preprocessing. The models therefore share the same image population, although their input resolutions and spatial coverage differ. % Historical multi-pose PatchCore runs are kept separate from this main comparison.
+Table~\ref{tab:damage-reference-configurations} summarizes the reference configurations using the abbreviations introduced in Chapter~4. The pose-A inputs use the fixed \(720\times720\) crop described in Section~\ref{sec:damage-preprocessing}, followed by model-specific preprocessing. The models therefore share the same image population, although their input resolutions and spatial coverage differ. % Historical PatchCore runs using all poses are kept separate from this main comparison.
 
 \begin{table}[ht!]
     \centering
     \small
     \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{@{}l l c c l@{}}
+    \begin{tabular}{@{}l c c l@{}}
         \toprule
-        \textbf{ID} & \textbf{Model}  & \textbf{Poses} & \textbf{Input (px)} & \textbf{Setting}             \\
+        \textbf{Configuration} & \textbf{Poses} & \textbf{Input (px)} & \textbf{Setting}             \\
         \midrule
         \midrule
-        PC-S        & PatchCore Small & A              & \(384\times512\)    & 50,000 Memory Bank           \\
-        PC-L        & PatchCore Large & A              & \(224\times224\)    & 50,000 Memory Bank           \\
-        EAD-S       & EfficientAD-S   & A              & \(256\times256\)    & Global calibration           \\
-        SSN         & SuperSimpleNet  & A              & \(256\times256\)    & Top-1\% score                \\
-        TG-384      & TinyGLASS       & A              & \(384\times384\)    & \(48\times48\), \(\sigma=1\) \\
-        TG-512      & TinyGLASS       & A              & \(512\times512\)    & \(32\times32\), \(\sigma=4\) \\
+        PC-S                   & A              & \(384\times512\)    & 50,000 Memory Bank           \\
+        PC-L                   & A              & \(224\times224\)    & 50,000 Memory Bank           \\
+        EAD-S                  & A              & \(256\times256\)    & Global calibration           \\
+        SSN                    & A              & \(256\times256\)    & Top-1\% score                \\
+        TG-384                 & A              & \(384\times384\)    & \(48\times48\), \(\sigma=1\) \\
+        TG-512                 & A              & \(512\times512\)    & \(32\times32\), \(\sigma=4\) \\
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{Reference configurations for synthetic damage inspection. TinyGLASS settings indicate the feature-grid size and Gaussian smoothing parameter.}
+    \caption{Reference configurations for synthetic damage inspection. TG-384 and TG-512 settings indicate the feature-grid size and Gaussian smoothing parameter.}
     \label{tab:damage-reference-configurations}
 \end{table}
 
-Both PatchCore configurations used a candidate reservoir capped at 1,000,000 descriptors, from which a memory bank of 50,000 descriptors was retained, with Gaussian smoothing set to \(\sigma=4\). After the fixed pose-A crop, PC-S resized the image directly to \(384\times512\), whereas PC-L resized the shorter side to 256 pixels before applying a \(224\times224\) centre crop. Image-score reweighting used nine neighbours for PC-S and was disabled for PC-L. The SSN reference used a Perlin threshold of 0.2 without restricting synthetic perturbations to the target wheel mask. Both TinyGLASS references used wheel restricted, hole like LAS perturbations, sampling small, medium, and large severities with probabilities of 70\%, 25\%, and 5\%, respectively. These probabilities apply to training perturbations, not to the composition of the rendered evaluation splits. TG-384 used layer2 features, whereas TG-512 used layer3 features, for efficiency purposes, with \(\sigma=4\) selected through a post hoc validation comparison of smoothing values.
+Both PatchCore configurations used a candidate reservoir capped at 1,000,000 descriptors, from which a memory bank of 50,000 descriptors was retained, with Gaussian smoothing set to \(\sigma=4\). After the fixed pose-A crop, PC-S resized the image directly to \(384\times512\), whereas PC-L resized the shorter side to 256 pixels before applying a \(224\times224\) center crop. Image-score reweighting used nine neighbors for PC-S and was disabled for PC-L. The SSN reference used a Perlin threshold of 0.2 without restricting synthetic perturbations to the target wheel mask. Both TG-384 and TG-512 used wheel restricted, hole like LAS perturbations, sampling small, medium, and large severities with probabilities of 70\%, 25\%, and 5\%, respectively. These probabilities apply to training perturbations, not to the composition of the rendered evaluation splits. TG-384 used layer2 features, whereas TG-512 used layer3 features, for efficiency purposes, with \(\sigma=4\) selected through a post hoc validation comparison of smoothing values.
 
-SuperSimpleNet was trained with a batch size of 16 for up to 100 epochs, while TinyGLASS used batches of eight for up to 640 epochs. For these models, the checkpoint with the highest validation Image AUROC was kept and subsequently evaluated on the corresponding test split. Early stopping used a patience of five validation checks for SuperSimpleNet and 40 for TinyGLASS. EfficientAD-S instead used the final checkpoint of a fixed 70,000-step run, followed by calibration on the 296 normal validation images. PatchCore constructed its memory bank once for each configuration and therefore did not require an epoch-wise checkpoint search. The test results reported in the following sections use these chosen model checkpoints and the metrics defined in Section~\ref{sec:damage-evaluation-metrics}.
+SSN was trained with a batch size of 16 for up to 100 epochs, while TinyGLASS used batches of eight for up to 640 epochs. For these models, the checkpoint with the highest validation Image AUROC was kept and subsequently evaluated on the corresponding test split. Early stopping used a patience of five validation checks for SSN and 40 for TinyGLASS. EAD-S instead used the final checkpoint of a fixed 70,000-step run, followed by calibration on the 296 normal validation images. PatchCore constructed its memory bank once for each configuration and therefore did not require an epoch-wise checkpoint search. The test results reported in the following sections use these chosen model checkpoints and the metrics defined in Section~\ref{sec:damage-evaluation-metrics}.
 
-Efficiency benchmarks used an NVIDIA T4 GPU in Kaggle, processing one image at a time. Latency was averaged over 50 synchronized measurements after 10 warm-up runs, both for prediction on an input already in GPU memory and for the complete evaluation pipeline, including image and mask loading, preprocessing, and transfer to the GPU. Energy was measured separately during repeated prediction, with a 5-second warm-up followed by three 30-second measurement windows. NVML provided the GPU energy counter, with energy per image calculated by dividing the total GPU energy by the number of predictions across the three windows. This value covered the whole GPU, including idle consumption, and excluded CPU processing and input transfer.
+Efficiency benchmarks used an NVIDIA T4 GPU in Kaggle, processing one image at a time. Latency was averaged over 50 synchronized measurements after 10 warm-up runs for prediction on an input already in GPU memory, excluding image and mask loading, preprocessing, and transfer to the GPU. Energy was measured separately during repeated prediction, with a 5-second warm-up followed by three 30-second measurement windows. NVML provided the GPU energy counter, with energy per image calculated by dividing the total GPU energy by the number of predictions across the three windows. This value covered the whole GPU, including idle consumption, and excluded CPU processing and input transfer.
 
 \section{Model Comparison}
 \label{sec:damage-model-comparison}
-Table~\ref{tab:damage-reference-test-results} compares the test results of the configurations defined in Table~\ref{tab:damage-reference-configurations}, separating image damage detection from pixel localization.
+Table~\ref{tab:damage-reference-test-results} compares the test results of the configurations defined in Table~\ref{tab:damage-reference-configurations}, separating image-level damage detection from pixel-level localization.
 
+% AUPRO test sources: PC-S and PC-L local extended_diagnostics.json records, 2026-10-06.
+% EfficientAD-S: Drive 1yzt2Po_ygLm0tAUv8rUoJcGQiIB336XF.
+% SuperSimpleNet: Drive 1xgGFz7-N5HO_jP82qnsNqK4QU6krJQtA.
+% TinyGLASS (384): Drive 1WJXkAa-5P3czBlCo0WozOvPF7zj0FCgj.
+% TinyGLASS (512): local test_sigma4_user_summary/test_user_summary.json, 2026-10-07.
 \begin{table}[ht!]
     \centering
     \small
     \setlength{\tabcolsep}{3.5pt}
-    \begin{tabular}{@{}l c c c c c@{}}
+    \begin{tabular}{@{}l c c c c c c c@{}}
         \toprule
-        \textbf{Configuration} & \textbf{Image AUROC} & \textbf{Image AP} & \textbf{Pixel AUROC} & \textbf{Pixel AP} & \textbf{AUPRO} \\
+        \textbf{Configuration}                      &
+        \shortstack{\textbf{Image}\\\textbf{AUROC}} &
+        \shortstack{\textbf{Image}\\\textbf{AP}}    &
+        \shortstack{\textbf{Pixel}\\\textbf{AUROC}} &
+        \shortstack{\textbf{Pixel}\\\textbf{AP}}    &
+        \shortstack{\textbf{AUPRO}\\\textbf{@0.05}} &
+        \shortstack{\textbf{AUPRO}\\\textbf{@0.10}} &
+        \shortstack{\textbf{AUPRO}\\\textbf{@0.30}}                                                                                                                        \\
         \midrule
         \midrule
-        PC-S                   & 79.28                & 77.49             & \textbf{99.78}       & 41.05             & \textbf{99.10} \\
-        PC-L                   & \textbf{86.43}       & \textbf{88.63}    & 99.43                & \textbf{42.89}    & 95.44          \\
-        EAD-S                  & 66.50                & 64.74             & 96.36                & 9.00              & 84.98          \\
-        SSN                    & 82.72                & 86.08             & 96.97                & 19.10             & 87.53          \\
-        TG-384                 & 77.52                & 79.28             & 97.21                & 25.48             & 90.24          \\
-        TG-512                 & 77.33                & 81.12             & 97.92                & 27.59             & 92.01          \\
+        PC-S                                        & 79.28          & 77.49          & \textbf{99.78} & 41.05          & \textbf{94.93} & \textbf{97.35} & \textbf{99.10} \\
+        PC-L                                        & \textbf{86.43} & \textbf{88.63} & 99.43          & \textbf{42.89} & 82.90          & 89.36          & 95.44          \\
+        EAD-S                                       & 66.50          & 64.74          & 96.36          & 9.00           & 58.45          & 70.36          & 84.98          \\
+        SSN                                         & 82.72          & 86.08          & 96.97          & 19.10          & 71.62          & 78.58          & 87.53          \\
+        TG-384                                      & 77.52          & 79.28          & 97.21          & 25.48          & 73.93          & 81.10          & 90.24          \\
+        TG-512                                      & 77.33          & 81.12          & 97.92          & 27.59          & 76.54          & 83.56          & 92.01          \\
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{Damage detection and localization percentages on the pose-A test split. AUPRO is normalized up to FPR 0.30.}
+    \caption{Damage detection and localization percentages on the pose-A test split. AUPRO is normalized up to the maximum FPR indicated in each column.}
     \label{tab:damage-reference-test-results}
 \end{table}
 
-PC-L achieved the highest Image AUROC and Image AP, 86.43\% and 88.63\%, followed by SSN at 82.72\% and 86.08\%. PC-S obtained a lower Image AUROC of 79.28\%, while the two TinyGLASS configurations produced similar detection results, with Image AUROC values of 77.52\% for TG-384 and 77.33\% for TG-512. EAD-S remained below the other configurations on both image detection metrics.
+PC-L achieved the highest Image AUROC and Image AP, 86.43\% and 88.63\%, followed by SSN at 82.72\% and 86.08\%. PC-S obtained a lower Image AUROC of 79.28\%, while TG-384 and TG-512 produced similar detection results, with Image AUROC values of 77.52\% for TG-384 and 77.33\% for TG-512. EAD-S remained below the other configurations on both image-level detection metrics.
 
-The localization results distinguish the two PatchCore configurations more clearly. PC-L obtained the highest Pixel AP, 42.89\%, whereas PC-S reached the highest Pixel AUROC, 99.78\%, and AUPRO, 99.10\%, with a Pixel AP of 41.05\%. PC-L therefore provided the strongest image discrimination, while PC-S achieved better regional coverage. Within TinyGLASS, TG-512 increased Pixel AP from 25.48\% to 27.59\% and AUPRO from 90.24\% to 92.01\%, maintaining nearly the same Image AUROC as TG-384. Both TinyGLASS configurations localized damage more effectively than SSN according to Pixel AP and AUPRO, even though SSN performed better at anomalous image detection. EAD-S obtained a Pixel AUROC of 96.36\% but only 9.00\% Pixel AP, showing that a high Pixel AUROC can coexist with limited localization precision.
+The localization results distinguish the two PatchCore configurations more clearly. PC-L obtained the highest Pixel AP, 42.89\%, whereas PC-S reached the highest Pixel AUROC, 99.78\%, and AUPRO@0.30, 99.10\%, with a Pixel AP of 41.05\%. PC-L therefore provided the strongest image discrimination, while PC-S achieved better regional coverage. Within TinyGLASS, TG-512 increased Pixel AP from 25.48\% to 27.59\% and AUPRO@0.30 from 90.24\% to 92.01\%, maintaining nearly the same Image AUROC as TG-384. Both TinyGLASS configurations localized damage more effectively than SSN according to Pixel AP and AUPRO, even though SSN performed better at anomalous image-level detection. EAD-S obtained a Pixel AUROC of 96.36\% but only 9.00\% Pixel AP, showing that a high Pixel AUROC can coexist with limited localization precision.
 
 Alongside detection and localization performance, Table~\ref{tab:damage-reference-efficiency} reports prediction latency, peak allocated GPU memory, and energy per image for the various configurations.
 
@@ -92,11 +104,11 @@ Alongside detection and localization performance, Table~\ref{tab:damage-referenc
     \label{tab:damage-reference-efficiency}
 \end{table}
 
-TG-384 had the lowest measured cost across all three resources, requiring 5.13~ms per image, 38.72~MiB of peak GPU memory, and 0.239~J per image. TG-512 required 6.29~ms, 55.03~MiB, and 0.369~J per image, with higher Pixel AP and AUPRO and nearly the same Image AUROC. The two TinyGLASS configurations therefore offer a choice between the lower resource requirements of TG-384 and the improved localization of TG-512. Both achieved better Pixel AP and AUPRO than SSN and EAD-S at a lower inference cost. This efficiency is consistent with TinyGLASS's compact architecture for edge deployment~\cite{bonazzi2026tinyglass} and our use of fixed feature pooling without a separate trainable adaptor.
+TG-384 had the lowest measured cost across all three resources, requiring 5.13~ms per image, 38.72~MiB of peak GPU memory, and 0.239~J per image. TG-512 required 6.29~ms, 55.03~MiB, and 0.369~J per image, with higher Pixel AP and AUPRO and nearly the same Image AUROC. TG-384 and TG-512 therefore offer a choice between the lower resource requirements of TG-384 and the improved localization of TG-512. Both achieved better Pixel AP and AUPRO than SSN and EAD-S at a lower inference cost. This efficiency is consistent with TinyGLASS's compact architecture for edge deployment~\cite{bonazzi2026tinyglass} and our use of fixed feature pooling without a separate trainable adapter.
 
-SSN offered an intermediate compromise for image-level detection: it reached 82.72\% Image AUROC at 27.54~ms per image, compared with 86.43\% at 62.89~ms for PC-L. These results favour TG-384 when inference resources are the main constraint, TG-512 when its localization improvement justifies the additional cost, and PC-L when detection quality has priority.
+SSN offered an intermediate compromise for image-level detection: it reached 82.72\% Image AUROC at 27.54~ms per image, compared with 86.43\% at 62.89~ms for PC-L. These results favor TG-384 when inference resources are the main constraint, TG-512 when its localization improvement justifies the additional cost, and PC-L when detection quality has priority.
 
-PC-S reduced peak GPU memory relative to PC-L, from 385.25 to 277.53~MiB, but required more time and energy per image. Its 101.21~ms latency and 6.849~J energy consumption were the highest measured values, so its advantage in regional coverage came with a greater inference cost. This behaviour is consistent with its denser feature grid, which produces more local descriptors to compare against the memory bank. EAD-S required the largest memory peak, without a corresponding advantage in detection or localization in this comparison.
+PC-S reduced peak GPU memory relative to PC-L, from 385.25 to 277.53~MiB, but required more time and energy per image. Its 101.21~ms latency and 6.849~J energy consumption were the highest measured values, so its advantage in regional coverage came with a greater inference cost. This behavior is consistent with its denser feature grid, which produces more local descriptors to compare against the memory bank. EAD-S required the largest memory peak, without a corresponding advantage in detection or localization in this comparison.
 
 To examine how performance varies across dataset conditions, Table~\ref{tab:damage-test-subgroups} groups the test results by hole severity, lighting preset, and normal surface wear. Image AUROC describes detection within each group, while Pixel AP examines the localization of the corresponding damage regions.
 
@@ -143,25 +155,16 @@ Lighting had a less uniform effect. SSN obtained a Pixel AP of 22.69\% under the
 
 Normal wear also affected the models differently. PC-L achieved its highest Image AUROC without additional wear, 91.29\%, compared with 84.71\% under light wear and 85.48\% under evident wear. PC-S followed the same detection trend, which is consistent with scratches introducing local appearance changes that can resemble damage in feature matching. SSN instead had Image AUROC values between 80.86\% and 84.33\% across the three surface conditions, while TG-384 achieved higher Pixel AP under light and evident wear than without additional wear. TG-512's Pixel AP ranged from 26.46\% under light wear to 29.24\% under evident wear, with 28.78\% without additional wear. The synthesis-based models may benefit from learning to distinguish local perturbations from the varied normal textures represented during training, although the observed wear results do not follow a common monotonic pattern.
 
-For a visual comparison of the model predictions, Figure~\ref{fig:damage-model-map-comparison} reserves a common layout for a test image, its ground-truth damage mask, and the anomaly maps produced by the six reference configurations.
+Figure~\ref{fig:damage-model-map-comparison} compares the six reference configurations on the same damaged wheel image. All models show a local peak in anomaly score near the perforation, although its contrast with the surrounding wheel varies. Converting these continuous maps into damage masks requires a suitable threshold for each model to retain the defect response while suppressing lower scores on normal regions. This is particularly important for PatchCore and EAD-S, whose maps also show widespread responses beyond the anomalous region. Normal structural openings in the wheel make this distinction more difficult, since both these openings and damage holes can reveal dark interior regions.
 
 \begin{figure}[ht!]
     \centering
-    \small
-    \begin{tabular}{@{}c c c c@{}}
-        \fbox{\parbox[c][24mm][c]{0.20\textwidth}{\centering RGB image\\\textit{Placeholder}}}    &
-        \fbox{\parbox[c][24mm][c]{0.20\textwidth}{\centering Ground truth\\\textit{Placeholder}}} &
-        \fbox{\parbox[c][24mm][c]{0.20\textwidth}{\centering PC-S\\\textit{Placeholder}}}         &
-        \fbox{\parbox[c][24mm][c]{0.20\textwidth}{\centering PC-L\\\textit{Placeholder}}}           \\[3mm]
-        \fbox{\parbox[c][24mm][c]{0.20\textwidth}{\centering EAD-S\\\textit{Placeholder}}}        &
-        \fbox{\parbox[c][24mm][c]{0.20\textwidth}{\centering SSN\\\textit{Placeholder}}}          &
-        \fbox{\parbox[c][24mm][c]{0.20\textwidth}{\centering TG-384\\\textit{Placeholder}}}       &
-        \fbox{\parbox[c][24mm][c]{0.20\textwidth}{\centering TG-512\\\textit{Placeholder}}}
-    \end{tabular}
+    \includegraphics[width=\textwidth]{Images/damage_model_prediction_comparison.png}
     \vspace{5mm}
-    \caption{Placeholder grid for a qualitative comparison on a shared test sample, showing the RGB input, ground-truth damage mask, and anomaly maps from all six reference configurations.}
+    \caption{Qualitative comparison of the RGB image, ground truth damage mask, and normalized anomaly maps for the six reference configurations.}
     \label{fig:damage-model-map-comparison}
 \end{figure}
+\FloatBarrier
 
 \section{Ablation Studies}
 \label{sec:damage-ablation-studies}
@@ -171,9 +174,9 @@ The following experiments examined which changes improved damage detection and l
 \subsection{Memory Bank and Smoothing in PatchCore}
 \label{sec:damage-patchcore-ablation}
 
-PatchCore was the first anomaly detector analysed, and these experiments were conducted using all camera poses, before the study adopted pose A as the common experimental setting. The memory bank size and smoothing studied in this stage were subsequently used for pose A experiments. The pose A comparison therefore used only the best configuration found.
+PatchCore was the first anomaly detector analyzed, and these experiments were conducted using all camera poses, before the study adopted pose A as the common experimental setting. The memory bank size and smoothing studied in this stage were subsequently used for pose A experiments. The pose A comparison therefore used only the best configuration found.
 
-The memory-bank comparison tested whether storing more examples of normal wheel appearance would improve detection and localization enough to justify the additional memory required to store the bank. The candidate reservoir was fixed at 1,000,000 descriptors, while the bank size varied as shown in Table~\ref{tab:damage-patchcore-bank-ablation}. For the Small configuration, increasing the bank from 20,000 to 50,000 descriptors improved both validation Image AUROC and Pixel AP. A further increase to 100,000 doubled the storage without improving either validation metric. The Large preset showed a similar trade-off: 100,000 descriptors slightly improved validation Image AUROC, but reduced Pixel AP and required twice the bank memory. These results supported keeping 50,000 descriptors for both configurations, with the test results showing little benefit from the larger bank.
+The memory-bank comparison tested whether storing more examples of normal wheel appearance would improve detection and localization enough to justify the additional memory required to store the bank. The candidate reservoir was fixed at 1,000,000 descriptors, while the bank size varied as shown in Table~\ref{tab:damage-patchcore-bank-ablation}. For the PC-S configuration, increasing the bank from 20,000 to 50,000 descriptors improved both validation Image AUROC and Pixel AP. A further increase to 100,000 doubled the storage without improving either validation metric. The PC-L preset showed a similar trade-off: 100,000 descriptors slightly improved validation Image AUROC, but reduced Pixel AP and required twice the bank memory. These results supported keeping 50,000 descriptors for both configurations, with the test results showing little benefit from the larger bank.
 
 \begin{table}[ht!]
     \centering
@@ -185,20 +188,20 @@ The memory-bank comparison tested whether storing more examples of normal wheel 
                         &               & \textbf{Image AUROC}                         & \textbf{Pixel AP}                      & \textbf{Image AUROC}                       & \textbf{Pixel AP} &        \\
         \midrule
         \midrule
-        Small           & 20,000        & 78.51                                        & 21.59                                  & 70.91                                      & 26.96             & 29.30  \\
-        Small           & 50,000        & 81.89                                        & 22.68                                  & 72.81                                      & 27.56             & 73.24  \\
-        Small           & 100,000       & 81.36                                        & 22.60                                  & 72.94                                      & 27.89             & 146.48 \\
+        PC-S            & 20,000        & 78.51                                        & 21.59                                  & 70.91                                      & 26.96             & 29.30  \\
+        PC-S            & 50,000        & 81.89                                        & 22.68                                  & 72.81                                      & 27.56             & 73.24  \\
+        PC-S            & 100,000       & 81.36                                        & 22.60                                  & 72.94                                      & 27.89             & 146.48 \\
         \midrule
-        Large           & 50,000        & 89.73                                        & 31.39                                  & 77.94                                      & 30.95             & 195.31 \\
-        Large           & 100,000       & 89.94                                        & 29.48                                  & 77.58                                      & 30.43             & 390.63 \\
+        PC-L            & 50,000        & 89.73                                        & 31.39                                  & 77.94                                      & 30.95             & 195.31 \\
+        PC-L            & 100,000       & 89.94                                        & 29.48                                  & 77.58                                      & 30.43             & 390.63 \\
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{Multi-pose PatchCore bank comparison with a reservoir of 1,000,000 descriptors and \(\sigma=4\). Small uses a \(512\times512\) input and Large a \(224\times224\) input. Memory refers to the bank alone.}
+    \caption{PatchCore bank comparison using all poses, with a reservoir of 1,000,000 descriptors and \(\sigma=4\). PC-S uses a \(512\times512\) input and PC-L a \(224\times224\) input. Memory refers to the bank alone.}
     \label{tab:damage-patchcore-bank-ablation}
 \end{table}
 
-Gaussian smoothing was examined separately to test whether reducing isolated high anomaly scores in the map would improve localization while preserving image detection. This comparison used the Small configuration with a bank of 100,000 descriptors. Table~\ref{tab:damage-patchcore-smoothing-ablation} shows that \(\sigma=4\) produced the highest Pixel AP on both splits, while test Image AUROC remained identical across the three settings. The result supports smoothing as a way to improve the spatial distribution of anomaly scores, and \(\sigma=4\) was kept for the subsequent PatchCore runs.
+Gaussian smoothing was examined separately to test whether reducing isolated high anomaly scores in the map would improve localization while preserving image-level detection. This comparison used the PC-S configuration with a bank of 100,000 descriptors. Table~\ref{tab:damage-patchcore-smoothing-ablation} shows that \(\sigma=4\) produced the highest Pixel AP on both splits, while test Image AUROC remained identical across the three settings. The result supports smoothing as a way to improve the spatial distribution of anomaly scores, and \(\sigma=4\) was kept for the subsequent PatchCore runs.
 
 \begin{table}[ht!]
     \centering
@@ -213,14 +216,14 @@ Gaussian smoothing was examined separately to test whether reducing isolated hig
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{Smoothing comparison (\%) for the multi-pose PC-S run with 100,000 descriptor bank.}
+    \caption{Smoothing comparison (\%) for the PC-S run using all poses with 100,000 descriptor bank.}
     \label{tab:damage-patchcore-smoothing-ablation}
 \end{table}
 
-\subsection{Calibration and Scoring in EfficientAD-S}
+\subsection{Calibration and Scoring in EAD-S}
 \label{sec:damage-efficientad-ablation}
 
-The EfficientAD-S experiments tested whether accounting for the normal response at each image position could reduce false anomaly responses from the surrounding scene and normal wheel structure. Spatial calibration used normal images to normalize the anomaly scores separately at each image position. It was combined with a static wheel region, and the image score was varied to examine whether averaging a small set of high responses would be more stable than taking the maximum. These scoring candidates were evaluated on the same run using validation Image AUROC.
+The EAD-S experiments tested whether accounting for the normal response at each image position could reduce false anomaly responses from the surrounding scene and normal wheel structure. Spatial calibration used normal images to normalize the anomaly scores separately at each image position. It was combined with a static wheel region, and the image score was varied to examine whether averaging a small set of high responses would be more stable than taking the maximum. These scoring candidates were evaluated on the same run using validation Image AUROC.
 
 Table~\ref{tab:damage-efficientad-score-ablation} shows that spatial scoring improved validation discrimination over the global maximum. Averaging the highest 0.05\% of responses within the wheel region gave the highest Image AUROC, although its result was almost identical to the spatial maximum. Increasing the averaging fraction reduced Image AUROC slightly, suggesting that the strongest local responses carried most of the useful detection signal.
 
@@ -237,13 +240,13 @@ Table~\ref{tab:damage-efficientad-score-ablation} shows that spatial scoring imp
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{EfficientAD-S validation scoring comparison percentages for the spatial-calibration experiment. Top fractions denote averaging within the static wheel region.}
+    \caption{EAD-S validation scoring comparison percentages for the spatial-calibration experiment. Top fractions denote averaging within the static wheel region.}
     \label{tab:damage-efficientad-score-ablation}
 \end{table}
 
 The complete spatial and global training strategies were also compared to determine whether the improvement in validation detection was accompanied by better damage localization. The spatial strategy reserved normal training images for calibration, while the global strategy used all normal training images and calibrated after training on normal validation images. Both runs used pose A, the \(720\times720\) crop, and a fixed 70,000-step budget.
 
-As shown in Table~\ref{tab:damage-efficientad-calibration-ablation}, the spatial strategy achieved higher validation Image AUROC, but the global strategy produced much higher validation Pixel AP. The test results showed the same localization advantage and also favoured the global strategy for image detection. These results support the chosen global configuration as a compromise between detection and localization. One possible explanation is that position specific normalization is more sensitive to changes in lighting and surface appearance, whereas global calibration applies a common scale across image positions.
+As shown in Table~\ref{tab:damage-efficientad-calibration-ablation}, the spatial strategy achieved higher validation Image AUROC, but the global strategy produced much higher validation Pixel AP. The test results showed the same localization advantage and also favored the global strategy for image-level detection. These results support the chosen global configuration as a compromise between detection and localization. One possible explanation is that position specific normalization is more sensitive to changes in lighting and surface appearance, whereas global calibration applies a common scale across image positions.
 
 \begin{table}[ht!]
     \centering
@@ -260,16 +263,16 @@ As shown in Table~\ref{tab:damage-efficientad-calibration-ablation}, the spatial
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{Comparison of the complete EfficientAD-S calibration and training strategies on pose A.}
+    \caption{Comparison of the complete EAD-S calibration and training strategies on pose A.}
     \label{tab:damage-efficientad-calibration-ablation}
 \end{table}
 
-\subsection{Training and Scoring in SuperSimpleNet}
+\subsection{Training and Scoring in SSN}
 \label{sec:damage-supersimplenet-ablation}
 
-The SuperSimpleNet experiments explored whether adopting a single canonical camera pose could simplify wheel inspection by reducing variations in normal appearance. Since the models learn from clean images, a more consistent view could make it easier to distinguish localized damage from changes due to viewpoint. Pose A was therefore tested alongside the multi-pose setting, and a fixed crop before resizing was introduced to examine whether giving the wheel more of the input image would preserve useful damage detail and reduce the influence of the background. Table~\ref{tab:damage-ssn-acquisition-ablation} compares the four pose and crop combinations at \(256\times256\). The pose specific comparisons describe different image populations, while the crop comparison within each population shows the effect of concentrating the input on the wheel.
+The SSN experiments explored whether adopting a single canonical camera pose could simplify wheel inspection by reducing variations in normal appearance. Since the models learn from clean images, a more consistent view could make it easier to distinguish localized damage from changes due to viewpoint. Pose A was therefore tested alongside the setting using all poses, and a fixed crop before resizing was introduced to examine whether giving the wheel more of the input image would preserve useful damage detail and reduce the influence of the background. Table~\ref{tab:damage-ssn-acquisition-ablation} compares the four pose and crop combinations at \(256\times256\). The pose specific comparisons describe different image populations, while the crop comparison within each population shows the effect of concentrating the input on the wheel.
 
-Pose A with cropping achieved the highest Image AUROC and Pixel AP in this comparison. Cropping was particularly useful for localization on pose A, increasing test Pixel AP from 7.27\% to 19.49\%. The modest detection improvement from cropping the multi-pose inputs also indicates that removing background alone did not resolve the difficulty introduced by different views. Together, these results support the controlled pose A acquisition and cropped input used for the SSN configuration and subsequent experiments with the other models.
+Pose A with cropping achieved the highest Image AUROC and Pixel AP in this comparison. Cropping was particularly useful for localization on pose A, increasing test Pixel AP from 7.27\% to 19.49\%. The modest detection improvement from cropping the inputs from all poses also indicates that removing background alone did not resolve the difficulty introduced by different views. Together, these results support the controlled pose A acquisition and cropped input used for the SSN configuration and subsequent experiments with the other models.
 
 \begin{table}[ht!]
     \centering
@@ -287,11 +290,11 @@ Pose A with cropping achieved the highest Image AUROC and Pixel AP in this compa
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{SuperSimpleNet acquisition comparison (\%) at \(256\times256\), before changing the image score formulation.}
+    \caption{SSN acquisition comparison (\%) at \(256\times256\), before changing the image score formulation.}
     \label{tab:damage-ssn-acquisition-ablation}
 \end{table}
 
-The number of training epochs was extended to test whether the initial configuration needed more optimization, and the input was increased to \(384\times384\) to test whether additional spatial detail would improve localization. Table~\ref{tab:damage-ssn-training-ablation} shows that neither change improved validation image discrimination. At 200 epochs, the larger input increased test AUPRO but reduced Pixel AP, so its larger regional coverage came with less precise pixel localization. The 100 epoch setting with \(256\times256\) input size was chosen as the basis for the subsequent scoring and perturbation experiments.
+The number of training epochs was extended to test whether the initial configuration needed more optimization, and the input was increased to \(384\times384\) to test whether additional spatial detail would improve localization. Table~\ref{tab:damage-ssn-training-ablation} shows that neither change improved validation image discrimination. At 200 epochs, the larger input increased test AUPRO but reduced Pixel AP, so its larger regional coverage came with less precise pixel-level localization. The 100 epoch setting with \(256\times256\) input size was chosen as the basis for the subsequent scoring and perturbation experiments.
 
 \begin{table}[ht!]
     \centering
@@ -299,7 +302,7 @@ The number of training epochs was extended to test whether the initial configura
     \setlength{\tabcolsep}{4pt}
     \begin{tabular}{@{}c c c c c c@{}}
         \toprule
-        \textbf{Input}   & \shortstack{\textbf{Epochs}} & \shortstack{\textbf{Val Image}\\\textbf{AUROC}} & \shortstack{\textbf{Val}\\\textbf{Pixel AP}} & \shortstack{\textbf{Test}\\\textbf{Pixel AP}} & \shortstack{\textbf{Test}\\\textbf{AUPRO}} \\
+        \textbf{Input}   & \shortstack{\textbf{Epochs}} & \shortstack{\textbf{Val Image}\\\textbf{AUROC}} & \shortstack{\textbf{Val}\\\textbf{Pixel AP}} & \shortstack{\textbf{Test}\\\textbf{Pixel AP}} & \shortstack{\textbf{Test}\\\textbf{AUPRO@0.30}} \\
         \midrule
         \midrule
         \(256\times256\) & 100                          & 84.07                                           & 18.44                                        & 19.49                                         & 88.98                                      \\
@@ -308,7 +311,7 @@ The number of training epochs was extended to test whether the initial configura
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{SuperSimpleNet number of epochs and input resolution comparisons on cropped pose A images.}
+    \caption{SSN number of epochs and input resolution comparisons on cropped pose A images.}
     \label{tab:damage-ssn-training-ablation}
 \end{table}
 
@@ -328,13 +331,13 @@ The image score was then reconsidered because a small localized hole may produce
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{Image-score comparison on the same SuperSimpleNet run, without retraining.}
+    \caption{Image-score comparison on the same SSN run, without retraining.}
     \label{tab:damage-ssn-score-ablation}
 \end{table}
 
 The synthetic perturbations were also varied to test how their extent and location affected learning. Restricting Perlin perturbations to the target wheel was intended to focus training on the structure being inspected. Within this setting, lowering the Perlin threshold from 0.6 to 0.2 tested whether a larger perturbed region would provide a stronger training signal. The high-threshold run produced weak detection and localization, whereas the lower threshold substantially improved both (Table~\ref{tab:damage-ssn-perturbation-ablation}). A plausible explanation is that the combination of a high threshold and wheel restriction left too little useful anomalous content on the feature grid.
 
-Removing the wheel restriction at threshold 0.2 tested whether perturbations over a wider range of normal features would improve pixel discrimination. Validation Wheel Pixel AP increased from 15.45\% to 18.49\%, and test Pixel AP increased from 16.78\% to 19.10\%. Image detection decreased slightly, as did test AUPRO, indicating a compromise between precision and regional coverage. The unrestricted variant was chosen for its stronger localization precision.
+Removing the wheel restriction at threshold 0.2 tested whether perturbations over a wider range of normal features would improve pixel discrimination. Validation Pixel AP increased from 15.45\% to 18.49\%, and test Pixel AP increased from 16.78\% to 19.10\%. Image-level detection decreased slightly, as did test AUPRO, indicating a compromise between precision and regional coverage. The unrestricted variant was chosen for its stronger localization precision.
 
 \begin{table}[ht!]
     \centering
@@ -342,27 +345,27 @@ Removing the wheel restriction at threshold 0.2 tested whether perturbations ove
     \setlength{\tabcolsep}{4pt}
     \begin{tabular}{@{}c c c c c c@{}}
         \toprule
-        \shortstack{\textbf{Perlin}\\\textbf{threshold}} & \shortstack{\textbf{Wheel}\\\textbf{restriction}} & \shortstack{\textbf{Val Image}\\\textbf{AUROC}} & \shortstack{\textbf{Val Wheel}\\\textbf{Pixel AP}} & \shortstack{\textbf{Test Image}\\\textbf{AUROC}} & \shortstack{\textbf{Test}\\\textbf{Pixel AP}} \\
+        \shortstack{\textbf{Perlin}\\\textbf{threshold}} & \shortstack{\textbf{Wheel}\\\textbf{restriction}} & \shortstack{\textbf{Val Image}\\\textbf{AUROC}} & \shortstack{\textbf{Val}\\\textbf{Pixel AP}} & \shortstack{\textbf{Test Image}\\\textbf{AUROC}} & \shortstack{\textbf{Test}\\\textbf{Pixel AP}} \\
         \midrule
         \midrule
-        0.6                                              & Yes                                               & 54.69                                           & 0.20                                               & 55.73                                            & 0.29                                          \\
-        0.2                                              & Yes                                               & 94.07                                           & 15.45                                              & 83.13                                            & 16.78                                         \\
-        0.2                                              & No                                                & 93.35                                           & 18.49                                              & 82.72                                            & 19.10                                         \\
+        0.6                                              & Yes                                               & 54.69                                           & 0.20                                         & 55.73                                            & 0.29                                          \\
+        0.2                                              & Yes                                               & 94.07                                           & 15.45                                        & 83.13                                            & 16.78                                         \\
+        0.2                                              & No                                                & 93.35                                           & 18.49                                        & 82.72                                            & 19.10                                         \\
         \bottomrule
     \end{tabular}
     \vspace{5mm}
-    \caption{SuperSimpleNet perturbation comparisons (\%) on cropped pose A inputs, using the top-1\% image score and \(\sigma=4\). Wheel restriction applies to training perturbations.}
+    \caption{SSN perturbation comparisons (\%) on cropped pose A inputs, using the top-1\% image score and \(\sigma=4\). Wheel restriction applies to training perturbations.}
     \label{tab:damage-ssn-perturbation-ablation}
 \end{table}
 
-Finally, smoothing was checked to determine whether it could improve spatial consistency without affecting the selected image score. The validation sweep over \(\sigma=0,1,2,4\) favoured \(\sigma=4\) for both restricted and unrestricted perturbations, using Wheel Pixel AP for selection. Image metrics remained unchanged because the score was computed before smoothing. This supported using \(\sigma=4\) in the final SSN configuration.
+Finally, smoothing was checked to determine whether it could improve spatial consistency without affecting the selected image score. The validation sweep over \(\sigma=0,1,2,4\) favored \(\sigma=4\) for both restricted and unrestricted perturbations, using Pixel AP for selection. Image metrics remained unchanged because the score was computed before smoothing. This supported using \(\sigma=4\) in the final SSN configuration.
 
 \subsection{Task Adaptation and Spatial Resolution in TinyGLASS}
 \label{sec:damage-tinyglass-ablation}
 
-The first TinyGLASS experiment tested whether the constraints used to create artificial anomalies helped the model detect wheel damage. With the hypersphere constraint enabled, altered features were kept within a set distance range from a single centre representing normal appearance. This constraint was removed to test whether using that common centre limited the training examples that the model could learn from. GAS was still used, with local limits on the distance between each perturbed feature and its original normal feature. With the \(900\times900\) crop, removing the hypersphere constraint improved Pixel AP on both validation and test, as shown in Table~\ref{tab:damage-tinyglass-training-ablation}, supporting its removal from the subsequent configurations.
+The first TinyGLASS experiment tested whether the constraints used to create artificial anomalies helped the model detect wheel damage. With the hypersphere constraint enabled, altered features were kept within a set distance range from a single center representing normal appearance. This constraint was removed to test whether using that common center limited the training examples that the model could learn from. GAS was still used, with local limits on the distance between each perturbed feature and its original normal feature. With the \(900\times900\) crop, removing the hypersphere constraint improved Pixel AP on both validation and test, as shown in Table~\ref{tab:damage-tinyglass-training-ablation}, supporting its removal from the subsequent configurations.
 
-At the selected \(720\times720\) crop, LAS texture perturbations were compared with irregular, darkened hole-like regions restricted to the target wheel. This experiment tested whether training anomalies closer to the appearance of the target defect would improve detection and localization. The hole variant improved both Image AUROC and Pixel AP on validation and test, supporting the use of these task specific perturbations.
+At the selected \(720\times720\) crop, LAS texture perturbations were compared with irregular, darkened hole like regions restricted to the target wheel. This experiment tested whether training anomalies closer to the appearance of the target defect would improve detection and localization. The hole variant improved both Image AUROC and Pixel AP on validation and test, supporting the use of these task specific perturbations.
 
 \begin{table}[ht!]
     \centering
@@ -420,4 +423,4 @@ The resolution experiments also examined the trade-off between accuracy and comp
 
 With \(\sigma=1\) and layer2 alignment, increasing the input from \(256\times256\) to \(384\times384\) improved detection and localization, with a relative increase of 62.1\% in test Pixel AP. A further increase to \(512\times512\) reduced test Pixel AP by 7.6\%. Pooling to the layer3 grid reduced the number of patches to one quarter, with test Pixel AP decreasing by 5.1\% at \(384\times384\) but increasing by 14.7\% at \(512\times512\). The higher resolution was therefore useful when combined with pooling, which may reduce the influence of normal texture while retaining damage information. The reduced patch count lowers discriminator work and feature storage, while the backbone continues to process the full input.
 
-Smoothing was compared on the same checkpoints to assess whether localization could improve without further training. The validation sweep at \(256\times256\) with layer2 alignment favoured \(\sigma=1\) for regional coverage, so this setting was carried forward to TG-384. Increasing smoothing to \(\sigma=4\) produced small gains in validation and test Pixel AP for the \(384\times384\) layer3 grid and both \(512\times512\) grids. The \(512\times512\) configuration with layer3 alignment achieved the highest validation and test Pixel AP among the settings shown, with a further relative gain of about 2\% on test after stronger smoothing. Image detection remained unchanged because its score was computed on the native patch grid before smoothing. Together with the resource measurements in Table~\ref{tab:damage-reference-efficiency}, these results support retaining TG-384 for its lower computational cost and TG-512 for its stronger localization.
+Smoothing was compared on the same checkpoints to assess whether localization could improve without further training. The validation sweep at \(256\times256\) with layer2 alignment favored \(\sigma=1\) for regional coverage, so this setting was carried forward to TG-384. Increasing smoothing to \(\sigma=4\) produced small gains in validation and test Pixel AP for the \(384\times384\) layer3 grid and both \(512\times512\) grids. The \(512\times512\) configuration with layer3 alignment achieved the highest validation and test Pixel AP among the settings shown, with a further relative gain of about 2\% on test after stronger smoothing. Image-level detection remained unchanged because its score was computed on the native patch grid before smoothing. Together with the resource measurements in Table~\ref{tab:damage-reference-efficiency}, these results support retaining TG-384 for its lower computational cost and TG-512 for its stronger localization.

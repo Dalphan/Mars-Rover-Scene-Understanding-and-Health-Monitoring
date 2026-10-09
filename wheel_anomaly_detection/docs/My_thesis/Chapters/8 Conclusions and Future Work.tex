@@ -1,1 +1,42 @@
-\chapter{Conclusions and Future Work}
+\chapter{Conclusions and Future Work}\label{chap:conclusions-future-work}
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+This thesis investigated semantic scene understanding and wheel damage inspection as complementary foundations for greater rover autonomy. The work examined how useful visual information could be obtained within limited computational resources, while developing a synthetic data source for the inspection of visible wheel perforations.
+
+For scene understanding, the comparison of segmentation architectures and reduced-precision deployments identified configurations suited to different accuracy and resource requirements. QAT SegFormer-B0 achieved the highest S5Mars test mIoU, at 76.93\%, whereas QAT DeepLabV3+ with MobileNetV2 required the least measured GPU energy per image, as shown in Section~\ref{sec:quantization-results}. The experiments showed that quantization could reduce inference costs while preserving segmentation accuracy, but the outcome depended on the model and the quantization method. Here, INT8 denotes selective mixed-precision execution, with some computations kept in floating point. These findings inform the design of future onboard perception modules that supply terrain information for navigation within a constrained computational budget.
+
+Beyond the S5Mars experiments, the separate MarsSeg tests showed better transfer between MSL and MER for the SegFormer-B0 configuration than for the tested CNNs, although its mIoU remained below the target trained reference models (Section~\ref{sec:marsseg-cross-mission-generalization}). These findings concern separately trained models, highlighting cross-mission generalization as a further consideration in model selection.
+
+The synthetic data contribution was an automated Blender pipeline and an annotated dataset of 10,000 images based on a Curiosity asset, described in Section~\ref{sec:final-synthetic-dataset}. The dataset provided normal observations for training and matched pairs of normal and damaged images for evaluation, with automatically generated wheel and anomaly masks. This construction made it possible to study visible perforations under controlled variations in acquisition and surface appearance, and provides a reusable basis for extending inspection research without manually annotating each rendered image.
+
+The inspection study evaluated and adapted four established model families to wheel perforations under a normal-only training setting: PatchCore, EAD-S, SSN, and TinyGLASS\@. On the pose A test subset, PC-L achieved the strongest image discrimination, with an Image AUROC of 86.43\%, while TG-384 offered the lowest measured inference resource requirements (Section~\ref{sec:damage-model-comparison}). Evaluating detection and localization separately showed that better image ranking did not necessarily imply more precise defect maps. These findings support the development of onboard screening that could flag suspected damage without requiring human review of every image, while spatial maps could guide targeted inspection.
+
+These inspection findings concern synthetic images of a single Curiosity asset, with the main comparison restricted to pose A, and their transfer to real images remains to be validated. Image AUROC measures how well the scores rank damaged and normal observations, but does not establish missed defect or false alarm rates at an operational threshold. Across both branches, energy measurements cover inference on a T4 GPU rather than the complete system, excluding CPU processing, preprocessing, and data-transfer costs.
+
+Together, these contributions provide an experimental basis for developing rover autonomy that accounts for both the surrounding terrain and visible wheel damage. Building on these results, future systems could use terrain labels to support navigation decisions and damage cues to prioritize closer wheel inspection, potentially allowing visual assessments to be performed locally.
+
+\section{Future Work}
+\label{sec:future-work}
+
+Further work should establish whether the inspection methods evaluated on synthetic data can distinguish visible perforations from normal wheel appearance in real rover images, and whether lightweight segmentation models retain accuracy across acquisition conditions. This motivates real image validation and domain adaptation, alongside further investigation of segmentation efficiency and small-defect localization. Extending damage coverage and connecting the two branches would then allow the framework to be evaluated as a complete pipeline, including its computational requirements on representative edge hardware.
+
+\begin{itemize}
+
+      \item \textbf{Real-Image Validation and Domain Adaptation.}
+            The synthetic dataset provides a controlled setting for exploring the inspection problem and identifying promising approaches, while an annotated real wheel dataset would allow these findings to be assessed on actual rover images. This is particularly important because the evaluated detectors learn or store a reference for normal appearance from the training images, so differences between rendered and real observations may produce anomaly responses unrelated to perforations. Real data should therefore include normal and damaged observations, allowing direct synthetic-to-real transfer to be compared with adaptation using normal real images.
+
+      \item \textbf{Lightweight Segmentation and Cross-Mission Generalization.}
+            Further work could compare new lightweight architectures and alternative quantization techniques, evaluating mIoU alongside latency, memory, and energy. The MarsSeg findings motivate evaluating transfer across missions alongside in-domain accuracy, including whether reduced-precision execution preserves that transfer. Augmentation policies should also be tailored to the acquisition setting, preserving meaningful scene layout while covering plausible changes in image appearance or viewpoint.
+
+      \item \textbf{Broader Damage Coverage and Small-Defect Localization.}
+            The dataset could be extended to multiple perforations, partial occlusions, other damage types, and additional rover assets, with revised visibility checks and annotations that distinguish damage presence from its visible extent. Local high resolution or multiscale processing should also be investigated to improve small-defect localization without increasing every input's resolution. Coarse-to-fine processing should be checked for missed small holes during region selection. Comparing methods on the same images would show whether better localization justifies the extra processing cost.
+
+      \item \textbf{Integration of the Framework Branches.}
+            Integration could use the predicted \emph{Rover} region to guide a dedicated wheel localizer, since the current semantic category does not identify individual rover parts. This would require evaluating segmentation on inspection views and assessing how missed wheels or inaccurate crops affect damage detection. The fixed pose A crop provides a reference for comparing automatic region selection, allowing its contribution to inspection quality and its additional computational cost to be assessed within the complete pipeline.
+
+      \item \textbf{Deployment and Operational Validation.}
+            Deployment should be evaluated on representative edge hardware through end-to-end latency, memory, and energy measurements, including preprocessing, transfers, and CPU contributions. Further experiments could investigate detector quantization, including lower-precision descriptors and distance computations in PatchCore where supported, while repeated runs would assess the stability of performance and resource measurements. Operational evaluation should use image and pixel thresholds selected on validation data according to explicit false alarm and sensitivity requirements, followed by independent testing of false alarms and missed defects.
+
+\end{itemize}
