@@ -1,8 +1,8 @@
 # Indice operativo — Anomaly Detection 2
 
-Questo e il primo file da consultare per qualsiasi lavoro sulla pipeline
-Blender in `outputs/anomaly_detection_2`. Serve a trovare la fonte corretta
-senza rileggere tutti i documenti o affidarsi a note ormai superate.
+Questo e il punto di ingresso per la pipeline Blender e il dataset in
+`outputs/anomaly_detection_2`. Le note dei run conclusi sono state accorpate
+nei documenti tecnici e nel riepilogo del dataset finale.
 
 ## Instradamento per argomento
 
@@ -11,143 +11,80 @@ senza rileggere tutti i documenti o affidarsi a note ormai superate.
 | Asset Curiosity, nomi ruote e gerarchia | [README.md](README.md) | Struttura semantica, assi, modifiche al GLB e limiti dell'asset |
 | DTM/ortho HiRISE e terreno Gale | [gale_terrain.md](gale_terrain.md) | Sorgenti geospaziali, crop, CRS, texture e scena Gale |
 | Patch base 4x4 m | [microterrain_level1.md](microterrain_level1.md) | Geometria deterministica e contratto Level 1 |
-| Granelli, frammenti e rocce | [microterrain_level2.md](microterrain_level2.md) | Distribuzioni, classi dimensionali e Geometry Nodes Level 2 |
+| Granelli, frammenti e rocce | [microterrain_level2.md](microterrain_level2.md) | Distribuzioni e Geometry Nodes Level 2 |
 | Dettaglio fine del suolo | [microterrain_level3.md](microterrain_level3.md) | Polvere, albedo, roughness e bump Level 3 |
 | Inquadrature delle ruote | [wheel_camera_pose_pilot.md](wheel_camera_pose_pilot.md) | Pose A/C1/C2/D, distanze, FOV e gate di framing |
-| Rotazione ruote e visibilita futura anomalie | [wheel_pose_sampling.md](wheel_pose_sampling.md) | Roll, trasformazioni baseline e vincoli anomaly-aware |
-| Illuminazione marziana | [mars_lighting_pilot.md](mars_lighting_pilot.md) | Preset dusty/clear, ombre L5 e jitter luce |
-| Graffi e usura non anomala | [wheel_surface_wear_pilot.md](wheel_surface_wear_pilot.md) | Maschere light/evident, proiezione e superfici interessate |
-| Distribuzioni e jitter complessivi | [domain_randomization.md](domain_randomization.md) | Pesi, seed, pair-lock, retry camera e allineamento alla patch |
-| Generazione automatica clean | [clean_batch_generator.md](clean_batch_generator.md) | Config, piano, manifest, pass RGB/mask, resume e validator |
-| Prestazioni renderer clean | [clean_performance_benchmark.md](clean_performance_benchmark.md) | Cache geometrica e pipeline sovrapposta CPU/GPU |
-| Fori paired clean/anomaly | [wheel_hole_anomaly.md](wheel_hole_anomaly.md) | Sampling, geometria ibrida, AOV mask, gate, pilot e drift |
-| Prestazioni renderer paired | [anomaly_performance_benchmark.md](anomaly_performance_benchmark.md) | Benchmark 24 coppie, cache geometrica, profiling e pipeline CPU/GPU |
-| Composizione e split dataset | [dataset_composition_and_splits.md](dataset_composition_and_splits.md) | Pool canonico, 10.000 immagini, split 70/10/20 e quote minime |
-| Pre-bulk da 200 immagini | [prebulk_200.md](prebulk_200.md) | Piano stratificato, run validati, tempi reali e pool parziale riusabile |
-| Audit pre-bulk e benchmark PNG | [prebulk_quantitative_audit.md](prebulk_quantitative_audit.md) | Integrita raster, distribuzioni, duplicati, margini gate e costo reale della codifica PNG |
-| Piano completo da 10.000 immagini | [bulk_plan_v1.md](bulk_plan_v1.md) | Indici globali, riuso pre-bulk, split pre-render, quote esatte e config dei 9.800 rimanenti |
-| Prima wave bulk da 1.000 | [bulk_wave_001.md](bulk_wave_001.md) | Run clean train in background, log, output e comando di resume |
-| Seconda wave bulk da 500 | [bulk_wave_002.md](bulk_wave_002.md) | Secondo blocco clean train, indici, log e resume |
-| Terza wave bulk da 2.500 | [bulk_wave_003.md](bulk_wave_003.md) | Terzo blocco clean train, 25 chunk, log e resume |
-| Quarta wave bulk da 2.200 | [bulk_wave_004.md](bulk_wave_004.md) | Quarto blocco clean train, 22 chunk, log e resume |
-| Sequenza bulk da 2.500 | [bulk_sequence_005.md](bulk_sequence_005.md) | Residuo clean train/validation e 675 coppie validation/test in esecuzione seriale |
-| Wave paired test da 220 coppie | [bulk_wave_007.md](bulk_wave_007.md) | Run da circa 90 minuti, 440 immagini test e monitoraggio |
-| Seconda wave paired test da 220 | [bulk_wave_008.md](bulk_wave_008.md) | Ulteriori 440 immagini test; restano 110 coppie |
-| Wave finale da 110 coppie | [bulk_wave_009.md](bulk_wave_009.md) | Ultimi 220 render pianificati e passaggio all'assemblaggio finale |
-| Dataset finale assemblato | [final_dataset_assembly.md](final_dataset_assembly.md) | Vista ordinata hardlink, manifest, split, conteggi e regole d'uso |
-| Export per Kaggle | [final_dataset_assembly.md](final_dataset_assembly.md#export-kaggle) | ZIP minimale, CSV dei campioni e README esterno |
+| Roll e visibilita delle anomalie | [wheel_pose_sampling.md](wheel_pose_sampling.md) | Baseline, trasformazioni e vincoli anomaly-aware |
+| Illuminazione marziana | [mars_lighting_pilot.md](mars_lighting_pilot.md) | Preset dusty/clear, ombre e jitter |
+| Graffi e usura non anomala | [wheel_surface_wear_pilot.md](wheel_surface_wear_pilot.md) | Maschere light/evident e superfici interessate |
+| Distribuzioni e jitter | [domain_randomization.md](domain_randomization.md) | Pesi, seed, pair-lock, retry camera e patch |
+| Generazione automatica clean | [clean_batch_generator.md](clean_batch_generator.md) | Piano, manifest, RGB/mask, resume e validator |
+| Fori paired clean/anomaly | [wheel_hole_anomaly.md](wheel_hole_anomaly.md) | Geometria, AOV mask, gate produttivi, pilot T3 e drift |
+| Prestazioni clean e paired | [performance_and_validation.md](performance_and_validation.md) | Cache, pipeline CPU/GPU, regressioni e limiti dei confronti |
+| Codifica PNG | [performance_and_validation.md#codifica-png](performance_and_validation.md#codifica-png) | Benchmark lossless e decisione sulla compressione |
+| Composizione e split | [dataset_composition_and_splits.md](dataset_composition_and_splits.md) | Pool, 10.000 immagini, split e quote minime |
+| Piano deterministico v1 | [bulk_plan_v1.md](bulk_plan_v1.md) | Indici globali, riuso pre-bulk e quote pre-render |
+| Pre-bulk e audit quantitativo | [final_dataset_assembly.md#pre-bulk-riusato-nel-dataset-finale](final_dataset_assembly.md#pre-bulk-riusato-nel-dataset-finale) | 200 immagini riusate, tempi, distribuzioni e controlli raster |
+| Provenienza delle wave completate | [final_dataset_assembly.md#provenienza-dei-run-completati](final_dataset_assembly.md#provenienza-dei-run-completati) | Run, split, conteggi, tempi e contrasto |
+| Dataset finale e uso dei file | [final_dataset_assembly.md](final_dataset_assembly.md) | Hardlink, manifest, split, export e pulizia locale |
 
 ## Percorsi rapidi
 
-- Modifiche al generatore batch: leggere nell'ordine
-  [clean_batch_generator.md](clean_batch_generator.md),
-  [domain_randomization.md](domain_randomization.md) e, se cambia la geometria
-  della posa, [wheel_pose_sampling.md](wheel_pose_sampling.md).
-- Modifiche a fori, maschere anomalia o batch paired: leggere
-  [wheel_hole_anomaly.md](wheel_hole_anomaly.md), poi
+- Generatore clean: [clean_batch_generator.md](clean_batch_generator.md),
+  [domain_randomization.md](domain_randomization.md), poi
+  [wheel_pose_sampling.md](wheel_pose_sampling.md) se cambia la posa.
+- Fori o paired: [wheel_hole_anomaly.md](wheel_hole_anomaly.md), poi
   [domain_randomization.md](domain_randomization.md) e
   [wheel_pose_sampling.md](wheel_pose_sampling.md).
-- Modifiche alla composizione bulk o agli split: leggere
-  [dataset_composition_and_splits.md](dataset_composition_and_splits.md), poi
-  [clean_batch_generator.md](clean_batch_generator.md) e
-  [wheel_hole_anomaly.md](wheel_hole_anomaly.md).
-- Modifiche al terreno: leggere [gale_terrain.md](gale_terrain.md), poi i tre
-  documenti microterrain nell'ordine Level 1, Level 2, Level 3.
-- Modifiche visive alle ruote: leggere prima il documento della camera, poi
-  illuminazione e usura.
-- Modifiche ai nomi o alla gerarchia del rover: partire sempre da
-  [README.md](README.md) e rieseguire i validator semantici.
+- Composizione o split: [dataset_composition_and_splits.md](dataset_composition_and_splits.md),
+  [bulk_plan_v1.md](bulk_plan_v1.md) e
+  [final_dataset_assembly.md](final_dataset_assembly.md).
+- Terreno: [gale_terrain.md](gale_terrain.md), quindi i documenti
+  microterrain Level 1, 2 e 3 nell'ordine della tabella.
+- Modifiche visive: documenti di camera, illuminazione e usura.
+- Nomi o gerarchia del rover: [README.md](README.md) e validator semantici.
 
 ## Stato autorevole corrente
 
-- Branch: `anomaly-detection-2`.
+- Branch di generazione: `anomaly-detection-2`.
 - Sorgente clean immutabile:
-  `outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend`.
-- SHA-256 sorgente:
-  `9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030`.
-- Run clean verificato:
-  `outputs/anomaly_detection_2/clean_batch/smoke_v2_terrain_contact_final`.
-- Probe di drift verificato:
-  `outputs/anomaly_detection_2/clean_batch/drift_probe_release`.
-- Pilot paired `hole` definitivo verificato (foro passante, contatto terreno,
-  bordo R4 robusto e pareti a pieghe locali T3):
-  `outputs/anomaly_detection_2/anomaly_batch/hole_pilot_v1_canonical_t3`.
-- Approvazione visiva T3 completata sulle quattro contact sheet A/C1/C2/D.
-- Probe A-B-A paired definitivo verificato:
-  `outputs/anomaly_detection_2/anomaly_batch/drift_probe_v1_t3_final`.
-- Benchmark paired completato: `cache_64` e la candidata produttiva perche
-  conserva RGB e mask byte-identici; la promozione definitiva resta
-  subordinata al pre-bulk.
-- Regressione paired post-pipeline verificata su 24 coppie:
-  `outputs/anomaly_detection_2/benchmark/anomaly_24/cache_64_regression_verified`.
-- Benchmark clean completato: la cache e neutra; la pipeline CPU/GPU con coda
-  limitata a 4 riduce del 33,75% il tempo interno ed e abilitata nel config
-  clean, con output byte-identici. Resta da confermare sul pre-bulk.
-- Composizione approvata: 10.000 immagini, split 70/10/20, train clean-only e
-  coppie indivisibili in validation/test.
-- Pre-bulk completato: 150 clean standalone e 25 coppie, per 200 immagini
-  complessive, indicizzate nel pool parziale `prebulk_200_v1`. Tempo reale tra
-  i timestamp dei due run: 29 min 43 s. Il bulk restante non e stato avviato.
-- Audit quantitativo pre-bulk superato su 400 raster senza errori, artefatti
-  orfani o duplicati. Benchmark PNG concluso: zlib level 1 non viene promosso,
-  perche il risparmio end-to-end stimato e inferiore allo 0,4% a fronte di
-  circa il 59% di spazio in piu.
-- Piano bulk v1 materializzato: 8.750 unita/10.000 immagini, delle quali 200
-  gia prodotte e 9.800 pending. Split, indici e quote congiunte sono fissati
-  prima dei render; tutte le celle di evaluation raggiungono il minimo 1 in
-  validation e 2 in test.
-- Bulk wave 001 completata e validata: 1.000 RGB e 1.000 target mask clean
-  train, matrice 24/24, durata circa 1 h 57 min.
-- Bulk wave 002 completata e validata: ulteriori 500 clean train in circa
-  58 min 12 s.
-- Bulk wave 003 completata e validata: 2.500 clean train in circa 4 h 52 min
-  43 s.
-- Bulk wave 004 completata e validata: 2.200 clean train in circa 4 h 16 min
-  55 s. Le prime quattro wave contengono complessivamente 6.200 clean train.
-- Bulk sequence 005 avviata: 1.150 clean residue e 675 coppie, per 2.500
-  immagini. I due step sono seriali e resumable; al termine train e validation
-  saranno completi e resteranno 1.100 immagini paired test.
-- Il blocco clean della sequence 005 e completo e validato. Due tentativi
-  paired hanno esposto un gate mediano ridondante e fragile (`9/255` e poi
-  `8/255`, con oltre l'86% della mask gia sopra `6/255`). Le directory fallite
-  sono state rimosse e il run definitivo `wave_006_pairs_675_final` riparte
-  con mediana coerente a `6/255`; tutti gli altri gate restano invariati.
-- Il successivo tentativo paired si e fermato a `changed_fraction=0,6394`
-  contro `0,65`. La soglia produttiva e stata fissata a `0,58` su decisione
-  esplicita; il run sostitutivo da zero e `wave_006_pairs_675_cf58`.
-- Il run `cf58` ha mostrato un caso strutturalmente valido a basso contrasto.
-  I gate fotometrici sono ora diagnostici (`normal_contrast`/`low_contrast`),
-  mentre `no_effect` e tutti i gate strutturali restano bloccanti. Il run
-  sostitutivo e `wave_006_pairs_675_photometric_diagnostic`.
-- Il run diagnostico e stato ripreso in sicurezza dopo un crash del PC: nessuna
-  coppia risultava committata e gli artefatti orfani vengono rigenerati; il
-  fingerprint del resume coincide con piano, configurazioni e codice correnti.
-- Run diagnostico completato e validato: 675/675 coppie, 665 normal-contrast e
-  10 low-contrast.
-- Wave 007 completata e validata: 220/220 coppie, 214 normal-contrast e 6
-  low-contrast, durata interna circa 77 minuti.
-- Wave 008 completata e validata: 220/220 coppie, 214 normal-contrast e 6
-  low-contrast, durata interna circa 77 minuti.
-- Wave 009 finale completata e validata: 110/110 coppie, 109 normal-contrast e
-  1 low-contrast, durata interna circa 41 minuti. Non restano render pending.
-- Dataset finale assemblato e verificato in
-  `outputs/anomaly_detection_2/datasets/curiosity_wheel_hole_v1_10000`: 8.750
-  unita, 10.000 RGB, 10.000 target-wheel mask e 1.250 anomaly mask. La vista
-  ordinata usa hardlink verso i run immutabili e rispetta gli split
-  7.000/1.000/2.000 senza duplicare lo spazio dei raster.
-- Pulizia post-assemblaggio completata: rimossi benchmark raster, revisioni
-  visive superate, smoke v1, dipendenze generate e log/PID falliti. Run bulk,
-  pre-bulk, pilot T3, probe di drift e sorgenti riproducibili sono conservati.
-- Export Kaggle verificato in
-  `outputs/anomaly_detection_2/kaggle_export/curiosity_wheel_hole_v1_10000`:
-  un solo ZIP con 21.250 PNG e `samples.csv`; README mantenuto fuori dallo ZIP.
+  `outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend`,
+  SHA-256 `9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030`.
+- Riferimenti clean verificati: `clean_batch/smoke_v2_terrain_contact_final`
+  e `clean_batch/drift_probe_release`, sotto `outputs/anomaly_detection_2/`.
+- Riferimenti paired verificati: `anomaly_batch/hole_pilot_v1_canonical_t3`
+  e `anomaly_batch/drift_probe_v1_t3_final`. Le quattro contact sheet T3
+  A/C1/C2/D sono approvate; il drift A-B-A e verificato.
+- La produzione usa cache geometrica paired e pipeline CPU/GPU con coda
+  limitata a 4; sul clean la cache e neutra. Misure e limiti sono nel
+  [riepilogo prestazioni](performance_and_validation.md).
+- Il bulk e completo: 8.750 unita e 10.000 RGB, split 7.000/1.000/2.000,
+  train clean-only e coppie indivisibili in validation/test. Il pre-bulk
+  di 150 clean e 25 coppie e incluso; non restano render pending.
+- La vista canonica e
+  `outputs/anomaly_detection_2/datasets/curiosity_wheel_hole_v1_10000`:
+  10.000 RGB, 10.000 target-wheel mask e 1.250 anomaly mask, tramite hardlink
+  verso i run immutabili. Il samples.csv originale e conservato nella root.
+- Nel bulk il contrasto e diagnostico: normal_contrast e low_contrast sono
+  registrati; no_effect e tutti i gate strutturali restano bloccanti.
+  Soglie, motivazione e migrazione sono nel
+  [contratto produttivo](wheel_hole_anomaly.md#gate-fotometrici-produttivi).
+- La pulizia del 14 ottobre 2026 ha rimosso output legacy, copie QA,
+  anteprime, backup .blend1, log e ambiente .venv. Dataset, run bulk/pre-bulk,
+  scene correnti, pilot canonici e report sperimentali sono conservati.
+  L'export ZIP Kaggle e stato rimosso, conservandone indice e metadati.
+  I controlli hanno confermato 21.250 raster presenti e indici invariati.
+- La successiva pulizia degli script ha rimosso 30 file della pipeline legacy,
+  3 strumenti di analisi benchmark e 4 launcher PowerShell in background.
+  Restano 63 file di generazione, inclusi i generatori correnti, la catena di
+  ricostruzione della scena, i validator, le anteprime e gli script per le
+  figure della tesi. I batch e l'assemblaggio si avviano con i comandi Python.
 
 ## Regola di manutenzione
 
-Quando viene aggiunta una nuova milestone o un documento diventa obsoleto,
-aggiornare prima questo indice. I dettagli tecnici devono restare nel documento
-specifico: qui vanno mantenuti soltanto instradamento e stato autorevole.
+Aggiornare questo indice quando cambia una milestone. Mantenere qui
+instradamento e stato attuale; dettagli, misure e motivazioni restano nei
+documenti specifici, evitando nuove pagine di solo avanzamento dei run.
 
-I file in [`docs/archive/legacy_blender`](../archive/legacy_blender/README.md) sono un archivio della
-pipeline legacy: non devono essere letti o aggiornati per le normali milestone
-di `anomaly_detection_2`, salvo che serva ricostruire una decisione storica.
+L'archivio locale `docs/archive/legacy_blender` e stato rimosso durante la
+pulizia autorizzata. Le versioni storiche restano recuperabili da Git.

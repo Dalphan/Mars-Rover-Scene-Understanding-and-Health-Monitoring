@@ -16,7 +16,7 @@ coppie. L'approvazione visiva delle quattro contact sheet T3 e completata.
 - Probe A-B-A:
   `outputs/anomaly_detection_2/anomaly_batch/drift_probe_v1_t3_final/drift_report.json`
 - Benchmark prestazioni:
-  [anomaly_performance_benchmark.md](anomaly_performance_benchmark.md)
+  [benchmark paired](performance_and_validation.md#benchmark-paired)
 
 ## Componenti autorevoli
 
@@ -220,6 +220,68 @@ reintrodurre una parete profonda uniforme. Il tentativo fallito e documentato
 qui come evidenza del comportamento fail-closed; i relativi artefatti parziali
 sono stati rimossi dopo la promozione del pilot T3 canonico.
 
+## Gate fotometrici produttivi
+
+Il pilot T3 resta congelato in `configs/blender/wheel_hole_anomaly.json`,
+con soglie fail-closed di changed fraction 0,65 e mediana 10/255.
+I risultati visivi e numerici del pilot sopra riportati mantengono quel
+contratto. Il bulk v1 usa invece
+`configs/blender/wheel_hole_anomaly_dataset_v1.json`, la cui policy
+`photometric_gates.failure_policy` e `diagnostic`.
+
+Le soglie del bulk sono changed pixel 6/255, changed fraction minima 0,58
+e mediana minima 6/255. Servono a classificare il contrasto:
+
+- `normal_contrast`: changed fraction e mediana superano entrambe le soglie;
+- `low_contrast`: esiste un effetto osservabile ma almeno una delle due
+  misure resta sotto soglia; il campione e accettabile se tutti i gate
+  bloccanti restano validi;
+- `no_effect`: manca l'effetto richiesto e la coppia viene rifiutata.
+
+Restano bloccanti maschera binaria, componente unica, area e lato corto
+minimi, inclusione nella target ROI, localita dell'energia, area massima
+dell'effetto e `nonzero_effect`. Quest'ultimo richiede energia totale
+positiva e almeno un pixel del frame con delta di almeno 6/255. La soglia
+di energia locale resta 0,99, con dilatazione massima di 16 px; la ROI
+richiede almeno 0,98 e l'effetto non puo superare 0,12 del frame.
+Renderer e validator registrano le misure e controllano la coerenza degli
+stati; il basso contrasto non rende ammissibili difetti strutturali o
+coppie prive di differenza. Le soglie non vengono ricalibrate per campione.
+
+### Evidenza che ha portato alla policy
+
+| Caso | Misura registrata | Decisione nella sequenza dei tentativi |
+|---|---|---|
+| `dr_200001` | mediana 9/255 contro 10/255; 86,44% della mask sopra 6/255; gate geometrici e di localita validi | primo passaggio della mediana a 9/255, confermato da retry identico |
+| `dr_200011` | mediana 8/255; 86,57% della mask sopra 6/255; altri gate validi | mediana portata a 6/255, coerente con changed pixel; con almeno il 65% sopra soglia la mediana non poteva contraddire il gate principale |
+| `dr_200012` | changed fraction 0,6394 contro 0,65; mediana e altri gate validi | minimo portato a 0,58 su decisione esplicita |
+| `dr_200060` | changed fraction 0,3937 e mediana 4/255; foro strutturalmente valido | separazione definitiva tra contrasto diagnostico e requisiti bloccanti |
+
+Il caso `dr_200060`, raggiunto dopo 49 coppie del tentativo `cf58`, ha
+mostrato che luce, polvere e sfondo possono produrre fori validi a basso
+contrasto. Questa e la motivazione della policy diagnostica, invece di
+ulteriori correzioni delle soglie per singolo campione.
+
+I tentativi falliti sono stati rimossi su richiesta, inclusa la run da
+18 coppie. Le denominazioni intermedie `wave_006_pairs_675_final` e
+`wave_006_pairs_675_cf58` appartengono a quella storia; il run completo
+conservato e `wave_006_pairs_675_photometric_diagnostic`.
+
+### Ripartenza e provenienza
+
+Dopo un arresto del PC durante il primo chunk diagnostico, il run e stato
+ripreso con resume. Il manifest non conteneva ancora coppie committate;
+tre artefatti orfani per pass erano gia nei percorsi finali e sono stati
+rigenerati deterministicamente. Fingerprint, piano, configurazioni e codice
+coincidevano, quindi non e stato necessario eliminare il run.
+
+Il resume conserva soltanto record committati e coerenti con il fingerprint;
+la sola presenza di file o lo stato complete della sequenza non sostituisce
+i validator. Per 1.225 coppie il contratto e cambiato dopo la creazione del
+piano: l'[assemblatore finale](final_dataset_assembly.md#nota-sui-pair-lock-storici)
+conserva il pair-lock effettivo e quello pianificato, senza cambiare split,
+sample index o categorie semantiche.
+
 ## Limiti
 
 - Una sola classe: `hole`.
@@ -228,5 +290,6 @@ sono stati rimossi dopo la promozione del pilot T3 canonico.
 - Nessuna garanzia di pixel identity tra GPU/driver differenti.
 - Il rapporto clean/anomaly e gli split sono definiti nel contratto dataset;
   render bulk ed export Anomalib/MVTec restano fuori scope di questa milestone.
-- Le coppie dovranno restare nello stesso split futuro.
-- Il render bulk non e ancora stato avviato.
+- Le coppie restano indivisibili nello stesso split.
+- Il bulk v1 e concluso: conteggi, split e run sono documentati
+  nell'[assemblaggio finale](final_dataset_assembly.md).

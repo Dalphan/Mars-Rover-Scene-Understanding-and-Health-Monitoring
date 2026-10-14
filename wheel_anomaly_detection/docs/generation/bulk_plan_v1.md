@@ -2,10 +2,14 @@
 
 ## Stato
 
-Piano completo materializzato e validato. La prima wave bulk da 1.000 clean
-train e stata avviata ed e documentata in [bulk_wave_001.md](bulk_wave_001.md).
-Il piano include i 200 raster RGB del pre-bulk e assegna in anticipo ogni
-unita a train, validation o test.
+Piano completo materializzato e validato; l'esecuzione e conclusa e il dataset
+e assemblato. La [provenienza dei run](final_dataset_assembly.md#provenienza-dei-run-completati)
+riassume i blocchi completati. Il piano include i 200 raster RGB del pre-bulk
+e assegna in anticipo ogni unita a train, validation o test.
+
+I conteggi pending e i config remaining sotto descrivono la situazione al
+momento della materializzazione del piano, rimasto immutabile. Non indicano
+render ancora da eseguire.
 
 Output autorevole:
 `outputs/anomaly_detection_2/datasets/curiosity_wheel_hole_v1_10000/planning/bulk_v1`.

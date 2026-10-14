@@ -29,7 +29,12 @@ cd wheel_anomaly_detection
 ```text
 semantic_segmentation/     S5Mars data analysis, model training, and evaluation
 wheel_anomaly_detection/   Blender data generation and anomaly-detection research
+thesis/                   LaTeX dissertation and presentation materials
 ```
+
+The dissertation and its presentation are shared by both projects and live in
+[`thesis`](thesis/README.md). LaTeX sources are under `thesis/latex/`; the
+VisionLab PowerPoint template is under `thesis/presentation/`.
 
 Original 3D assets, generated datasets, checkpoints, logs, and other runtime
 artifacts remain local and are excluded from version control.

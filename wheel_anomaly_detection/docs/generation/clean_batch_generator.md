@@ -22,7 +22,7 @@ Il post-processing PNG e sovrapposto al render successivo tramite un singolo
 worker CPU e una coda limitata a quattro campioni. Il worker non usa mai `bpy`:
 esegue soltanto split RGB/mask, compressione, verifica, hash e commit atomico.
 Il benchmark dedicato e documentato in
-[clean_performance_benchmark.md](clean_performance_benchmark.md).
+[benchmark clean](performance_and_validation.md#benchmark-clean).
 
 Il rover viene traslato temporaneamente in XY per portare la ruota target
 sull'anchor approvato di `wheel_middle_left`; terreno e georeferenziazione

@@ -41,3 +41,8 @@ semantic_segmentation/docs/figures/*
 *.bst
 *.cls
 *.out
+
+# Required local sources for the dissertation template.
+!/thesis/latex/sapthesis.bst
+!/thesis/latex/sapthesis.cls
+!/thesis/latex/sapthesis.layout
