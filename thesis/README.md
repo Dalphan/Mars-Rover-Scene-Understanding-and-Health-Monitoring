@@ -1,32 +1,59 @@
-# Thesis and presentation
+# Dissertation and Presentation Materials
 
-Shared dissertation materials live here, alongside the two independent code
-projects.
+This directory contains the dissertation
+**Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection
+for Martian Rovers**, together with reusable figures and presentation materials
+shared by the two code projects.
 
-```text
-thesis/
-  latex/          Dissertation sources, chapters, figures and compiled PDF
-  presentation/   VisionLab PowerPoint template and future presentation
-  figures/        Reusable chart sources, data and editable diagrams
-  research/       Preserved writing-evidence records
+## Contents
+
+| Directory | Contents |
+| --- | --- |
+| `latex/` | Main document, chapters, bibliography, images, Sapthesis resources and a compiled PDF snapshot. |
+| `presentation/` | VisionLab PowerPoint template for the thesis presentation. |
+| `figures/` | Editable diagrams, chart renderers and curated plotting data. |
+| `research/` | Selected writing-evidence records. |
+
+## Building the dissertation
+
+The main source is
+[the LaTeX document](<latex/Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers.tex>);
+a [compiled PDF snapshot](<latex/Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers.pdf>)
+is also included. The PDF is a saved research artifact; compile the sources
+to incorporate later edits.
+
+Use a LaTeX distribution with the packages declared in the main document.
+The checked-in source selects pdfLaTeX and the bundled Sapthesis class.
+From the repository root:
+
+```bash
+cd thesis/latex
+pdflatex -interaction=nonstopmode -halt-on-error "Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers.tex"
 ```
 
-The main document is
-[the LaTeX thesis](<latex/Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers.tex>).
-Compile it from `thesis/latex/` so that the relative chapter and image paths
-resolve. The former `wheel_anomaly_detection/docs/My_thesis/` directory was
-moved here intact. The local cleanup on 14 October 2026 removed compilation
-auxiliaries while retaining the dissertation sources, figures, compiled
-thesis PDF and Sapienza class/style resources. The separate template manual
-was removed during the subsequent documentation cleanup; the template README
-and its license information remain.
+Repeat compilation until references and the table of contents settle.
+The current bibliography is included directly from
+[the bibliography chapter](latex/Chapters/Bibliography.tex).
+Compile from `thesis/latex/` so chapter, image and class paths resolve.
 
-The presentation will use
-[Presentazione standard VisionLab.pptx](<presentation/Presentazione standard VisionLab.pptx>).
-This is an identical local copy of the user-provided template in Downloads;
-the original remains unchanged.
+## Presentation and figures
 
-Reusable figure sources are described in [figures/README.md](figures/README.md).
-The introduction's evidence record is retained in
-`research/introduction/writing_evidence.json`; downloaded reference copies
-and old chapter previews were removed during cleanup.
+Use [the VisionLab PowerPoint template](<presentation/Presentazione standard VisionLab.pptx>)
+for the presentation. This directory currently contains the template;
+the presentation content is prepared separately.
+
+[The figure guide](figures/README.md) explains editable sources and chart
+regeneration. Figure renderers should write to a preview location first,
+before replacing an image referenced by the dissertation.
+
+The introduction's preserved evidence record is
+[`writing_evidence.json`](research/introduction/writing_evidence.json).
+It records research provenance; downloaded reference copies are not included.
+
+## Template attribution
+
+The bundled Sapthesis class retains its original
+[README and license notice](latex/README). That upstream README describes the
+complete template distribution; its separate class manual is not bundled here.
+University logos, third-party illustrations and presentation materials retain
+their respective attribution and terms.

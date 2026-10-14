@@ -1,13 +1,49 @@
-# Curiosity semantic asset — anomaly detection 2
+# Curiosity Semantic Asset and Dataset Generation
 
-Per orientarsi tra tutte le milestone, consultare prima
-[INDEX.md](INDEX.md), che indirizza al documento tecnico corretto per ogni
-argomento.
+Start with [the generation index](INDEX.md) for the current dataset state,
+configuration contracts and milestone documents. The pipeline derives a
+six-wheel semantic rover scene from a verified NASA GLB, adds terrain and
+imaging variation, and renders clean/paired anomalous observations.
 
-This milestone starts from the verified NASA file
-`24584_Curiosity_static.glb` and creates a minimally modified Blender asset in
-`outputs/anomaly_detection_2/`. Generated `.blend`, `.glb`, reports and renders
-remain ignored runtime output.
+## Required local resources
+
+The original asset, geospatial products, derived scenes and generated
+datasets are not distributed with the repository.
+
+- NASA GLB: `24584_Curiosity_static.glb`, stored in `assets/original/`.
+- Expected SHA-256:
+  `86a8ee6d39fb1711ae549ba99951d2f52b44a7b8367ce4814cc81aec60e94b31`.
+- HiRISE Gale DTM and imagery: identifiers and crop requirements are in
+  [the terrain milestone](gale_terrain.md).
+- Blender 5.2 with Eevee, plus the host packages in
+  [generation requirements](../../requirements/generation.txt).
+
+Work on imported or derived copies and preserve the source GLB.
+ML packages belong in a host environment separate from Blender Python.
+
+## Semantic asset preparation
+
+Run commands from `wheel_anomaly_detection/`. Make the `blender` executable
+available on PATH or substitute its location.
+
+Import the verified GLB into Blender, then save the imported scene as
+`outputs/anomaly_detection_2/curiosity_imported.blend`. The preparation script
+expects one imported mesh named `MSL`; it does not import the GLB itself.
+
+Prepare the semantic asset from that saved copy:
+
+```bash
+blender --background outputs/anomaly_detection_2/curiosity_imported.blend --python-exit-code 1 --python scripts/blender/prepare_curiosity_semantic_asset.py -- --source-glb assets/original/24584_Curiosity_static.glb --output-dir outputs/anomaly_detection_2
+```
+
+Validate the result:
+
+```bash
+blender --background outputs/anomaly_detection_2/curiosity_semantic_clean.blend --python-exit-code 1 --python scripts/blender/validate_curiosity_semantic_asset.py
+```
+
+The build checks the source checksum before and after processing and writes
+the derived scene and its reports under `outputs/anomaly_detection_2/`.
 
 ## Scene structure
 
@@ -26,71 +62,58 @@ Rover
     └── wheel_rear_right
 ```
 
-`Rover`, `Body`, `Suspension`, and `Wheels` are empty transform objects. The
-same names are also used for collections. The `Suspension` empty explicitly
-points to `body_suspension_assembly`: suspension and rocker-bogie geometry is
-identified but intentionally not separated from the remaining rover mesh.
+Collections and transform empties use these semantic names. Body and
+suspension remain one mesh: the `Suspension` node identifies the combined
+geometry rather than a separate suspension object.
 
-## Naming and axes
+The imported coordinate convention is `+Z` up, `-Y` front and `+X` rover
+left. Each wheel is a separate mesh parented to `Wheels`, with its origin
+at the world-space bounding-box center.
 
-Wheel names are exact and stable. The imported model uses world `+Z` as up,
-negative world `Y` as the rover front, and positive world `X` as the rover's
-left side when facing forward. Every wheel is a distinct mesh object parented
-to `Wheels`; its origin is the center of its world-space bounding box.
+## Changes from the source GLB
 
-## Changes from the NASA GLB
+The original `wheels` material identifies 1,944 disconnected components:
+six spatial clusters of 324 components. Native Blender separation preserves
+face material assignments, three UV layers, packed textures and custom
+normals. The remaining mesh becomes `body_suspension_assembly`.
 
-- Removed only the default Blender cube, camera, and light.
-- Used the original `wheels` material as the semantic gate. It contains 1,944
-  disconnected components that form six unambiguous spatial clusters of 324
-  components each.
-- Separated the six clusters with Blender's native mesh separation operation.
-  Meshes were not reconstructed; original face material assignments, three UV
-  layers, packed textures, and custom normals are retained.
-- Renamed the remaining imported mesh to `body_suspension_assembly` and added a
-  small, predictable semantic hierarchy.
-- Did not alter the source GLB. Its SHA-256 is checked before and after the
-  build.
+Default scene objects are removed and a semantic hierarchy is added.
+The source GLB remains unchanged. Wheel-adjacent fixed parts stay in the
+body mesh where separation would be ambiguous.
+
+## Generation stages
+
+| Stage | Contract and reproduction instructions |
+| --- | --- |
+| Gale terrain and nominal camera/lighting | [Gale terrain](gale_terrain.md) |
+| Deterministic 4 x 4 m local relief | [Microterrain Level 1](microterrain_level1.md) |
+| Instanced clasts and rocks | [Microterrain Level 2](microterrain_level2.md) |
+| Fine-scale material variation | [Microterrain Level 3](microterrain_level3.md) |
+| Camera families and wheel roll | [Camera poses](wheel_camera_pose_pilot.md), [pose sampling](wheel_pose_sampling.md) |
+| Lighting, wear and randomization | [Lighting](mars_lighting_pilot.md), [surface wear](wheel_surface_wear_pilot.md), [domain randomization](domain_randomization.md) |
+| Clean and paired render batches | [Clean generator](clean_batch_generator.md), [hole anomalies](wheel_hole_anomaly.md) |
+| Complete dataset plan and assembly | [Bulk plan](bulk_plan_v1.md), [final assembly](final_dataset_assembly.md) |
+
+The current batch source is
+`outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend`.
+Rebuild the prerequisite stages or supply the matching derived scene before
+starting a batch. Render settings come from the selected configuration;
+the checked-in clean/paired defaults use 1200 x 900 RGB images.
 
 ## Validation
 
-Open `outputs/anomaly_detection_2/curiosity_semantic_clean.blend` and run:
+Use the semantic, scene and batch validators for the stage being run.
+For completed batches:
 
-```powershell
-blender --background curiosity_semantic_clean.blend --python scripts/blender/validate_curiosity_semantic_asset.py
+```bash
+python scripts/host/validate_clean_batch.py --run-dir outputs/anomaly_detection_2/clean_batch/YOUR_RUN_ID
+python scripts/host/validate_anomaly_batch.py --run-dir outputs/anomaly_detection_2/anomaly_batch/YOUR_RUN_ID
 ```
 
-The validator requires exactly the six canonical wheel names, prints each
-wheel's location, Euler rotation, scale, world bounding box and mesh counts,
-and verifies the `wheels` material, UV layers and `Wheels` parent.
+Replace `YOUR_RUN_ID` with an existing run. Validators need the matching
+source scene, configurations, manifests and raster outputs. They do not
+replace visual QA. The current checkout has no `tests/` directory.
 
-## Known limitations
-
-- The original rover is a single highly fragmented mesh. Body, rocker-bogie,
-  suspension and wheel-adjacent fixed parts remain combined in
-  `body_suspension_assembly`; this avoids a destructive or visually ambiguous
-  heuristic split. They are identified by object metadata and the
-  `Suspension` semantic node.
-- The semantic-asset milestone itself does not alter cameras, lighting or
-  terrain; those are layered on by the separate Gale milestone below.
-
-## Terrain milestones
-
-The deterministic HiRISE Gale terrain, approximate MAHLI camera and nominal
-solar lighting are documented in [gale_terrain.md](gale_terrain.md).
-
-The deterministic two-metre Level-1 microterrain patch, its generation
-contract and the 10/30 cm visual checkpoint are documented in
-[microterrain_level1.md](microterrain_level1.md).
-
-The approved Level-2 checkpoint adds three families of non-realized,
-partially buried Geometry Nodes clasts and is documented in
-[microterrain_level2.md](microterrain_level2.md).
-
-The Level-3 checkpoint adds sub-granular dust, albedo, roughness and bump
-shading while preserving every L2 geometry signature. It is documented in
-[microterrain_level3.md](microterrain_level3.md).
-
-The deterministic clean dataset factory, its one-render RGB/target-mask
-contract, resume behavior and verified 24-sample smoke run are documented in
-[clean_batch_generator.md](clean_batch_generator.md).
+Historical output paths in milestone documents record local provenance;
+a fresh Git clone does not include those artifacts. Use the
+[index](INDEX.md) to identify the current pipeline.

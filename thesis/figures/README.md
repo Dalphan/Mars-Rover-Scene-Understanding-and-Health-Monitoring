@@ -1,16 +1,48 @@
-# Reusable figure sources
+# Reusable Figure Sources
 
-These small source files were preserved before removing temporary project
-outputs on 14 October 2026.
+These files support diagrams and plots used by the dissertation. Run the
+commands below from the repository root.
 
-- `quantization/render_miou_energy.py` and `render_miou_energy.ps1` read the
-  current quantization table from Chapter 5 in `thesis/latex/Chapters/`.
-- `quantization/plot_quantization_tradeoff.py` and `quantization_results.csv`
-  preserve the earlier curated data snapshot and its plotting script.
-  This historical CSV does not replace the current chapter table.
-- `segmentation/segmentation_architectures_overview.svg` is the editable
-  architecture diagram formerly stored under the segmentation documentation.
+## Quantization chart from the current chapter table
 
-The figure used by the dissertation remains in `thesis/latex/Images/`.
-Chart regeneration requires the appropriate Python packages or the existing
-PowerShell renderer; the former root `.venv` was removed as requested.
+[`render_miou_energy.py`](quantization/render_miou_energy.py) reads the
+20 measurements in
+[Chapter 5](<../latex/Chapters/5 Evaluation of Lightweight Scene Understanding.tex>).
+The source table contains the current test mIoU and GPU-energy measurements.
+
+With Matplotlib installed in your active Python environment, render a preview:
+
+```bash
+python thesis/figures/quantization/render_miou_energy.py --output outputs/thesis_figures/quantization_miou_energy.png
+```
+
+A Windows renderer is also available as
+[`render_miou_energy.ps1`](quantization/render_miou_energy.ps1).
+Pass the source explicitly so it uses your checkout location:
+
+```powershell
+./thesis/figures/quantization/render_miou_energy.ps1 -Source "thesis/latex/Chapters/5 Evaluation of Lightweight Scene Understanding.tex" -Output "outputs/thesis_figures/quantization_miou_energy.png"
+```
+
+The dissertation image is
+[`quantization_miou_energy.png`](../latex/Images/quantization_miou_energy.png).
+Review a regenerated preview before replacing it.
+
+## Historical plotting snapshot
+
+[`quantization_results.csv`](quantization/quantization_results.csv) and
+[`plot_quantization_tradeoff.py`](quantization/plot_quantization_tradeoff.py)
+preserve an earlier curated snapshot. This CSV has a different scope from
+the current chapter table.
+
+To reproduce that historical plot with Matplotlib:
+
+```bash
+python thesis/figures/quantization/plot_quantization_tradeoff.py --output outputs/thesis_figures/quantization_historical.png
+```
+
+## Editable architecture diagram
+
+[`segmentation_architectures_overview.svg`](segmentation/segmentation_architectures_overview.svg)
+is the editable segmentation architecture overview. Dissertation-ready
+images are stored in [the LaTeX image directory](../latex/Images/).
