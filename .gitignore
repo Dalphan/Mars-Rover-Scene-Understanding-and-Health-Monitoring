@@ -46,3 +46,8 @@ semantic_segmentation/docs/figures/*
 !/thesis/latex/sapthesis.bst
 !/thesis/latex/sapthesis.cls
 !/thesis/latex/sapthesis.layout
+
+/semantic_segmentation/docs/
+/wheel_anomaly_detection/docs/
+/wheel_anomaly_detection/scripts/blender/
+/wheel_anomaly_detection/scripts/host/
