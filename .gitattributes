@@ -1,0 +1,13 @@
+# Keep repository text files stable across Windows and Linux.
+* text=auto eol=lf
+
+# PowerShell scripts are conventionally consumed by Windows tools.
+*.ps1 text eol=crlf
+
+# Binary documents and media must never be normalized.
+*.pptx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.blend binary
+*.glb binary

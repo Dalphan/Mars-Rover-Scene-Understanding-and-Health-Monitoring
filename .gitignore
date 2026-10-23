@@ -1,20 +1,55 @@
-.pytest_cache/
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
+.hydra/
 
 .venv/
 venv/
 
 outputs/
-.hydra/
-
-.env
+logs/
 *.log
 
-*.md
-!README.md
-
-outputs/
+.env
+gdrive_kaggle_secrets*.local.json
 
 .agents/
+.codex/
+
+# Local presentation and chart build workspaces.
+/.chart-data-*/
+/.codex-finalizer/
+/.codex-presentation-build/
+/.codex-presentation-output/
+/presentation_build/
+
+# Original 3D assets stay local and immutable.
+assets/original/*
+!assets/original/.gitkeep
+
+semantic_segmentation/docs/figures/*
+
+# Local notes and user-specific instruction drafts.
+/SKILLS.md
+/AGENTS.md
+
+*.aux
+*.toc
+*.synctex*
+*.layout
+*.bst
+*.cls
+*.out
+
+# Required local sources for the dissertation template.
+!/thesis/latex/sapthesis.bst
+!/thesis/latex/sapthesis.cls
+!/thesis/latex/sapthesis.layout
+
+/semantic_segmentation/docs/
+/wheel_anomaly_detection/docs/
+/wheel_anomaly_detection/scripts/blender/
+/wheel_anomaly_detection/scripts/host/
+
+/thesis/paper_tii_draft/

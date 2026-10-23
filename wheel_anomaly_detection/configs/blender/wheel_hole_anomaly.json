@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "class_id": "hole",
+  "holes_per_sample": 1,
+  "wheel_diameter_m": 0.485294,
+  "distributions": {
+    "severity": {
+      "small": 0.55,
+      "medium": 0.35,
+      "large": 0.10
+    },
+    "surface_by_severity": {
+      "small": {
+        "tread": 0.7777777777777778,
+        "shoulder": 0.2222222222222222
+      },
+      "medium": {
+        "tread": 0.7777777777777778,
+        "shoulder": 0.2222222222222222
+      },
+      "large": {
+        "tread": 1.0
+      }
+    },
+    "profile_family": {
+      "jagged_slit": 0.45,
+      "branched_tear": 0.40,
+      "peeled_window": 0.15
+    },
+    "image_sector": {
+      "leading": 0.3333333333333333,
+      "upper": 0.3333333333333333,
+      "trailing": 0.3333333333333334
+    }
+  },
+  "severity": {
+    "small": {
+      "long_axis_m": [0.027, 0.041],
+      "short_axis_m": [0.010, 0.017],
+      "cavity_recess_m": [0.008, 0.012],
+      "minimum_mask_area_px": 64,
+      "minimum_mask_short_side_px": 6
+    },
+    "medium": {
+      "long_axis_m": [0.044, 0.068],
+      "short_axis_m": [0.015, 0.027],
+      "cavity_recess_m": [0.012, 0.018],
+      "minimum_mask_area_px": 128,
+      "minimum_mask_short_side_px": 10
+    },
+    "large": {
+      "long_axis_m": [0.073, 0.116],
+      "short_axis_m": [0.022, 0.041],
+      "cavity_recess_m": [0.016, 0.025],
+      "minimum_mask_area_px": 256,
+      "minimum_mask_short_side_px": 14
+    }
+  },
+  "profile_quality": {
+    "aspect_ratio": [2.0, 4.5],
+    "convexity": [0.60, 0.90],
+    "maximum_circularity": 0.78,
+    "minimum_open_area_fraction": 0.60
+  },
+  "placement": {
+    "maximum_candidate_attempts": 32,
+    "expected_grouser_count": 19,
+    "tread_base_radius_fraction": 0.960,
+    "tread_skin_radius_fraction": [0.94, 0.98],
+    "shoulder_base_radius_fraction": 0.960,
+    "tread_radius_tolerance_fraction": 0.040,
+    "tread_half_width_fraction": 0.75,
+    "shoulder_outboard_center_fraction": [0.82, 0.96],
+    "maximum_upper_angle_degrees": 52.0,
+    "frame_margin_fraction": 0.04,
+    "sector_scale": 0.65,
+    "sector_jitter_max_degrees": 4.0,
+    "sector_safety_degrees": 4.0,
+    "minimum_camera_facing_dot": 0.30,
+    "occlusion_epsilon_m": 0.004
+  },
+  "geometry": {
+    "skin_thickness_m": 0.00075,
+    "open_wall_depth_profile": "T3",
+    "open_wall_fold_arc_count": 2,
+    "open_wall_depth_max_by_severity_m": {
+      "small": 0.002,
+      "medium": 0.003,
+      "large": 0.004
+    },
+    "rim_width_m": [0.0015, 0.0035],
+    "through_opening": true,
+    "recessed_cap_enabled": false,
+    "minimum_synthetic_clear_depth_m": 0.20,
+    "active_rim_profile": "R4_robust",
+    "rim_profiles": {
+      "R0_current": {
+        "width_scale": 1.0,
+        "surface_offset_m": 0.00020,
+        "exposed_fraction_scale": 1.0
+      },
+      "R1_mild": {
+        "width_scale": 0.80,
+        "surface_offset_m": 0.00015,
+        "exposed_fraction_scale": 0.78
+      },
+      "R2_balanced": {
+        "width_scale": 0.60,
+        "surface_offset_m": 0.00010,
+        "exposed_fraction_scale": 0.58
+      },
+      "R3_strong": {
+        "width_scale": 0.45,
+        "surface_offset_m": 0.00006,
+        "exposed_fraction_scale": 0.40
+      },
+      "R4_minimal": {
+        "width_scale": 0.30,
+        "surface_offset_m": 0.00003,
+        "exposed_fraction_scale": 0.25
+      },
+      "R4_robust": {
+        "effective_width_m": [0.00045, 0.00085],
+        "surface_offset_m": 0.00006,
+        "exposed_fraction_scale": 0.25
+      }
+    },
+    "flap": {
+      "eligible_probability": 0.20,
+      "maximum_angle_degrees": 20.0,
+      "maximum_lift_m": 0.005
+    }
+  },
+  "material": {
+    "cavity_luminance_factor": [0.18, 0.32],
+    "cavity_roughness": [0.78, 0.95],
+    "rim_exposed_fraction_by_wear": {
+      "surface_current": [0.55, 0.85],
+      "wear_light": [0.35, 0.65],
+      "wear_evident": [0.20, 0.50]
+    }
+  },
+  "mask_gates": {
+    "minimum_inside_target_roi_fraction": 0.98,
+    "target_roi_dilation_px": 2,
+    "maximum_effect_frame_fraction": 0.12,
+    "maximum_raster_speckle_component_px": 4,
+    "require_single_component": true
+  },
+  "photometric_gates": {
+    "changed_pixel_threshold_8bit": 6,
+    "minimum_changed_fraction_inside_mask": 0.65,
+    "minimum_median_delta_8bit": 10,
+    "minimum_local_difference_energy_fraction": 0.99,
+    "maximum_difference_dilation_px": 16
+  }
+}

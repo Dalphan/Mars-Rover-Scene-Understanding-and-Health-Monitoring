@@ -1,0 +1,114 @@
+# @package _global_
+
+# Python mirror of notebooks/kaggle_s5mars_onnx_qat.ipynb.
+sync:
+  source_notebook: notebooks/kaggle_s5mars_onnx_qat.ipynb
+  direction: notebook_to_python
+
+seed: 42
+dataset:
+  repo_id: Mirali33/mb-s5mars
+  train_split: train
+  val_split: val
+  test_split: test
+  image_size: [512, 512]
+  image_mean: [0.485, 0.456, 0.406]
+  image_std: [0.229, 0.224, 0.225]
+  num_classes: 9
+  ignore_index: -100
+  class_names:
+    0: Background
+    1: Bedrock
+    2: Hole
+    3: Ridge
+    4: Rock
+    5: Rover
+    6: Sand / Soil
+    7: Sky
+    8: Track
+
+model:
+  name: segformer_b0
+  pretrained_name: nvidia/segformer-b0-finetuned-ade-512-512
+  experiment: segformer_b0
+  variant: int8_conv_mlp_decoder_linear_qdq
+  int8_linear_groups: [encoder_mlp, decoder_projection]
+  fp16_fallback_module_prefixes: []
+
+checkpoint:
+  filename: best.ckpt
+  folder_id: 1gor4_Lct_xBMJuWlfxnAXm0fYNjcKBRs
+  # Kept separate from PTQ checkpoints, whose default model is DeepLabV3.
+  local_dir: outputs/checkpoints/${model.experiment}
+
+training:
+  train_batch_size: 2
+  eval_batch_size: 1
+  calibration_batch_size: 4
+  gradient_accumulation_steps: 4
+  num_workers: 2
+  calibration_samples: 500
+  epochs: 10
+  early_stopping_patience: 3
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  warmup_epochs: 1
+  use_amp: true
+  supervised_weight: 0.7
+  distillation_weight: 0.3
+  distillation_temperature: 2.0
+  combined_loss_alpha: 0.5
+  dice_smooth: 1.0e-5
+  max_train_samples: null
+  max_val_samples: null
+  max_test_samples: null
+
+steps:
+  restore_saved_qat: false
+  run_trt_fp16_baseline: false
+  run_final_test: false
+  upload_best_each_epoch: true
+  upload_final_artifacts: true
+
+reference:
+  max_validation_miou_drop_vs_conv_only: 0.005
+  segformer_qat_conv_only:
+    validation_miou: 0.8300365905100314
+    mean_latency_ms: 5.65719264004656
+    p95_latency_ms: 7.511129749673273
+    average_sampled_power_w: 67.1286606997559
+    energy_per_image_mj: 291.7556744253289
+    images_per_joule: 3.4275254524858854
+    peak_gpu_memory_mib: 1008.0
+    engine_size_mib: 10.90683364868164
+    test_miou: 0.7692888447846535
+
+output:
+  root: outputs/qat_modelopt
+  drive_parent_folder_id: null
+  drive_folder_name: s5mars_qat_modelopt_${model.experiment}_${model.variant}
+
+export:
+  onnx_opset: 20
+  fp16_fallback_min_prediction_agreement: 0.95
+  export_min_prediction_agreement: 0.95
+  trt_min_prediction_agreement: 0.95
+
+tensorrt:
+  device_id: 0
+  workspace_gib: 4
+  build_mode: weakly_typed_explicit_qdq
+  fp16_build_mode: weakly_typed_fp16
+  builder_optimization_level: 5
+
+benchmark:
+  latency_warmup_runs: 10
+  latency_measured_runs: 50
+  efficiency_warmup_runs: 10
+  efficiency_min_runs: 100
+  efficiency_min_seconds: 30.0
+  nvml_sample_interval_seconds: 0.02
+
+hydra:
+  run: {dir: .}
+  output_subdir: null

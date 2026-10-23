@@ -1,0 +1,156 @@
+\chapter{Synthetic Data-Driven Damage Inspection}
+
+\section{Task Definition}
+\label{sec:damage-task-definition}
+
+The second branch of the proposed framework addresses visual wheel inspection through the detection and localization of damage in RGB images. The experiments use the synthetic Curiosity wheel dataset introduced in the previous chapter, with localized holes as the target anomaly class. The objective is both to distinguish normal from damaged observations and to identify the image regions associated with the damage. Accordingly, the methods produce an image anomaly score and a spatial anomaly map, allowing detection and localization to be examined separately.
+
+The problem was approached through visual anomaly detection using a normal-only training setting, consistent with the setting adopted by benchmarks such as MVTec AD \cite{bergmann2019mvtec}. Only normal images from the generated dataset were used for training, while the rendered damaged images and their annotations were reserved for validation and testing. This choice was motivated by the aim of reducing dependence on annotated damage examples during training, rather than fitting a supervised segmentation model directly to the available hole masks. Normality was defined by the absence of the modeled perforations, not by a clear wheel surface, so that other appearance variations remained part of the normal distribution.
+
+Several deep learning-based anomaly detection approaches were investigated to compare their ability to identify localized defects without confusing them with the appearance changes introduced during dataset generation. Compact configurations were also considered in view of the longer-term possibility of onboard inspection. The resulting study provides a controlled assessment of damage detection and localization within the synthetic domain, while validation on real rover imagery remains outside the scope of the present experiments.
+
+\section{Preprocessing}
+\label{sec:damage-preprocessing}
+
+All images were loaded as three-channel RGB observations and converted to floating-point tensors. Their pixel intensities were rescaled from the original 8-bit representation to the \([0,1]\) interval before any model-specific normalization.
+The experiments included full frame inputs and wheel focused configurations using fixed square crops for each camera pose. The crop windows were defined from normal validation observations and applied consistently across dataset splits, before resizing. At inference, the pose identifier determined the crop, without requiring the damage mask. The already detailed framing of pose D did not receive an additional pose specific crop.
+Wheel focused framing was motivated by the aim of dedicating more of the available input resolution to the inspected rover part. The intention was to keep useful surface detail at moderate network input sizes, favoring a controlled camera configuration that centers the target wheel. Figure~\ref{fig:wheel-pose-a-crop} illustrates this preparation for pose A. In a future integration of the two framework branches, the \emph{Rover} category predicted by the scene understanding module could help identify vehicle regions and help further wheel-localization steps. This connection was not implemented in the present work, as the segmentation label does not directly identify individual wheels.
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/wheel_pose_a_crop_comparison.png}
+    \vspace{3mm}
+    \caption{Comparison before and after the fixed crop for camera pose A.
+        (a) Original \(1200 \times 900\)-pixel observation, with the crop window
+        highlighted in cyan. (b) The retained \(720 \times 720\)-pixel region,
+        shown before resizing to the network input resolution.
+        Both panels depict the same dataset image.}
+    \label{fig:wheel-pose-a-crop}
+\end{figure}
+
+Input resolution depended on the model and experimental configuration. It was treated as a compromise between computational cost and the spatial detail available for inspection, because strong downsampling can leave small defects represented by very few pixels, while larger inputs increase processing and memory requirements. The effects of these choices are examined in the evaluation chapter.
+
+\section{Anomaly Detection Models}
+
+The model set was selected with two complementary objectives: comparing different anomaly detection strategies compatible with the normal-only training strategy and investigating their computational requirements for potential onboard inspection. The resulting pool comprises four model families: PatchCore~\cite{roth2022patchcore}, EfficientAD-S (EAD-S)~\cite{batzner2024efficientad}, SuperSimpleNet (SSN)~\cite{rolih2026nolabel}, and TinyGLASS~\cite{bonazzi2026tinyglass}. These methods cover three main principles: matching against stored normal features, measuring student-teacher discrepancies, and learning to discriminate normal observations from synthetic perturbations. In the latter case, anomalous training examples are created from clean inputs in feature or image space, maintaining the separation from the damaged renders reserved for validation and testing.
+
+The selection also contrasts the storage and search costs of a descriptor memory with the feature-extraction and prediction costs of feed-forward networks. PatchCore provides a memory-based reference, whereas the other three models compute anomaly scores through learned network outputs. EAD-S and the ResNet-18 configuration of TinyGLASS represent compact alternatives, while SSN uses a larger Wide ResNet-50-2 feature extractor. This diversity makes it possible to examine the trade-off between damage detection and localization quality, memory requirements, and inference latency, and to assess whether more costly representations help distinguish localized perforations from normal appearance variations.
+
+\subsection{PatchCore}
+\label{subsec:patchcore}
+
+PatchCore detects anomalies by comparing local image features with a memory of defect-free examples, rather than learning predefined damage categories~\cite{roth2022patchcore}. A convolutional backbone pretrained on ImageNet remains frozen, with features from two intermediate stages aggregated over local neighborhoods and combined across scales, preserving local detail while incorporating spatial context.
+
+During training, patch descriptors extracted from normal images are collected into a memory bank, from which greedy \emph{coreset} selection retains a representative subset to limit redundancy and reduce the cost of nearest-neighbor searches. At inference, each test patch is compared with the stored descriptors and assigned an anomaly score equal to its Euclidean distance from the nearest neighbor, with the resulting scores mapped back to their spatial positions to form an anomaly map. The image score is based on the most anomalous patch, although the original formulation also applies neighborhood-based reweighting when computing this score~\cite{roth2022patchcore}. Figure~\ref{fig:patchcore_architecture} illustrates this process, from memory construction to patch and image anomaly scoring.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]
+    {Images/patchcore_original_architecture.png}
+    \caption{Original overview of PatchCore: normal-feature memory
+        construction on the left and nearest-neighbor-based anomaly
+        detection and localization on the right.
+        Reproduced from Roth et al.~\cite{roth2022patchcore}.}
+    \label{fig:patchcore_architecture}
+\end{figure}
+
+PatchCore was included as a memory-based baseline compatible with normal-only training. Its local scoring mechanism is relevant to wheel perforations, which affect limited image regions, while providing both detection and localization outputs. Related applications include BladeSynth, where PatchCore was fitted using normal rendered aero-engine blade images~\cite{eltoum2025bladesynth}, and surface inspection of shock absorber connecting rods, where both the original method and an enhanced variant were evaluated~\cite{zhou2026shockabsorber}. These studies provide precedents for metallic component inspection, without establishing performance on Martian rover imagery.
+
+In this project, a ResNet-18 configuration, denoted PatchCore Small (PC-S), was considered to reduce feature-extraction cost, alongside PatchCore Large (PC-L), which uses Wide ResNet-50-2. Both configurations use frozen pretrained features. To bound memory construction, patches are randomly sampled from each clean image and kept  in a capped candidate reservoir before greedy coreset selection. Consequently, the coreset is selected from bounded candidates rather than from every extracted training patch. This introduces a trade-off between computational cost and coverage of normal appearances. Memory bank size also influences storage requirements and nearest-neighbor inference cost, making it an important factor in the efficiency assessment.
+
+\subsection{EAD-S}
+\label{subsec:efficientad}
+
+EfficientAD detects deviations from normal appearance through a student-teacher model, in which a student learns to reproduce a frozen teacher's features using clean images~\cite{batzner2024efficientad}. The teacher is a compact Patch Description Network (PDN), distilled from a deeper pretrained network to avoid executing that larger backbone at inference. Differences between teacher and student outputs provide a local anomaly map, where larger discrepancies indicate possible departures from the normal training distribution.
+
+Because local descriptors may appear normal even when objects are arranged incorrectly, EfficientAD also includes an autoencoder that reconstructs teacher features from the complete image. An additional student output learns the autoencoder's normal reconstruction behavior, allowing the global anomaly map to measure their disagreement while accounting for systematic reconstruction errors. The two maps are calibrated and averaged~\cite{batzner2024efficientad}, as illustrated in Figure~\ref{fig:efficientad_architecture}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]
+    {Images/efficientad_original_figure5.png}
+    \caption{EfficientAD illustrated on a structural anomaly
+        (left) and a logical anomaly (right), showing the local
+        and global detection branches.
+        Reproduced from Batzner et al.~\cite{batzner2024efficientad}.}
+    \label{fig:efficientad_architecture}
+\end{figure}
+
+EfficientAD was included to investigate an alternative to PatchCore's memory-based matching, since its inference relies on learned network outputs rather than a nearest-neighbor search over stored descriptors. A related application is automotive inspection on AutoVI, where the authors evaluated EfficientAD alongside other detectors on assembly-line images with variable illumination and cluttered backgrounds~\cite{villanueva2026autovi}. Although these experiments concern assembly defects rather than wheel perforations, they provide a relevant precedent for evaluating the method on mechanical components under variable acquisition conditions.
+
+The experiments used EAD-S, keeping a pretrained teacher while optimizing the student and autoencoder on clean wheel images. Training emphasized the largest feature discrepancies through hard-feature mining and included an auxiliary penalty on ImageNet images to discourage imitation beyond normal wheel appearance. In the global baseline configuration, calibration used only clean validation images, and the maximum of the combined anomaly map provided the image score.
+
+\subsection{SSN}
+\label{subsec:supersimplenet}
+
+SSN learns to distinguish normal image features from artificially perturbed ones, allowing a discriminative detector to be trained without examples of actual damage~\cite{rolih2025supersimplenet}. Rather than modifying the input images, it adds Gaussian noise to feature regions selected by thresholded Perlin noise, producing spatially coherent perturbations whose locations provide the training labels. Although the method can also exploit annotated defects, this study considers its normal-only setting.
+
+A pretrained convolutional backbone extracts intermediate features, which are aligned to a common spatial resolution and pooled to incorporate neighboring context. A trainable adapter prepares these features for a segmentation head, while a separate classification head combines the predicted anomaly map with image features to estimate an image score. In the extended formulation, the classification branch receives the unadapted features, allowing the two heads to operate on different representations~\cite{rolih2026nolabel}. Figure \ref{fig:supersimplenet_architecture} illustrates this architecture, including the anomaly generation mechanism that is active during training but bypassed at inference.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{Images/supersimplenet_original_architecture.png}
+    \caption{Architecture of the extended SSN formulation.
+        Synthetic feature perturbations are introduced during training,
+        whereas inference directly produces an anomaly map and a
+        classification score. Reproduced without modification from
+        Rolih et al.~\cite{rolih2026nolabel}.
+    }
+    \label{fig:supersimplenet_architecture}
+\end{figure}
+
+SSN was included to compare feature-space anomaly synthesis with PatchCore's memory-based matching and EfficientAD's student-teacher formulation. This comparison investigates whether learning from localized feature perturbations can support the detection of wheel perforations without using damaged renders for weight optimization. Its feed-forward inference also avoids searching a stored descriptor bank, although the computational cost of the pretrained backbone remains relevant. A related application is the normal-only inspection of automotive assemblies on AutoVI, where SSN was evaluated alongside other anomaly detectors~\cite{villanueva2026autovi}.
+
+The project implementation uses a frozen Wide ResNet-50-2 pretrained on ImageNet, extracting features from its second and third residual stages while optimizing the adapter and prediction heads on clean wheel images. The generated perturbations are distinct from the holes rendered in Blender and do not require their annotations. Besides the original classification-head score, the experiments considered an image score obtained by averaging the largest \(1\%\) of the raw anomaly-map values on the native feature grid, before resizing and smoothing. Restricting synthetic perturbations to the target-wheel region was also investigated as an ablation, using the wheel mask during training only.
+
+\subsection{TinyGLASS}
+\label{subsec:tinyglass}
+
+TinyGLASS is a compact adaptation of GLASS that learns to separate normal features from synthetic anomalies, replacing the original Wide ResNet backbone with ResNet-18 to reduce feature-extraction cost~\cite{bonazzi2026tinyglass}. Intermediate features are combined across scales and processed by a patch-wise discriminator, which assigns higher scores to regions that depart from the normal training distribution.
+
+Training combines the two complementary synthesis strategies introduced by GLASS. Local Anomaly Synthesis (LAS) creates altered image regions by blending external textures within randomized masks, whereas Global Anomaly Synthesis (GAS) perturbs normal features with Gaussian noise and refines them through gradient ascent. These gradient-guided perturbations provide difficult negative examples, while projection constraints limit their distance from normal features~\cite{chen2025glass}. Combining image alterations with feature perturbations exposes the discriminator to both visible appearance changes and deviations close to normality. The synthesis mechanisms are used only during training, leaving a feed-forward prediction path at inference, as illustrated in Figure~\ref{fig:tinyglass_architecture}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]
+    {Images/tinyglass_original_architecture.png}
+    \caption{Original TinyGLASS architecture, showing the
+        feature-processing path and the anomaly synthesis
+        mechanisms used during training only.
+        Reproduced without modification from
+        Bonazzi et al.~\cite{bonazzi2026tinyglass},
+        under the
+        \href{https://creativecommons.org/licenses/by/4.0/}
+        {CC BY 4.0 license}.}
+    \label{fig:tinyglass_architecture}
+\end{figure}
+
+TinyGLASS was selected to examine the accuracy-efficiency trade-off of a compact synthesis-based detector. In the original study, the method was evaluated on the custom M\&Ms candy dataset (MMS), including a crack-hole category, and deployed on the Sony IMX500 sensor~\cite{bonazzi2026tinyglass}, providing a related example of localized defect inspection.
+
+The baseline implementation kept the ImageNet-pretrained ResNet-18 frozen and used fixed patch pooling for feature compression, without the separate trainable adapter shown in the original figure. Alongside texture-based LAS, a task-specific variant generated irregular, darkened regions inside the target wheel to approximate the appearance of perforations. These two-dimensional alterations were created from clean renders and their wheel masks, rather than from the damaged Blender images, and required no masks during inference. Feature resolution was also varied to examine the balance between computational cost and localization detail. The predicted anomaly maps were resized and smoothed, whereas the image score was obtained from the maximum patch score before this postprocessing.
+
+The TinyGLASS configurations with \(384\times384\) and \(512\times512\) inputs are denoted TG-384 and TG-512, respectively.
+
+\section{Evaluation Metrics}
+\label{sec:damage-evaluation-metrics}
+
+Performance is evaluated at two levels: image-level detection, which distinguishes clean images from images containing anomalous wheel damage, and pixel-level localization, which compares the anomaly maps with the ground truth hole masks. Both levels are assessed using the area under the receiver operating characteristic curve (AUROC) and Average Precision (AP), without selecting a fixed decision threshold.
+
+These metrics are defined as
+\begin{equation}
+    \begin{aligned}
+        \mathrm{AUROC}
+         & = \int_0^1 \mathrm{TPR}(u)\,\mathrm{d}u, \\
+        \mathrm{AP}
+         & = \sum_j (R_j - R_{j-1})P_j,
+    \end{aligned}
+    \label{eq:damage-evaluation-metrics}
+\end{equation}
+where \(\mathrm{TPR}(u)\) is the True Positive Rate at False Positive Rate (FPR) \(u\), while \(P_j\) and \(R_j\) denote precision and recall at successive decreasing score thresholds, with \(R_0=0\). Scores and labels are accumulated over the entire evaluated partition rather than averaging metrics across individual images.
+
+AUROC describes the ability to rank anomalous images or pixels above normal ones, whereas AP summarizes the precision achieved as recall increases. AP is particularly relevant to localization because defect pixels occupy a small proportion of the input, so even a low false positive rate can produce many incorrect detections when normal pixels dominate \cite{saito2015precisionrecall}. Since AP also depends on anomaly prevalence, comparisons between configurations must account for differences in the evaluated data.
+
+Localization is also examined using Per-Region Overlap (PRO), which measures the fraction of detected pixels within each connected ground truth anomalous region and averages these fractions with equal weight. This prevents larger defects from dominating the evaluation just because of their area \cite{bergmann2021mvtec}. The normalized area under the PRO curve (AUPRO) is reported up to false positive rates of \(0.05\), \(0.10\), and \(0.30\), with the stricter limits emphasizing anomalous detection when fewer false detections are permitted.
+
+%The primary pixel metrics consider the entire processed image. Additional wheel restricted AUROC and AP scores are computed within the target-wheel mask from the corresponding clean render, allowing localization to be assessed without contributions from background pixels. This mask defines an evaluation region and is not required as an input during inference. 
+Computational efficiency is assessed separately through inference latency and GPU memory measurements, with the measurement conditions specified in the evaluation chapter.

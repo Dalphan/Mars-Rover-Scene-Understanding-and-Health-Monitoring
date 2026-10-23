@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "camera": {
+    "name": "MAHLI_WheelPosePilot",
+    "resolution": [1600, 1200],
+    "focal_length_mm": 21.0,
+    "sensor_width_mm": 11.8,
+    "clip_start_m": 0.01,
+    "depth_of_field": false,
+    "world_up": [0.0, 0.0, 1.0],
+    "rover_forward_world": [0.0, -1.0, 0.0],
+    "pilot_fill_light": {
+      "enabled": true,
+      "energy_w": 220.0,
+      "size_m": 1.2,
+      "subject_distance_m": 1.2,
+      "height_offset_m": 0.35,
+      "color": [1.0, 0.85, 0.72]
+    }
+  },
+  "pilot": {
+    "target_wheel": "wheel_middle_left",
+    "source_blend": "outputs/anomaly_detection_2/microterrain/level3/microterrain_L3.blend",
+    "output_dir": "outputs/anomaly_detection_2/camera_pose_pilot",
+    "terrain_color_grade": {
+      "enabled": true,
+      "material_prefixes": ["GaleTerrain"],
+      "hue": 0.48,
+      "saturation": 1.30,
+      "value": 0.80,
+      "factor": 1.0
+    }
+  },
+  "poses": [
+    {
+      "id": "A_overhead",
+      "family": "A",
+      "label": "A - engineering overhead",
+      "distance_m": 1.50,
+      "elevation_deg": 55.0,
+      "tangential_deg": 10.0,
+      "target_offset_m": {"outward": 0.0, "forward": 0.0, "up": 0.024},
+      "crop_policy": "full_wheel"
+    },
+    {
+      "id": "C_leading_three_quarter",
+      "family": "C",
+      "label": "C1 - leading three-quarter",
+      "distance_m": 1.52,
+      "elevation_deg": 31.0,
+      "tangential_deg": 43.0,
+      "target_offset_m": {"outward": 0.0, "forward": 0.025, "up": -0.022},
+      "crop_policy": "full_wheel"
+    },
+    {
+      "id": "C_trailing_three_quarter",
+      "family": "C",
+      "label": "C2 - trailing three-quarter",
+      "distance_m": 1.52,
+      "elevation_deg": 31.0,
+      "tangential_deg": -43.0,
+      "target_offset_m": {"outward": 0.0, "forward": -0.025, "up": -0.022},
+      "crop_policy": "full_wheel"
+    },
+    {
+      "id": "D_upper_detail",
+      "family": "D",
+      "label": "D - rare upper detail",
+      "distance_m": 0.70,
+      "elevation_deg": 45.0,
+      "tangential_deg": 20.0,
+      "target_offset_m": {"outward": 0.0, "forward": 0.035, "up": 0.105},
+      "crop_policy": "intentional_detail_crop"
+    }
+  ]
+}

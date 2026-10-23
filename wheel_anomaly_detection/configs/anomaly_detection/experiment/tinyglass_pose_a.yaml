@@ -1,0 +1,19 @@
+# @package _global_
+
+dataset:
+  camera_poses: [A_overhead]
+
+model:
+  run_name: tinyglass_pose_a_crop720_input384_layer2_sigma1_hole_small70_lowlr_pat40_frozen
+  input_size: [384, 384]
+  gaussian_sigma: 1.0
+  pose_crop_enabled: true
+  las_restrict_to_target_mask: true
+  las_mode: hole
+  freeze_backbone: true
+
+preprocessing:
+  # The A camera is centred on the selected target wheel. This 720px square
+  # is less aggressive than the completed 640px crop experiment.
+  pose_crops:
+    A_overhead: [90, 240, 720, 720]

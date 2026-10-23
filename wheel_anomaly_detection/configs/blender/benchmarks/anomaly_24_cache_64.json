@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "source": {"blend": "outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend", "sha256": "9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030"},
+  "domain_randomization_config": "configs/blender/domain_randomization.json",
+  "anomaly_config": "configs/blender/wheel_hole_anomaly.json",
+  "sample_indices": [6, 11, 12, 23, 36, 41, 47, 48, 53, 57, 66, 80, 84, 88, 99, 108, 109, 121, 125, 129, 132, 135, 151, 186],
+  "pilot_stratification": {"enabled": true, "severity_formula": "wheel_plus_pose_mod_3", "image_sector_formula": "two_wheel_plus_pose_mod_3", "shoulder_cells": [["wheel_front_left", "C_leading_three_quarter"], ["wheel_front_right", "C_trailing_three_quarter"], ["wheel_middle_left", "C_leading_three_quarter"], ["wheel_middle_right", "D_upper_detail"], ["wheel_rear_left", "A_overhead"]], "profile_family_counts": {"jagged_slit": 11, "branched_tear": 10, "peeled_window": 3}, "eligible_flap_count": 3},
+  "render": {"engine": "BLENDER_EEVEE", "blender_major_minor": [5, 2], "resolution": [1200, 900], "samples": 64, "passes": ["rgb", "target_wheel_mask", "anomaly_mask"]},
+  "execution": {"chunk_size_pairs": 50, "max_chunk_retries": 1},
+  "output": {"root": "outputs/anomaly_detection_2/benchmark/anomaly_24"},
+  "benchmark": {"enabled": true, "geometry_cache": true, "png_compression_level": 4, "scene_png_compression": 15, "reuse_preflight": "outputs/anomaly_detection_2/anomaly_batch/hole_pilot_v1_canonical_t3/anomaly_preflight.json"}
+}

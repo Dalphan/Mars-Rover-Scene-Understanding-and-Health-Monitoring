@@ -1,0 +1,9 @@
+-r requirements.txt
+
+# Keep only the GPU ONNX Runtime package: it includes the CPU provider too.
+onnx==1.21.0
+onnxscript
+onnxruntime-gpu==1.26.0
+tensorrt-cu12==10.9.0.34
+nvidia-modelopt==0.46.1
+nvidia-ml-py

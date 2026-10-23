@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "prebulk_id": "prebulk_200_v1",
+  "total_images": 200,
+  "standalone_clean_units": 150,
+  "paired_clean_hole_units": 25,
+  "clean_batch_config": "configs/blender/prebulk_200_clean.json",
+  "anomaly_batch_config": "configs/blender/prebulk_200_anomaly.json",
+  "selection_seed_clean": 2026081401,
+  "selection_seed_anomaly": 2026081402,
+  "quota_policy": "exact_marginals_balanced_wheel_and_roll",
+  "expected": {
+    "camera_pose": {"A_overhead": 0.40, "C_leading_three_quarter": 0.275, "C_trailing_three_quarter": 0.275, "D_upper_detail": 0.05},
+    "lighting": {"mars_dusty_refined": 0.75, "mars_clear_refined": 0.25},
+    "surface_wear": {"surface_current": 0.20, "wear_light": 0.45, "wear_evident": 0.35},
+    "severity": {"small": 0.50, "medium": 0.40, "large": 0.10},
+    "surface": {"tread": 0.80, "shoulder": 0.20}
+  }
+}

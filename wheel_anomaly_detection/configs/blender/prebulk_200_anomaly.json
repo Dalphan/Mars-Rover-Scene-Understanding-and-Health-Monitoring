@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "source": {"blend": "outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend", "sha256": "9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030"},
+  "domain_randomization_config": "configs/blender/domain_randomization_dataset_v1.json",
+  "anomaly_config": "configs/blender/wheel_hole_anomaly_dataset_v1.json",
+  "sample_indices": [100028, 100082, 100111, 100180, 100198, 100306, 100367, 100467, 100823, 100839, 101052, 101086, 101623, 102011, 102699, 102768, 103045, 103330, 103547, 104265, 107044, 108201, 113151, 114214, 117603],
+  "pilot_stratification": {"enabled": false},
+  "render": {"engine": "BLENDER_EEVEE", "blender_major_minor": [5, 2], "resolution": [1200, 900], "samples": 64, "passes": ["rgb", "target_wheel_mask", "anomaly_mask"]},
+  "execution": {"chunk_size_pairs": 25, "max_chunk_retries": 1, "geometry_cache": true, "async_postprocess": true, "async_queue_depth": 4},
+  "output": {"root": "outputs/anomaly_detection_2/prebulk_200/anomaly_batch"}
+}

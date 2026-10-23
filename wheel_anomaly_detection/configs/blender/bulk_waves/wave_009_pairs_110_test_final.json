@@ -1,0 +1,923 @@
+{
+  "schema_version": 1,
+  "source": {
+    "blend": "outputs/anomaly_detection_2/pose_sampling/wheel_roll_pose_sampling.blend",
+    "sha256": "9d33d41b643fb78b57e99a71a68a839d170b56cd96341145e384b9ad338d4030"
+  },
+  "domain_randomization_config": "configs/blender/domain_randomization_dataset_v1.json",
+  "anomaly_config": "configs/blender/wheel_hole_anomaly_dataset_v1.json",
+  "sample_indices": [
+    203714,
+    203804,
+    203814,
+    203840,
+    203878,
+    203893,
+    203914,
+    203930,
+    204047,
+    204095,
+    204152,
+    204169,
+    204180,
+    204204,
+    204214,
+    204231,
+    204251,
+    204283,
+    204322,
+    204324,
+    204350,
+    204357,
+    204372,
+    204378,
+    204406,
+    204413,
+    204424,
+    204449,
+    204452,
+    204457,
+    204461,
+    204487,
+    204497,
+    204499,
+    204505,
+    204509,
+    204547,
+    204560,
+    204597,
+    204633,
+    204651,
+    204691,
+    204729,
+    204731,
+    204851,
+    204902,
+    204941,
+    204947,
+    205049,
+    205061,
+    205075,
+    205076,
+    205104,
+    205123,
+    205167,
+    205171,
+    205306,
+    205313,
+    205339,
+    205352,
+    205367,
+    205402,
+    205445,
+    205529,
+    205600,
+    205602,
+    205799,
+    205805,
+    205851,
+    205881,
+    205907,
+    206042,
+    206052,
+    206064,
+    206170,
+    206296,
+    206338,
+    206407,
+    206617,
+    206621,
+    206775,
+    206835,
+    206888,
+    207102,
+    207149,
+    207305,
+    207982,
+    208346,
+    208659,
+    209113,
+    209116,
+    209734,
+    210061,
+    210273,
+    211208,
+    211545,
+    212155,
+    212456,
+    212750,
+    213110,
+    214561,
+    214866,
+    217827,
+    218886,
+    219776,
+    222119,
+    223606,
+    227796,
+    229414,
+    236556
+  ],
+  "pilot_stratification": {
+    "enabled": false
+  },
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "blender_major_minor": [
+      5,
+      2
+    ],
+    "resolution": [
+      1200,
+      900
+    ],
+    "samples": 64,
+    "passes": [
+      "rgb",
+      "target_wheel_mask",
+      "anomaly_mask"
+    ]
+  },
+  "execution": {
+    "chunk_size_pairs": 50,
+    "max_chunk_retries": 1,
+    "geometry_cache": true,
+    "async_postprocess": true,
+    "async_queue_depth": 4
+  },
+  "output": {
+    "root": "outputs/anomaly_detection_2/bulk/waves/anomaly"
+  },
+  "semantic_assignments": [
+    {
+      "sample_index": 203714,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 203804,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 203814,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 203840,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 203878,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 203893,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 203914,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 203930,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204047,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204095,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204152,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204169,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204180,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 204204,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204214,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204231,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204251,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204283,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204322,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204324,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204350,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204357,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204372,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204378,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 204406,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204413,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 204424,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204449,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 204452,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204457,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204461,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204487,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 204497,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204499,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204505,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204509,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204547,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204560,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204597,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204633,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204651,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204691,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204729,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204731,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 204851,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 204902,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 204941,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 204947,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205049,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 205061,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205075,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 205076,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 205104,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205123,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205167,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205171,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 205306,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 205313,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 205339,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 205352,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205367,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205402,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 205445,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205529,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205600,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 205602,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 205799,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 205805,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205851,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 205881,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 205907,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 206042,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 206052,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 206064,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 206170,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 206296,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 206338,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 206407,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 206617,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 206621,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 206775,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 206835,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 206888,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 207102,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 207149,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 207305,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 207982,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 208346,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 208659,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 209113,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 209116,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 209734,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 210061,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 210273,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 211208,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 211545,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 212155,
+      "severity": "medium",
+      "surface": "shoulder",
+      "image_sector": "upper",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 212456,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 212750,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 213110,
+      "severity": "small",
+      "surface": "shoulder",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 214561,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "peeled_window"
+    },
+    {
+      "sample_index": 214866,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 217827,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 218886,
+      "severity": "medium",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 219776,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 222119,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 223606,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "leading",
+      "profile_family": "jagged_slit"
+    },
+    {
+      "sample_index": 227796,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 229414,
+      "severity": "small",
+      "surface": "tread",
+      "image_sector": "upper",
+      "profile_family": "branched_tear"
+    },
+    {
+      "sample_index": 236556,
+      "severity": "large",
+      "surface": "tread",
+      "image_sector": "trailing",
+      "profile_family": "branched_tear"
+    }
+  ]
+}

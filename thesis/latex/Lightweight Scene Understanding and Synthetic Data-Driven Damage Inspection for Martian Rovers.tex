@@ -1,0 +1,112 @@
+% !TeX encoding = UTF-8
+% !TeX program = pdflatex
+% !TeX spellcheck = en_US
+
+\documentclass[binding=0.6cm]{sapthesis}
+
+\usepackage{microtype}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{subcaption}
+\usepackage{placeins}
+\usepackage{hyperref}
+%\hypersetup{pdftitle={Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers},pdfauthor={Daniele Venturini}}
+
+\hypersetup{
+%			hyperfootnotes=true,			
+%			bookmarks=true,			
+			colorlinks=true,
+			linkcolor=red,
+            linktoc=page,
+			anchorcolor=black,
+			citecolor=red,
+			urlcolor=blue,
+			pdftitle={Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers},
+            pdfauthor={Daniele Venturini},
+			pdfkeywords={thesis, sapienza, roma, university}
+ }
+
+\title{Lightweight Scene Understanding and Synthetic Data-Driven Damage Inspection for Martian Rovers}
+\author{Daniele Venturini}
+\IDnumber{1991255}
+\course{Master's Degree in Computer Science}
+\courseorganizer{Faculty of Information Engineering, Informatics, and Statistics}
+\AcademicYear{2025/2026}
+\advisor{Prof. Marco Raoul Marini}
+%\coadvisor{}
+\authoremail{venturini.1991255@studenti.uniroma1.it}
+\copyyear{2026}
+\thesistype{Master's Degree Thesis}
+\examdate{27 October 2026}
+\examiner[]{Prof. Galasso}
+\examiner[Thesis Advisor]{Prof. Marini}
+\examiner[]{Prof. Carlucci}
+\examiner[]{Prof. Perelli}
+\examiner[]{Prof. Pontarelli}
+\examiner[]{Prof. Spinelli}
+\examiner[]{Prof. Sterbini}
+\versiondate{1.048596}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+\dedication{"Even if it's over now, \\ I'm glad we stopped to hear the music"}
+
+\begin{acknowledgments}
+	Certo! Ecco una versione generica di ringraziamenti da scrivere in una tesi magistrale:
+	Purtroppo questa volta devo fare le cose per bene e ciò include fare i ringraziamenti. Per renderli speciali, sarà anche l'unica parte di tesi scritta senza aiuti artificiali coff coff.
+	Il che sarà molto difficile dato che non so come si scrivano bene.
+
+	Per iniziare vorrei ringraziare la mia famiglia, così possono leggere la loro parte tenendo nascosta la seconda parte.
+	Ringrazio mia sorella, principalmente perché mi ha sopportato con non tanta pazienza durante tutti questi anni. Quando rientri a casa sappiamo che avrai mille cose da raccontare e di cui lamentarti, ma parliamo anche di cose buone dai, sei la spalla perfetta per vedere film e serie tv, soprattutto horror.
+	Un grazie a mio padre, il tuttofare, che so mi avresti voluto mandare a lavorare molto prima, ma mi hai sempre supportato in questo lungo percorso, anche quando ho scelto di continuare e fare anche la magistrale. Sei il mio punto di riferimento su cui posso fare affidamento per tutto, ed è anche grazie a te che ho preso questa passione per l'informatica (ed ora sei te a chiedere consigli a me su questo).
+	Un grazie anche a te mamma, per avermi permesso di fare questo percorso, per essere sempre disponibile, per prenderti sempre cura di noi, per avermi insegnato a cucinare e fare buonissimi dolci, per avermi sempre incoraggiato a fare quel che mi piaceva. Sei una forza della natura e mi dai sempre la forza di andare avanti.
+	Ospite speciale dei ringraziamenti Nina, il piccolo demone a casa, che in questi quasi 3 anni ha continuamente provato a mangiarci le mani o le braccia, ma a me fa le fusa.
+
+	Ora per la seconda parte, mi raccomando leggetevi solo la vostra parte.
+	Inizierei ringraziando i colleghi universitari\texttrademark~che mi hanno accompagnato in questi anni di magistrale. Una presenza constante e ineluttabile è stato Federico, iniziando questo percorso insieme e scegliendo i corsi in modo da poterli seguire insieme (chiaramente i peggiori). Ma sappiamo entrambi che l'università era solo la side quest e il tuo obiettivo era solo farmi spendere soldi in vari giochi. Tra poco con uno stipendio sarà più difficile dirti di no. Colgo l'occasione anche per farti gli auguri per la tua futura laurea (domani) e per la sfida del dottorato, i fusi orari non ci fermeranno.
+	Cambiamo una lettera e troviamo Federica, compagna di non so quanti progetti di gruppo e poi anche del percorso di eccellenza\textsuperscript{\copyright}. Felice di averli fatti con te perchè so che sei una persona affidabile, e credo pensai lo stesso di me, sei sempre un po' criptica.
+	E poi Diana, amica sempre presente nel bene e nel male dai primi giorni di università. Tra ritiri in aula studio, PAUSE CAFFE' (infinite), lezioni, qualche spritzino, scleri contro i professori, non c'era giornata che non ravvivavi.
+	Menzione d'onore a quello che io ho sempre chiamato il "Gruppo di Roma", colleghi di innumerevoli serate sobrie e tranquille. Dopo una breve pausa e con qualche new entry, abbiamo avuto la geniale idea di riunirci per riportare caos e imprevedibilità (non sai mai quando ti arriva il messaggio "STASERA SI ESCE").
+	Particolare attenzione anche al "Gruppo del DND" o giochi da tavolo o vacanze a case di Federico. Insomma un sacco di roba.  Mi dispiace per i due master che devono gestire 4 bambini che non sanno ragionare, ma tra i meme e scene iconice, anche oltre alla campagna, rendono le sessioni e le scampagnate infinitamente divertenti ed esotiche.
+
+	Infine e per meno importanza, chiaramente, gli Apriliani\texttrademark.
+	Federico, quando non è mese di esami, so che posso sempre contare su di te per le idee più strampalate e all'ultimo secondo, e tu sai lo stesso di me. Ciò non toglie anche i vari discorsi filosofici, politici, utopici, in cui ogni volta facciamo finta di essere dei sapientoni e poi arriviamo sempre alla stessa conclusione: [Redacted for legal reasons].
+	E poi c'è Tommaso, la spalla di affidamento, "collega di lavoro", il troppo occupato con i lavori, il principale detentore del contratto di mantenimento, l'avventuriero, l'anfora d'oro. Insomma, un sacco di cose. Ne abbiamo passate mooolte insieme, ma sei stato sempre presente, anche nei momenti più difficili, dimostrando la persona che sei e per questo te ne sono molto grato. Mi raccomando che anche te dovrai far parte dei numerosi piani che prepariamo nei discorsi apriliani filosofici.
+
+	Per concludere mi permetto anche un breve spazio egocentrico, perchè sì sono i miei ringraziamenti in fondo. Impossibile negarlo, sono stati due anni difficili, in cui ho quasi perso l'interesse e l'ambizione con cui avevo iniziato questo percorso, per poi ritrovarli e motivarmi ancora più di prima. Questo lo devo alle persone che ho incontrato, anche per brevi periodi, e a chi mi ha accompagnato dall'inizio o anche prima. Ringrazio me stesso per credere sempre in me e per continuare a lottare per raggiungere i miei obiettivi, nonostante tutto.
+\end{acknowledgments}
+
+\raggedbottom
+
+\begin{abstract}
+	This thesis investigates two applications for Martian rover autonomy: lightweight semantic scene understanding for navigation support and automated inspection of visible wheel damage. Segmentation architectures are evaluated on S5Mars, together with quantization strategies to reduce inference cost. SegFormer-B0 reaches 76.93\% test mean Intersection over Union after Quantization-Aware Training, while DeepLabV3+ with MobileNetV2 requires the least measured GPU energy per image. Separate MarsSeg experiments show better cross-mission transfer for SegFormer-B0 than for the tested convolutional models.
+
+	For damage inspection, no suitable real-image benchmark with perforation masks was identified. An automated Blender pipeline therefore generates 10,000 annotated images of a Curiosity model, including matched normal and perforated wheel observations. Synthetic generation avoids extensive manual labeling while providing automatic ground truth and controlled variation of damage and imaging conditions. Four anomaly detection families are evaluated using only normal renders for training. On the overhead-view test subset, PatchCore Large achieves an image-level area under the receiver operating characteristic curve of 86.43\%, whereas a compact TinyGLASS configuration has the lowest measured inference cost. Detection and localization results show that better image discrimination does not necessarily imply more precise damage maps. The findings provide an experimental basis for terrain interpretation and targeted wheel inspection, adaptation across the synthetic-to-real gap and measurements on representative hardware. Future integration could use the predicted \emph{Rover} region to guide a dedicated wheel localizer before applying the damage detector, combining navigation support and targeted inspection within a common onboard perception pipeline.
+\end{abstract}
+
+\tableofcontents
+
+\mainmatter
+\include{Chapters/1 Introduction}
+\include{Chapters/2 Lightweight Scence Understanding}
+\include{Chapters/3 Synthetic Dataset Generation}
+\include{Chapters/4 Synthetic Data-Driven Damage Inspection}
+\include{Chapters/5 Evaluation of Lightweight Scene Understanding}
+\include{Chapters/6 Evaluation of Synthetic Damage Inspection}
+\include{Chapters/7 Discussion and Limitations}
+\include{Chapters/8 Conclusions and Future Work}
+
+\backmatter
+\cleardoublepage
+\phantomsection % Give this command only if hyperref is loaded
+\addcontentsline{toc}{chapter}{\bibname}
+% Here put the code for the bibliography. You can use BibTeX or
+% the BibLaTeX package or the simple environment thebibliography.
+
+\begin{thebibliography}{17}
+	\include{Chapters/Bibliography}
+\end{thebibliography}
+
+\end{document}

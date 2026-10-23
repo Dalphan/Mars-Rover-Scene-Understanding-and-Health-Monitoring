@@ -1,0 +1,6 @@
+defaults:
+  - /model/patchcore@_here_
+  - _self_
+
+# Explicit alias for the default 4:3, ResNet-18 project preset.
+run_name: patchcore_light_${model.backbone}_384x512

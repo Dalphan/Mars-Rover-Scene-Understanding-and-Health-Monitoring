@@ -1,0 +1,8 @@
+defaults:
+  - /model/patchcore@_here_
+  - _self_
+
+# Original lower-resolution PatchCore preset kept for controlled comparisons.
+run_name: patchcore_${model.backbone}_256
+input_size: [256, 256]
+resize: ${model.input_size}
